@@ -91,24 +91,55 @@ def removeSwearWords(swear_frase: str) -> bool:
     utils.write(SWEAR_WORD_PATH, badWords)
 
 
-def getRule(rule: str) -> str:
-    return "Keep it clean. No excessive swearing- We would like this chat to be positive and fairly family friendly."
+def loadRules() -> dict:
+    rules = utils.read(config.Config.rulesPath)
+    rulesFormatted = {}
+
+    for i in rules.keys():
+        if isinstance(rules[i], dict):
+            for j in rules[i].keys():
+                if isinstance(rules[i][j], dict):
+                    for m in rules[i][j].keys():
+                        if isinstance(rules[i][j][m], dict):
+                            for n in rules[i][j][m].keys():
+                                rulesFormatted[f"{i}.{j}.{m}.{n}"] = rules[i][j][m][n]
+                        else:
+                            rulesFormatted[f"{i}.{j}.{m}"] = rules[i][j][m]
+                else:
+                    rulesFormatted[f"{i}.{j}"] = rules[i][j]
+        else:
+            rulesFormatted[f"{i}"] = rules[i]
+
+    return rulesFormatted
 
 
-def addToHistory(id=str, user=discord.Member, rule=str, proof=str, verdict=str) -> None:
+def getRule(rule: str) -> str | None:
+    rules = loadRules()
+
+    if rule in rules.keys():
+        return rules[rule]
+
+    return None
+
+
+def addToHistory(
+    id: str,
+    user: discord.Member,
+    rule: str,
+    proof: str,
+    verdict: str,
+) -> None:
     history = utils.read(HISTORY_PATH)
+    #TODO data
 
     if history == None:
         history = {}
 
-    if user.id in history.keys:
+    if user.id in history.keys():
         history[user.id]["name"] = user.name
     else:
-        history[user.id] = {}
+        history[user.id] = {"name": user.name, "history": {}}
 
-    if "history" in history[user.id].keys:
-        history[user.id]["history"][id]({"rule": str, "proof": proof, "verdict": verdict})
-    else:
-        history[user.id]["history"] = {id: {"rule": str, "proof": proof, "verdict": verdict}}
+    history[user.id]["history"][id] = {"rule": rule, "proof": proof, "verdict": verdict}
 
     utils.write(HISTORY_PATH, history)

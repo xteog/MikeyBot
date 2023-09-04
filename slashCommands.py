@@ -6,15 +6,41 @@ import sys
 import config
 import moderation
 import defs
-from testRequest import read, write
 import traceback
 import utils
 import json
 import views
-import testRequest
 import datetime
 import permissions
 
+
+async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
+    global cog
+    
+    codes = cog.rules.keys()
+    list = []
+    current = current.upper()
+
+
+    for code in codes:
+        if (len(code) >= len(current) and current == code[0:len(current)]) or current == code:
+            name = f"{code}: {cog.rules[code]}"
+
+            if len(name) >= 100:
+                name = name[0:96] + "..."
+            
+            list.append(
+                discord.app_commands.Choice(
+                    name= name,
+                    value=code,
+                )
+            )
+
+    if len(list) == 0:
+        #TODO lev_dist
+        print("non trovato")
+
+    return list[0:25]
 
 async def location_autocomplete(interaction: discord.Interaction, current: str):
     global cog
@@ -113,7 +139,7 @@ def check_expiry(expiry):
 
 async def list_depots(interaction: discord.Interaction, current: str):
     l = []
-    data = read(defs.DB["database"])
+    data = utils.read(defs.DB["database"])
     for i in range(len(data["depots"])):
         l.append(
             discord.app_commands.Choice(
@@ -125,20 +151,28 @@ async def list_depots(interaction: discord.Interaction, current: str):
 
 
 class CommandsCog(discord.ext.commands.Cog):
-    def __init__(self, client: discord.ext.commands.Bot):
+    def __init__(self, client: main.MyBot):
         self.client = client
-        self.list_locations = self.create_list_locations()
-        self.list_factory = self.create_list_factory()
+        self.list_locations = None#self.create_list_locations()
+        self.list_factory = None#self.create_list_factory()
+        self.rules = moderation.loadRules() #TODO togli
+        client.tree.add_command(
+            discord.app_commands.ContextMenu(
+                name="Report Message",
+                callback=self.report,  # set the callback of the context menu to "my_cool_context_menu"
+            )
+        )
         logging.basicConfig(
             filename="logging.log",
             format="%(asctime)s [%(levelname)s]:%(name)s:%(message)s",
             level=logging.INFO,
         )
+                
 
     def create_list_locations(self):
         list = []
         for map in defs.MAP_NAME:
-            data = read(defs.DB["mapData"].format(map))
+            data = utils.read(defs.DB["mapData"].format(map))
             for i in range(len(data["mapItems"])):
                 if data["mapItems"][i]["iconType"] in [33, 52]:
                     min = 0
@@ -177,7 +211,7 @@ class CommandsCog(discord.ext.commands.Cog):
         list = []
 
         for map in defs.MAP_NAME:
-            data = read(defs.DB["mapData"].format(map))
+            data = utils.read(defs.DB["mapData"].format(map))
             for i in range(len(data["mapItems"])):
                 if data["mapItems"][i]["iconType"] in [17, 34, 51]:
                     min = 0
@@ -221,19 +255,19 @@ class CommandsCog(discord.ext.commands.Cog):
         logging.info(f'"\\event_filter" used by {interaction.user.name}')
 
         if interaction.user.id in defs.DB["permission"]:
-            data = read(defs.DB["database"])
+            data = utils.read(defs.DB["database"])
             view = views.EventFilterView(self.client, data)
             await interaction.response.send_message(
                 "Seleziona le regioni di interesse:", view=view, ephemeral=True
             )
             regions = await view.wait()
             with open(defs.DB["mapName"], "w") as f:
-                write(defs.DB["mapName"], regions)
+                utils.write(defs.DB["mapName"], regions)
                 str = "Regioni di interesse:\n" + regions[0]
                 for i in range(1, len(regions)):
                     str += ", " + regions[i]
                 data["map_filter"] = regions
-                write(defs.DB["database"], data)
+                utils.write(defs.DB["database"], data)
                 await self.client.eventChannel.edit(topic=str)
                 await interaction.delete_original_response()
                 await interaction.followup.send(str, ephemeral=True)
@@ -250,7 +284,7 @@ class CommandsCog(discord.ext.commands.Cog):
         modal = views.DepotModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
-        data = read(defs.DB["database"])
+        data = utils.read(defs.DB["database"])
         location = json.loads(location)
         data["depots"].append(
             {
@@ -281,7 +315,7 @@ class CommandsCog(discord.ext.commands.Cog):
                 await msg.delete()
         data["depotListMsg"] = self.client.depotChannel.last_message_id
 
-        write(defs.DB["database"], data)
+        utils.write(defs.DB["database"], data)
 
     @discord.app_commands.command(
         name="depot_remove",
@@ -292,7 +326,7 @@ class CommandsCog(discord.ext.commands.Cog):
     async def depot_remove(self, interaction: discord.Interaction, depot: int):
         logging.info(f'"\\depot_remove" used by {interaction.user.name}')
 
-        data = read(defs.DB["database"])
+        data = utils.read(defs.DB["database"])
         loc = data["depots"][depot]["location"]
         data["depots"].remove(data["depots"][depot])
         depots = data["depots"]
@@ -314,7 +348,7 @@ class CommandsCog(discord.ext.commands.Cog):
         if len(depots) > 0:
             data["depotListMsg"] = self.client.depotChannel.last_message_id
 
-        write(defs.DB["database"], data)
+        utils.write(defs.DB["database"], data)
 
     @discord.app_commands.command(
         name="logi_reminder", description="Imposta un sveglia pubblica"
@@ -327,7 +361,7 @@ class CommandsCog(discord.ext.commands.Cog):
         modal = views.ReminderModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
-        data = read(defs.DB["database"])
+        data = utils.read(defs.DB["database"])
         location = json.loads(location)
 
         cond, time = check_expiry(modal.expiry.value)
@@ -360,12 +394,34 @@ class CommandsCog(discord.ext.commands.Cog):
             await modal.interaction.delete_original_response()
             # await client.depotChannel.send(embed=embed)
 
-            write(defs.DB["database"], data)
+            utils.write(defs.DB["database"], data)
+
+    @discord.app_commands.command(
+        name="issue_warning",
+        description="Warns a user of a violation",
+    )
+    @discord.app_commands.describe(user="The user that you want to warn")
+    @discord.app_commands.describe(rule="The rule violated (ex. G.1.4)")
+    @discord.app_commands.check(permissions.reset)
+    @discord.app_commands.autocomplete(rule=rules_autocomplete)
+    async def issue_warning(self, interaction: discord.Interaction, user: discord.Member,  rule: str):
+        modal = views.WarningModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
+        await self.client.sendWarning(user, rule, interaction.user, modal.notes, modal.link)
+        #TODO non va
+        moderation.addToHistory("ciao", user, rule, modal.link, modal.notes)
+        
+        await modal.interaction.delete_original_response()
+
+        await interaction.followup.send("Warning sent", ephemeral=True)
 
     @discord.app_commands.command(
         name="add_swear_word",
         description="Adds a a word that it is considered to violate the rules.",
     )
+    @discord.app_commands.describe(swear_word="The word you want to add")
     @discord.app_commands.check(permissions.reset)
     async def add_swear_word(self, interaction: discord.Interaction, swear_word: str):
         logging.info(f'"\\add_swear_word" used by {interaction.user.name}')
@@ -386,15 +442,24 @@ class CommandsCog(discord.ext.commands.Cog):
     @discord.app_commands.check(permissions.reset)
     async def reset(self, interaction: discord.Interaction):
         logging.info(f'"\\reset" used by {interaction.user.name}')
-
+        # TODO finisci
         await self.client.change_presence(status=discord.Status.offline)
 
         main.reconnect(self.client)
-      
+
+
+    async def report(self, interaction: discord.Interaction, message: discord.Message):
+        logging.info(f'"\\report" used by {interaction.user.name}')
+
+        await interaction.response.send_message("reportato")
 
     @reset.error
     @add_swear_word.error
+    @issue_warning.error
     async def error(self, interaction: discord.Interaction, error):
+        await interaction.response.send_message("Error: " + error, ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error):
         await interaction.response.send_message("Error: " + error, ephemeral=True)
 
 

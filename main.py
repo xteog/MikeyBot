@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 import discord
 from discord.ext import commands
 import slashCommands
@@ -46,12 +47,12 @@ class MyBot(commands.Bot):
             await message.add_reaction("🛑")
             await self.issueWarning(message)
 
-    async def issueWarning(self, message):
+    async def issueWarning(self, message: discord.Message):
         view = views.ViolationReportView(self, message, self.user)
         await self.warningChannel.send(embed=view.embed, view=view)
 
-    async def sendWarning(self, message, badWordsSaid):
-        await self.warningChannel.send(f"{message.author.name} said a bad word")
+    async def sendWarning(self, user: discord.Member, rule: str, creator: discord.Member, notes: str, proof: str):
+        await self.warningChannel.send(embed=views.ViolationReportEmbed(rule, [creator], user, link=proof, verdict=notes))
 
     async def deletMessage(self, id):
         msg = await self.depotChannel.fetch_message(id)
@@ -59,7 +60,10 @@ class MyBot(commands.Bot):
 
     async def sendMessage(self, msg, channelId):
         channel = self.get_channel(channelId)
-        await self.channel.send(msg)
+        await channel.send(msg)
+
+    async def on_error(self, event_method: str) -> None:
+        print(event_method)
 
 
 def runBot():

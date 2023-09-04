@@ -6,3 +6,4 @@ config.py
 /data/tempIcon.png
 /data/tempImage.png
 /data/tempVoronoi.png
+logging.log
