@@ -1,11 +1,13 @@
-import render
+from typing import Any
+from discord.interactions import Interaction
+from discord.ui.item import Item
 import defs
 import discord
 import moderation
-from testRequest import read, write
 import asyncio
 import datetime
 import random
+import utils
 
 
 class ViolationReportView(discord.ui.View):
@@ -18,12 +20,13 @@ class ViolationReportView(discord.ui.View):
     ):
         super().__init__()
         self.bot = bot
+        self.user = message.author
         self.message = message
         self.creator = creator
         self.timeout = self.bot.config.defaultTimeout
 
         self.embed = ViolationReportEmbed(
-            bot, rule="S.4", message=message, creators=[creator]
+            rule="S.4", user=self.user, message=message, creators=[creator]
         )
         self.add_item(DeleteMsgButton(bot, message, creator, disabled))
 
@@ -37,19 +40,20 @@ class ViolationReportView(discord.ui.View):
     ) -> None:
         moderation.removeSwearWords(self.message.content)
         newEmbed = ViolationReportEmbed(
-            self.bot,
             rule="S.4",
+            user=self.user,
             message=self.message,
             creators=[self.creator, interaction.user],
             verdict="No offence, this word/s will no more be detected as swear words",
         )
         await interaction.response.edit_message(embed=newEmbed, view=discord.ui.View())
 
+    
     async def on_timeout(self) -> None:
-        self.clear_items()  # TODO make it work
+        #self.clear_items()  # TODO make it work
         moderation.addToHistory(
             id="None",
-            user=self.message.author,
+            user=self.user,
             rule="S.4",
             proof=f'"{moderation.formatSwearWords(self.message.content)}" on #{self.message.channel.mention}\n',
             verdict="No offence (timeout)",
@@ -84,18 +88,27 @@ class DeleteMsgButton(discord.ui.Button):  # TODO add creator
 
 class ViolationReportEmbed(discord.Embed):
     def __init__(
-        self, bot, rule: str, creators: list, message=None, link=None, verdict=None
+        self,
+        rule: str,
+        creators: list[discord.Member],
+        user: discord.Member,
+        message: discord.Message | None = None,
+        link: str | None = None,
+        verdict: str | None = None,
     ):
         super().__init__(title="Violation Report", color=0xFFFFFF)
-        self.set_thumbnail(url=message.author.avatar.url)
         self.description = f"**ID:** `None`\n"
-        self.description += f"**User:** {message.author.name}(<@{message.author.id}>)\n"
+        self.description += f"**User:** {user.name} (<@{user.id}>)\n"
         self.description += f"**Rule:** `{rule}`\n> {moderation.getRule(rule)}\n"
+        self.set_thumbnail(url=user.avatar.url)
 
+        
+        
         if message != None:
             self.description += f'**Proof:** "{moderation.formatSwearWords(message.content)}" on #{message.channel.mention}\n'
-        elif link != None:
-            self.description += f"**Proof:** [link to proof] '{link}'\n"
+
+        if link != None:
+            self.description += f"**Proof:** [link to proof]({link})\n"
 
         if verdict != None:
             self.description += f"\n**Verdict:** {verdict}\n"
@@ -117,7 +130,7 @@ class RegionFilterSelect(discord.ui.View):
         options = []
         for map in self.elements:
             desc = ""
-            data = read(defs.DB["mapData"].format(map))
+            data = utils.read(defs.DB["mapData"].format(map))
             for i in data["mapItems"]:
                 if i["flags"] == 41:
                     if i["teamId"] == "COLONIALS":
@@ -198,6 +211,32 @@ class DepotModal(discord.ui.Modal, title="Dati Deposito"):
         self.stop()
 
 
+class WarningModal(discord.ui.Modal, title="Details"):
+    def __init__(self):
+        super().__init__()
+        self.notes = discord.ui.TextInput(
+            label="Notes",
+            required=False,
+            placeholder="Enter additional details",
+            style=discord.TextStyle.paragraph,
+        )
+        self.link = discord.ui.TextInput(
+            label="Proof link",
+            required=False,
+            placeholder='ex. "youtube.com/watch?v=dQw4w9WgXcQ"',
+        )
+        self.add_item(self.notes)
+        self.add_item(self.link)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        self.interaction = interaction
+
+        if self.notes == " ":
+            print("vuoto")#risolvi
+        self.stop()
+
+
 class ReminderModal(discord.ui.Modal, title="Info ordine"):
     def __init__(self):
         super().__init__()
@@ -243,8 +282,6 @@ class DepotEmbed(discord.Embed):
                     value=f"Nome: `{d['name']}`\nPasscode: `{d['passcode']}`\n{d['desc']}",
                     inline=False,
                 )
-        if callback == False:
-            render.paste_items_fullmap(depots, True)
         self.fileMap = discord.File(defs.PATH + "/data/tempDepotMap.png")
         self.set_image(url="attachment://tempDepotMap.png")
 
@@ -265,7 +302,6 @@ class ReminderEmbed(discord.Embed):
                 description=f"Luogo: <:{emoji[0]}:{emoji[1]}> {defs.ICON_ID[r['iconType']]} a {r['location']}({r['map']})\nQuantità: {r['quantity']}\nScadenza: <t:{timestamp}:R> (<t:{timestamp}:t>)\n{r['desc']}",
                 color=0x5865F2,
             )
-            render.paste_items_fullmap([reminder], True, "/data/tempCropMap.png")
             self.fileMap = discord.File(defs.PATH + "/data/tempCropMap.png")
             self.set_thumbnail(url="attachment://tempCropMap.png")
         else:
@@ -319,9 +355,9 @@ class ReminderButton(discord.ui.Button):
                 "m": datetime.datetime.now().minute,
             }
             await interaction.response.defer()
-            data = read(defs.DB["database"])
+            data = utils.read(defs.DB["database"])
             data["reminders"][self.id] = self.reminder
-            write(defs.DB["database"], data)
+            utils.write(defs.DB["database"], data)
 
             # await interaction.response.send_message("Aggiunta notifica", ephemeral=True)
 
@@ -362,9 +398,9 @@ class PickUpButton(discord.ui.Button):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        data = read(defs.DB["database"])
+        data = utils.read(defs.DB["database"])
         data["reminders"][self.id]["pickedUp"] = interaction.user.name
-        write(defs.DB["database"], data)
+        utils.write(defs.DB["database"], data)
         embed, view = view_reminder(data["reminders"][self.id], self.user, True)
         await interaction.response.edit_message(embed=embed, view=view)
 
@@ -392,33 +428,13 @@ async def send_reminder(id, reminder):
             "h": datetime.datetime.now().hour,
             "m": datetime.datetime.now().minute,
         }
-        data = read(defs.DB["database"])
+        data = utils.read(defs.DB["database"])
         data["reminders"][r["item"] + "dhm" + r["location"]] = r
 
-        write(defs.DB["database"], data)
+        utils.write(defs.DB["database"], data)
 
         return True
     return False
-
-
-class StartWarEmbed(discord.Embed):
-    def __init__(self):
-        super().__init__(title=f"La guerra è iniziata")
-        map = render.Map(defs.PATH + "/data/FullMap.png")
-        map.resize()
-        map.save(defs.PATH + "/data/tempFullMap.png")
-        self.fileMap = discord.File(map.path)
-        self.set_image(url="attachment://tempFullMap.png")
-
-
-class EndWarEmbed(discord.Embed):
-    def __init__(self, winner):
-        super().__init__(title=f"La guerra è finita, i {winner} hanno vinto!")
-        map = render.Map(defs.PATH + "/data/FullMap.png")
-        map.resize()
-        map.save(defs.PATH + "/data/tempFullMap.png")
-        self.fileMap = discord.File(map.path)
-        self.set_image(url="attachment://tempFullMap.png")
 
 
 def view_depots(group, depots, callback=False):
@@ -456,7 +472,7 @@ def view_reminder(reminder, user, expired=False):
 
 
 def make_view(map, region):
-    data = read(defs.DB["mapData"].format(map))
+    data = utils.read(defs.DB["mapData"].format(map))
     for i in data["mapItems"]:
         if i["flags"] == 41:
             if i["teamId"] == "COLONIALS":
