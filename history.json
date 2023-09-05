@@ -2,20 +2,20 @@
   "493028834640396289": {
     "name": "_gorlomi",
     "history": {
-      "None": {
+      "op": {
         "rule": "S.4",
-        "proof": "\"||Fuck|| you\" on #<#1144675608509567096>\n",
-        "verdict": "No offence (timeout)"
+        "proof": "\"||fuck|| you\" on <#1148399138552168519>\n",
+        "verdict": ""
       }
     }
   },
   "493028834640396289": {
     "name": "_gorlomi",
     "history": {
-      "None": {
+      "op": {
         "rule": "S.4",
-        "proof": "\"||Fuck|| you\" on #<#1144675646388318418>\n",
-        "verdict": "No offence (timeout)"
+        "proof": "\"||fuck|| you\" on <#1144675608509567096>\n",
+        "verdict": "https:"
       }
     }
   }

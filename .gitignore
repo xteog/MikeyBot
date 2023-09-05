@@ -7,3 +7,4 @@ config.py
 /data/tempImage.png
 /data/tempVoronoi.png
 logging.log
+history.json

@@ -24,6 +24,7 @@ class MyBot(commands.Bot):
         self.server = self.config.serverId
         self.day = datetime.date.today() + datetime.timedelta(days=1)
         self.warningChannel = None
+        self.dmsChannel = None
         self.errorChannel = None
 
     async def on_ready(self):
@@ -33,6 +34,7 @@ class MyBot(commands.Bot):
         await self.tree.sync(guild=discord.Object(id=self.server))
         self.errorChannel = self.get_channel(self.config.errorChannelId)
         self.warningChannel = self.get_channel(self.config.warningsChannelId)
+        self.dmsChannel = self.get_channel(self.config.dmsChannelId)
         moderation.setPaths(self.config.swearWordsPath, self.config.historyPath)
         #await self.change_presence(status=discord.Status.online)
         print("Mikey is up".format(self.user.name))
@@ -51,8 +53,8 @@ class MyBot(commands.Bot):
         view = views.ViolationReportView(self, message, self.user)
         await self.warningChannel.send(embed=view.embed, view=view)
 
-    async def sendWarning(self, user: discord.Member, rule: str, creator: discord.Member, notes: str, proof: str):
-        await self.warningChannel.send(embed=views.ViolationReportEmbed(rule, [creator], user, link=proof, verdict=notes))
+    async def sendWarning(self, user: discord.Member, rule: str, creators: list[discord.Member], notes: str, proof: str):
+        await self.dmsChannel.send(embed=views.ViolationReportEmbed(rule, creators, user, link=proof, verdict=notes, title="Warning Report"))
 
     async def deletMessage(self, id):
         msg = await self.depotChannel.fetch_message(id)

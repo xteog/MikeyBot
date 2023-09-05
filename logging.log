@@ -1944,3 +1944,315 @@ Traceback (most recent call last):
     await interaction.response.send_message("Error: " + error, ephemeral=True)
                                             ~~~~~~~~~~^~~~~~~
 TypeError: can only concatenate str (not "CommandInvokeError") to str
+2023-09-05 01:39:29,990 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:39:29,991 [INFO]:discord.client:logging in using static token
+2023-09-05 01:39:31,032 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 1b404845fee951c5d49e8f0124e841a6).
+2023-09-05 01:39:44,678 [ERROR]:discord.ui.view:Ignoring exception in view <ViolationReportView timeout=10 children=3> for item <Button style=<ButtonStyle.danger: 4> url=None disabled=False label='Warn' emoji=None row=None>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\view.py", line 427, in _scheduled_task
+    await item.callback(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 68, in warn
+    moderation.addToHistory("op", self.user, self.rule, proof, verdict)
+                                                               ^^^^^^^
+UnboundLocalError: cannot access local variable 'verdict' where it is not associated with a value
+2023-09-05 01:40:35,114 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:40:35,115 [INFO]:discord.client:logging in using static token
+2023-09-05 01:40:36,054 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: df9073aac8ffc40df6d2d8628e625a71).
+2023-09-05 01:41:21,403 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:41:21,405 [INFO]:discord.client:logging in using static token
+2023-09-05 01:41:22,444 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: fd722054acf8d473d3e28714ab149c50).
+2023-09-05 01:41:35,145 [ERROR]:discord.ui.view:Ignoring exception in view <ViolationReportView timeout=3600 children=3> for item <Button style=<ButtonStyle.danger: 4> url=None disabled=False label='Warn' emoji=None row=None>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\view.py", line 427, in _scheduled_task
+    await item.callback(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 70, in warn
+    moderation.addToHistory("op", self.user, self.rule, proof, verdict)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\moderation.py", line 145, in addToHistory
+    utils.write(HISTORY_PATH, history)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\utils.py", line 41, in write
+    data = json.dumps(data, indent=2)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  [Previous line repeated 1 more time]
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type TextInput is not JSON serializable
+2023-09-05 01:43:49,179 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:43:49,181 [INFO]:discord.client:logging in using static token
+2023-09-05 01:43:50,308 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 635e1514b681b6e2559c933e7dd07bec).
+2023-09-05 01:44:08,027 [ERROR]:discord.ui.view:Ignoring exception in view <ViolationReportView timeout=3600 children=3> for item <Button style=<ButtonStyle.danger: 4> url=None disabled=False label='Warn' emoji=None row=None>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\view.py", line 427, in _scheduled_task
+    await item.callback(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 70, in warn
+    moderation.addToHistory("op", self.user, self.rule, proof, verdict)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\moderation.py", line 145, in addToHistory
+    utils.write(HISTORY_PATH, history)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\utils.py", line 41, in write
+    data = json.dumps(data, indent=2)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  [Previous line repeated 1 more time]
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type TextInput is not JSON serializable
+2023-09-05 01:46:02,026 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:46:02,027 [INFO]:discord.client:logging in using static token
+2023-09-05 01:46:03,121 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 71a0e9d9755303281897537b987de3fe).
+2023-09-05 01:46:12,850 [ERROR]:discord.ui.view:Ignoring exception in view <ViolationReportView timeout=3600 children=3> for item <Button style=<ButtonStyle.danger: 4> url=None disabled=False label='Warn' emoji=None row=None>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\view.py", line 427, in _scheduled_task
+    await item.callback(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 70, in warn
+    moderation.addToHistory("op", self.user, self.rule, proof, verdict)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\moderation.py", line 145, in addToHistory
+    utils.write(HISTORY_PATH, history)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\utils.py", line 41, in write
+    data = json.dumps(data, indent=2)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  [Previous line repeated 1 more time]
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.1520.0_x64__qbz5n2kfra8p0\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type TextInput is not JSON serializable
+2023-09-05 01:46:37,741 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:46:37,743 [INFO]:discord.client:logging in using static token
+2023-09-05 01:46:38,808 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: d5e16f5a7c7f8dff7cd210d068ab1556).
+2023-09-05 01:46:57,910 [ERROR]:discord.ui.view:Ignoring exception in view <ViolationReportView timeout=3600 children=3> for item <Button style=<ButtonStyle.danger: 4> url=None disabled=False label='Warn' emoji=None row=None>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\view.py", line 427, in _scheduled_task
+    await item.callback(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 81, in warn
+    await interaction.followup.edit_message(embed=newEmbed, view=discord.ui.View())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Webhook.edit_message() missing 1 required positional argument: 'message_id'
+2023-09-05 01:49:36,199 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:49:36,201 [INFO]:discord.client:logging in using static token
+2023-09-05 01:49:37,240 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 510c163eeedee0c9771d0ae683f6bc61).
+2023-09-05 01:49:51,166 [ERROR]:discord.ui.view:Ignoring exception in view <ViolationReportView timeout=3600 children=3> for item <Button style=<ButtonStyle.danger: 4> url=None disabled=False label='Warn' emoji=None row=None>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\view.py", line 427, in _scheduled_task
+    await item.callback(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 82, in warn
+    await self.bot.sendWarning(
+          ^^^^^^^^^^^^^^^^^^^^^
+TypeError: MyBot.sendWarning() got an unexpected keyword argument 'message'
+2023-09-05 01:50:11,679 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:50:11,681 [INFO]:discord.client:logging in using static token
+2023-09-05 01:50:12,567 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: ab5635f4c9ad08d264c0d8fa2c9ff1dc).
+2023-09-05 01:51:24,270 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:51:24,271 [INFO]:discord.client:logging in using static token
+2023-09-05 01:51:25,216 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: f9447197c8b9752257ea7a1554999ac7).
+2023-09-05 01:52:21,913 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:52:21,916 [INFO]:discord.client:logging in using static token
+2023-09-05 01:52:22,935 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: eb0d5db8f18ef0730fee7a7cb75e3396).
+2023-09-05 01:52:35,929 [ERROR]:discord.ui.modal:Ignoring exception in modal <WarningModal timeout=None children=1>:
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\modal.py", line 188, in _scheduled_task
+    await self.on_submit(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 291, in on_submit
+    if len(self.notes) <= 1:
+       ^^^^^^^^^^^^^^^
+TypeError: object of type 'TextInput' has no len()
+2023-09-05 01:53:05,401 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:53:05,402 [INFO]:discord.client:logging in using static token
+2023-09-05 01:53:06,485 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 2077aa8855ee6044d8d116c1012a3c9a).
+2023-09-05 01:53:24,145 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:53:24,146 [INFO]:discord.client:logging in using static token
+2023-09-05 01:53:25,111 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 9570a073fef3404a3989f2556a540d1d).
+2023-09-05 01:53:43,613 [ERROR]:asyncio:Task exception was never retrieved
+future: <Task finished name='discord.py: on_message' coro=<Client._run_event() done, defined at C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py:433> exception=TypeError('MyBot.on_error() takes 2 positional arguments but 3 were given')>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 441, in _run_event
+    await coro(*args, **kwargs)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 48, in on_message
+    if len(moderation.findSwearWords(message.content)) > 0:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\moderation.py", line 42, in findSwearWords
+    for word in badWords:
+TypeError: 'NoneType' object is not iterable
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 446, in _run_event
+    await self.on_error(event_name, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MyBot.on_error() takes 2 positional arguments but 3 were given
+2023-09-05 01:54:38,517 [ERROR]:discord.ui.modal:Ignoring exception in modal <WarningModal timeout=None children=1>:
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\ui\modal.py", line 188, in _scheduled_task
+    await self.on_submit(interaction)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 292, in on_submit
+    self.notes.value = None
+    ^^^^^^^^^^^^^^^^
+AttributeError: property 'value' of 'TextInput' object has no setter
+2023-09-05 01:58:43,480 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:58:43,481 [INFO]:discord.client:logging in using static token
+2023-09-05 01:58:44,520 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: bdbcbcd359f76687fd4f54d7b86960c6).
+2023-09-05 01:58:52,135 [ERROR]:asyncio:Task exception was never retrieved
+future: <Task finished name='discord.py: on_message' coro=<Client._run_event() done, defined at C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py:433> exception=TypeError('MyBot.on_error() takes 2 positional arguments but 3 were given')>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 441, in _run_event
+    await coro(*args, **kwargs)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 50, in on_message
+    await self.issueWarning(message)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 53, in issueWarning
+    view = views.ViolationReportView(self, message, self.user)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 29, in __init__
+    self.embed = ViolationReportEmbed(
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 147, in __init__
+    if link[0:5] == "https":
+       ~~~~^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 446, in _run_event
+    await self.on_error(event_name, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MyBot.on_error() takes 2 positional arguments but 3 were given
+2023-09-05 01:59:09,649 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 01:59:09,650 [INFO]:discord.client:logging in using static token
+2023-09-05 01:59:10,679 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 4f56d7f1e0acebe7c5c04e8d896da97f).
+2023-09-05 02:01:04,708 [ERROR]:asyncio:Task exception was never retrieved
+future: <Task finished name='discord.py: on_message' coro=<Client._run_event() done, defined at C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py:433> exception=TypeError('MyBot.on_error() takes 2 positional arguments but 3 were given')>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 441, in _run_event
+    await coro(*args, **kwargs)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 50, in on_message
+    await self.issueWarning(message)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 53, in issueWarning
+    view = views.ViolationReportView(self, message, self.user)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 29, in __init__
+    self.embed = ViolationReportEmbed(
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 147, in __init__
+    if link[0:5] == "https":
+       ~~~~^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 446, in _run_event
+    await self.on_error(event_name, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MyBot.on_error() takes 2 positional arguments but 3 were given
+2023-09-05 02:04:24,534 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 02:04:24,535 [INFO]:discord.client:logging in using static token
+2023-09-05 02:04:25,803 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 6787abd57419954b8f610438f2b94efd).
+2023-09-05 02:04:31,473 [ERROR]:asyncio:Task exception was never retrieved
+future: <Task finished name='discord.py: on_message' coro=<Client._run_event() done, defined at C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py:433> exception=TypeError('MyBot.on_error() takes 2 positional arguments but 3 were given')>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 441, in _run_event
+    await coro(*args, **kwargs)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 50, in on_message
+    await self.issueWarning(message)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 53, in issueWarning
+    view = views.ViolationReportView(self, message, self.user)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 29, in __init__
+    self.embed = ViolationReportEmbed(
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 147, in __init__
+    if len(link) > 5 and link[0:5] == "https":
+       ^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 446, in _run_event
+    await self.on_error(event_name, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MyBot.on_error() takes 2 positional arguments but 3 were given
+2023-09-05 02:04:57,265 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 02:04:57,267 [INFO]:discord.client:logging in using static token
+2023-09-05 02:04:58,225 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: eddbee91bd74231520fd35fd893bca0f).
+2023-09-05 02:05:01,755 [ERROR]:asyncio:Task exception was never retrieved
+future: <Task finished name='discord.py: on_message' coro=<Client._run_event() done, defined at C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py:433> exception=TypeError('MyBot.on_error() takes 2 positional arguments but 3 were given')>
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 441, in _run_event
+    await coro(*args, **kwargs)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 50, in on_message
+    await self.issueWarning(message)
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\main.py", line 53, in issueWarning
+    view = views.ViolationReportView(self, message, self.user)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 30, in __init__
+    self.embed = ViolationReportEmbed(
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gallo\Code\Programmi\MikeyBot\views.py", line 149, in __init__
+    if len(link) > 5 and link[0:5] == "https":
+       ^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\gallo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\discord\client.py", line 446, in _run_event
+    await self.on_error(event_name, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MyBot.on_error() takes 2 positional arguments but 3 were given
+2023-09-05 02:05:21,591 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 02:05:21,592 [INFO]:discord.client:logging in using static token
+2023-09-05 02:05:22,526 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: cbd4adc8b2384cd9e5fa809a77fec5a0).
+2023-09-05 02:06:39,584 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 02:06:39,586 [INFO]:discord.client:logging in using static token
+2023-09-05 02:09:32,657 [WARNING]:discord.client:PyNaCl is not installed, voice will NOT be supported
+2023-09-05 02:09:32,659 [INFO]:discord.client:logging in using static token
+2023-09-05 02:09:34,431 [INFO]:discord.gateway:Shard ID None has connected to Gateway (Session ID: 80287359233c29afed6d1890988067d3).
+2023-09-05 02:11:15,898 [INFO]:discord.gateway:Shard ID None has successfully RESUMED session 80287359233c29afed6d1890988067d3.

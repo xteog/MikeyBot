@@ -405,11 +405,11 @@ class CommandsCog(discord.ext.commands.Cog):
     @discord.app_commands.check(permissions.reset)
     @discord.app_commands.autocomplete(rule=rules_autocomplete)
     async def issue_warning(self, interaction: discord.Interaction, user: discord.Member,  rule: str):
-        modal = views.WarningModal()
+        modal = views.ViolationModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
 
-        await self.client.sendWarning(user, rule, interaction.user, modal.notes, modal.link)
+        await self.client.sendWarning(user, rule, [interaction.user], modal.notes.value, modal.link.value)
         #TODO non va
         moderation.addToHistory("ciao", user, rule, modal.link, modal.notes)
         
