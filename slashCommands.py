@@ -409,12 +409,19 @@ class CommandsCog(discord.ext.commands.Cog):
         await interaction.response.send_modal(modal)
         await modal.wait()
 
-        await self.client.sendWarning(user, rule, [interaction.user], modal.notes.value, modal.link.value)
-        #TODO non va
-        moderation.addToHistory("ciao", user, rule, modal.link, modal.notes)
+        data = moderation.WarningData(
+            offender=user, 
+            rule=rule, 
+            creator=interaction.user,
+            proof=modal.link.value,
+            verdict=modal.notes.value
+        )
+
+        await self.client.sendWarning(data)
+
+        moderation.addToHistory(data)
         
         await modal.interaction.delete_original_response()
-
         await interaction.followup.send("Warning sent", ephemeral=True)
 
     @discord.app_commands.command(

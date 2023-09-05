@@ -1,4 +1,5 @@
 import json
+import random
 
 
 def lev_dist(s, t):
@@ -50,3 +51,12 @@ def read(path: str) -> list | None:
         return json.loads(file)
     except: #TODO catch
         return None
+    
+
+def randomString(len:int) -> str:
+    alphabet = "0123456789"
+
+    return "".join(random.choices(alphabet, k=len))
+
+def isLink(str: str) -> bool:
+    return len(str) > 5 and str[0:5] == "https"

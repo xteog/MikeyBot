@@ -1,3 +1,4 @@
+import random
 import utils
 import config
 import discord
@@ -5,6 +6,15 @@ import discord
 SWEAR_WORD_PATH = ""
 HISTORY_PATH = ""
 
+
+class WarningData():#TODO rule è una struttura
+    def __init__(self, offender:discord.Member, rule:str, creator:discord.Member, proof:str = "", verdict:str = "") -> None:
+        self.id = utils.randomString(4)
+        self.offender = offender
+        self.rule = rule
+        self.creators = [creator]
+        self.proof = proof
+        self.verdict = verdict
 
 def setPaths(swearWordsPath: str, historyPath: str):
     global SWEAR_WORD_PATH, HISTORY_PATH
@@ -123,23 +133,20 @@ def getRule(rule: str) -> str | None:
 
 
 def addToHistory(
-    id: str,
-    user: discord.Member,
-    rule: str,
-    proof: str,
-    verdict: str,
+    data: WarningData
 ) -> None:
     history = utils.read(HISTORY_PATH)
-    #TODO data
 
     if history == None:
         history = {}
 
-    if user.id in history.keys():
-        history[user.id]["name"] = user.name
+    if str(data.offender.id) in history.keys():
+        history[str(data.offender.id)]["name"] = data.offender.name
     else:
-        history[user.id] = {"name": user.name, "history": {}}
+        history[str(data.offender.id)] = {"name": data.offender.name, "history": {}}
 
-    history[user.id]["history"][id] = {"rule": rule, "proof": proof, "verdict": verdict}
+    history[str(data.offender.id)]["history"][data.id] = {"rule": data.rule, "proof": data.proof, "verdict": data.verdict}
 
     utils.write(HISTORY_PATH, history)
+
+

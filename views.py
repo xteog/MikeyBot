@@ -10,7 +10,7 @@ import random
 import utils
 
 
-class ViolationReportView(discord.ui.View):
+class ViolationReportView(discord.ui.View):  # TODO ReportMessageView
     def __init__(
         self,
         bot,
@@ -20,16 +20,16 @@ class ViolationReportView(discord.ui.View):
     ):
         super().__init__()
         self.bot = bot
-        self.rule = "S.4"
-        self.user = message.author
-        self.message = message
-        self.creator = creator
         self.timeout = self.bot.config.defaultTimeout
 
-        self.embed = ViolationReportEmbed(
-            rule=self.rule, user=self.user, message=message, creators=[creator]
+        self.data = moderation.WarningData(
+            offender=message.author,
+            rule="S.4",
+            creator=creator,
+            proof=f'"{moderation.formatSwearWords(message.content)}" on {message.channel.mention}\n',
         )
 
+        self.embed = ViolationReportEmbed(self.data)
         self.add_item(DeleteMsgButton(bot, message, creator, disabled))
 
     @discord.ui.button(
@@ -42,6 +42,7 @@ class ViolationReportView(discord.ui.View):
     ) -> None:
         moderation.removeSwearWords(self.message.content)
         newEmbed = ViolationReportEmbed(
+            id=self.id,
             rule=self.rule,
             user=self.user,
             message=self.message,
@@ -63,42 +64,23 @@ class ViolationReportView(discord.ui.View):
         await modal.wait()
 
         if modal.notes.value == "":
-            verdict = "The driver was warned"
+            self.data.verdict = "The driver was warned"
         else:
-            verdict = modal.notes.value
-        proof = f'"{moderation.formatSwearWords(self.message.content)}" on {self.message.channel.mention}\n'
+            self.data.verdict = modal.notes.value
 
-        moderation.addToHistory("op", self.user, self.rule, proof, verdict)
+        moderation.addToHistory(self.data)
 
-        newEmbed = ViolationReportEmbed(
-            rule=self.rule,
-            user=self.user,
-            message=self.message,
-            creators=[self.creator, interaction.user],
-            verdict=verdict,
-        )
+        newEmbed = ViolationReportEmbed(self.data)
 
         await modal.interaction.delete_original_response()
         await interaction.followup.edit_message(
             interaction.message.id, embed=newEmbed, view=discord.ui.View()
         )
-        await self.bot.sendWarning(
-            rule=self.rule,
-            user=self.user,
-            creators=[self.creator, interaction.user],
-            notes=verdict,
-            proof=proof,
-        )
+        await self.bot.sendWarning(self.data)
 
     async def on_timeout(self) -> None:
         # self.clear_items()  # TODO make it work
-        moderation.addToHistory(
-            id="None",
-            user=self.user,
-            rule="S.4",
-            proof=f'"{moderation.formatSwearWords(self.message.content)}" on {self.message.channel.mention}\n',
-            verdict="No offence (timeout)",
-        )
+        moderation.addToHistory(self.data)
         print("No offence (timeout)")
 
 
@@ -128,40 +110,32 @@ class DeleteMsgButton(discord.ui.Button):  # TODO add creator
 
 
 class ViolationReportEmbed(discord.Embed):
-    def __init__(
-        self,
-        rule: str,
-        creators: list[discord.Member],
-        user: discord.Member,
-        message: discord.Message | None = None,  # TODO sostituisci con link/proof
-        link: str = "",
-        verdict: str = "",
-        title: str = "Violation Report",
-    ):
+    def __init__(self, data: moderation.WarningData, title: str = "Violation Report"):
         super().__init__(title=title, color=0xFFFFFF)
-        self.description = f"**ID:** `None`\n"
-        self.description += f"**User:** {user.name} (<@{user.id}>)\n"
-        self.description += f"**Rule:** `{rule}`\n> {moderation.getRule(rule)}\n"
-        self.set_thumbnail(url=user.avatar.url)
+        self.description = f"**ID:** `{data.id}`\n"
+        self.description += (
+            f"**User:** {data.offender.name} ({data.offender.mention})\n"
+        )
+        self.description += (
+            f"**Rule:** `{data.rule}`\n> {moderation.getRule(data.rule)}\n"
+        )
 
-        if message != None:
-            self.description += f'**Proof:** "{moderation.formatSwearWords(message.content)}" on #{message.channel.mention}\n'
-
-        if link != "":
-            if len(link) > 6 and link[0:5] == "https":
-                self.description += f"**Proof:** [link to proof]({link})\n"
+        if data.proof != "":
+            if utils.isLink(data.proof):
+                self.description += f"**Proof:** [link to proof]({data.proof})\n"
             else:
-                self.description += f"**Proof:** {link}"
+                self.description += f"**Proof:** {data.proof}"
 
-        if verdict != "":
-            self.description += f"\n**Verdict:** {verdict}\n"
+        if data.verdict != "":
+            self.description += f"\n**Verdict:** {data.verdict}\n"
 
+        self.set_thumbnail(url=data.offender.avatar.url)
         self.timestamp = datetime.datetime.utcnow()
 
-        footer = f"Created by {creators[0].name}"
-        for i in range(1, len(creators)):
-            footer += f" & {creators[i].name}"
-        self.set_footer(text=footer, icon_url=creators[0].avatar.url)
+        footer = f"Created by {data.creators[0].name}"
+        for i in range(1, len(data.creators)):
+            footer += f" & {data.creators[i].name}"
+        self.set_footer(text=footer, icon_url=data.creators[0].avatar.url)
 
 
 class RegionFilterSelect(discord.ui.View):

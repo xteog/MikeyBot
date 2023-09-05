@@ -36,7 +36,7 @@ class MyBot(commands.Bot):
         self.warningChannel = self.get_channel(self.config.warningsChannelId)
         self.dmsChannel = self.get_channel(self.config.dmsChannelId)
         moderation.setPaths(self.config.swearWordsPath, self.config.historyPath)
-        #await self.change_presence(status=discord.Status.online)
+        # await self.change_presence(status=discord.Status.online)
         print("Mikey is up".format(self.user.name))
 
         self.ready = True
@@ -53,8 +53,13 @@ class MyBot(commands.Bot):
         view = views.ViolationReportView(self, message, self.user)
         await self.warningChannel.send(embed=view.embed, view=view)
 
-    async def sendWarning(self, user: discord.Member, rule: str, creators: list[discord.Member], notes: str, proof: str):
-        await self.dmsChannel.send(embed=views.ViolationReportEmbed(rule, creators, user, link=proof, verdict=notes, title="Warning Report"))
+    async def sendWarning(self, data: moderation.WarningData):
+        await self.dmsChannel.send(
+            embed=views.ViolationReportEmbed(
+                data=data,
+                title="Warning Report",
+            )
+        )
 
     async def deletMessage(self, id):
         msg = await self.depotChannel.fetch_message(id)
@@ -82,7 +87,7 @@ async def reconnect(bot):
 
 if __name__ == "__main__":
     logging.basicConfig(
-        filename="logging.log",
+        filename="data/logging.log",
         format="%(asctime)s [%(levelname)s]:%(name)s:%(message)s",
         level=logging.INFO,
     )

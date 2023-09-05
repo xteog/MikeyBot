@@ -2,9 +2,4 @@
 config.py
 /.vscode
 /.env
-/data/tempFullMap.png
-/data/tempIcon.png
-/data/tempImage.png
-/data/tempVoronoi.png
-logging.log
-history.json
+/data
