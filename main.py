@@ -61,6 +61,10 @@ class MyBot(commands.Bot):
             )
         )
 
+    async def prova(self, id):
+        user = await self.fetch_user(id)
+        return user
+
     async def deletMessage(self, id):
         msg = await self.depotChannel.fetch_message(id)
         await msg.delete()

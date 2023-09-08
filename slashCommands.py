@@ -16,31 +16,33 @@ import permissions
 
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
     global cog
-    
+
     codes = cog.rules.keys()
     list = []
     current = current.upper()
 
-
     for code in codes:
-        if (len(code) >= len(current) and current == code[0:len(current)]) or current == code:
+        if (
+            len(code) >= len(current) and current == code[0 : len(current)]
+        ) or current == code:
             name = f"{code}: {cog.rules[code]}"
 
             if len(name) >= 100:
                 name = name[0:96] + "..."
-            
+
             list.append(
                 discord.app_commands.Choice(
-                    name= name,
+                    name=name,
                     value=code,
                 )
             )
 
     if len(list) == 0:
-        #TODO lev_dist
+        # TODO lev_dist
         print("non trovato")
 
     return list[0:25]
+
 
 async def location_autocomplete(interaction: discord.Interaction, current: str):
     global cog
@@ -153,9 +155,9 @@ async def list_depots(interaction: discord.Interaction, current: str):
 class CommandsCog(discord.ext.commands.Cog):
     def __init__(self, client: main.MyBot):
         self.client = client
-        self.list_locations = None#self.create_list_locations()
-        self.list_factory = None#self.create_list_factory()
-        self.rules = moderation.loadRules() #TODO togli
+        self.list_locations = None  # self.create_list_locations()
+        self.list_factory = None  # self.create_list_factory()
+        self.rules = moderation.loadRules()  # TODO togli
         client.tree.add_command(
             discord.app_commands.ContextMenu(
                 name="Report Message",
@@ -167,7 +169,6 @@ class CommandsCog(discord.ext.commands.Cog):
             format="%(asctime)s [%(levelname)s]:%(name)s:%(message)s",
             level=logging.INFO,
         )
-                
 
     def create_list_locations(self):
         list = []
@@ -404,29 +405,31 @@ class CommandsCog(discord.ext.commands.Cog):
     @discord.app_commands.describe(rule="The rule violated (ex. G.1.4)")
     @discord.app_commands.check(permissions.reset)
     @discord.app_commands.autocomplete(rule=rules_autocomplete)
-    async def issue_warning(self, interaction: discord.Interaction, user: discord.Member,  rule: str):
+    async def issue_warning(
+        self, interaction: discord.Interaction, user: discord.Member, rule: str
+    ):
         modal = views.ViolationModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
 
         data = moderation.WarningData(
-            offender=user, 
-            rule=rule, 
+            offender=user,
+            rule=rule,
             creator=interaction.user,
             proof=modal.link.value,
-            verdict=modal.notes.value
+            verdict=modal.notes.value,
         )
 
         await self.client.sendWarning(data)
 
         moderation.addToHistory(data)
-        
+
         await modal.interaction.delete_original_response()
-        await interaction.followup.send("Warning sent", ephemeral=True)
+        await interaction.followup.send(f"Warning `{data.id}` sent", ephemeral=True)
 
     @discord.app_commands.command(
         name="add_swear_word",
-        description="Adds a a word that it is considered to violate the rules.",
+        description="Adds a a word that it is considered to violate the rules",
     )
     @discord.app_commands.describe(swear_word="The word you want to add")
     @discord.app_commands.check(permissions.reset)
@@ -443,8 +446,61 @@ class CommandsCog(discord.ext.commands.Cog):
             )
 
     @discord.app_commands.command(
+        name="search_violation",
+        description="Search a violation in the history by id or user",
+    )
+    @discord.app_commands.describe(id="The violation's ID composed by 4 digits")
+    @discord.app_commands.describe(user="Returns a list of the user's violations")
+    @discord.app_commands.check(permissions.reset)
+    async def search_violation(
+        self,
+        interaction: discord.Interaction,
+        id: int = None,
+        user: discord.Member = None,
+    ):
+        logging.info(f'"\\search_violation" used by {interaction.user.name}')
+
+        if (id == None and user == None) or (id != None and user != None):
+            await interaction.response.send_message(
+                "You must fill one of the parameters", ephemeral=True
+            )
+            return
+
+        if id != None:
+            violations = await moderation.getViolations(bot=self.client, id=id)
+            if violations == None:
+                await interaction.response.send_message(
+                    f'No violations found with ID `{id}`', ephemeral=True
+                )
+            else:
+                embed = views.ViolationReportEmbed(violations[0])
+                await interaction.response.send_message(embed=embed)
+
+        if user != None:
+            violations = await moderation.getViolations(bot=self.client, user=user)
+            if violations == None:
+                await interaction.response.send_message(
+                    f"The user {user.mention} doesn't have violations", ephemeral=True
+                )
+            else:
+                embed = views.ViolationListEmbed(violations)
+                await interaction.response.send_message(embed=embed)
+
+    @discord.app_commands.command(
+        name="help",
+        description="Shows the documentation of the bot",
+    )
+    async def help(self, interaction: discord.Interaction):
+        logging.info(f'"\\help" used by {interaction.user.name}')
+
+        with open("README.md") as f:
+            text = f.read()
+
+        await interaction.response.send_message(text, ephemeral=True)  # TODO dm
+
+    @discord.app_commands.command(
         name="reset",
-        description="Resets the bot. Use it if there is a bug or it stopped working",
+        description="Resets the bot. Use it if there is a bug or it stopped working. (todo)",
     )
     @discord.app_commands.check(permissions.reset)
     async def reset(self, interaction: discord.Interaction):
@@ -453,7 +509,6 @@ class CommandsCog(discord.ext.commands.Cog):
         await self.client.change_presence(status=discord.Status.offline)
 
         main.reconnect(self.client)
-
 
     async def report(self, interaction: discord.Interaction, message: discord.Message):
         logging.info(f'"\\report" used by {interaction.user.name}')

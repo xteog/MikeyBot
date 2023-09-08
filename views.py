@@ -41,14 +41,11 @@ class ViolationReportView(discord.ui.View):  # TODO ReportMessageView
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         moderation.removeSwearWords(self.message.content)
-        newEmbed = ViolationReportEmbed(
-            id=self.id,
-            rule=self.rule,
-            user=self.user,
-            message=self.message,
-            creators=[self.creator, interaction.user],
-            verdict="No offence, this word/s will no more be detected as swear words",
+        self.data.verdict = (
+            "No offence, this word/s will no more be detected as swear words"
         )
+        self.data.creators.append(interaction.user)
+        newEmbed = ViolationReportEmbed(data=self.data)
         await interaction.response.edit_message(embed=newEmbed, view=discord.ui.View())
 
     @discord.ui.button(
@@ -80,11 +77,12 @@ class ViolationReportView(discord.ui.View):  # TODO ReportMessageView
 
     async def on_timeout(self) -> None:
         # self.clear_items()  # TODO make it work
+        self.data.verdict = "No offence (timeout)"
         moderation.addToHistory(self.data)
         print("No offence (timeout)")
 
 
-class DeleteMsgButton(discord.ui.Button):  # TODO add creator
+class DeleteMsgButton(discord.ui.Button):
     def __init__(
         self,
         bot,
@@ -110,7 +108,9 @@ class DeleteMsgButton(discord.ui.Button):  # TODO add creator
 
 
 class ViolationReportEmbed(discord.Embed):
-    def __init__(self, data: moderation.WarningData, title: str = "Violation Report"):
+    def __init__(
+        self, data: moderation.WarningData, title: str = "Violation Report"
+    ):
         super().__init__(title=title, color=0xFFFFFF)
         self.description = f"**ID:** `{data.id}`\n"
         self.description += (
@@ -130,12 +130,25 @@ class ViolationReportEmbed(discord.Embed):
             self.description += f"\n**Verdict:** {data.verdict}\n"
 
         self.set_thumbnail(url=data.offender.avatar.url)
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = data.timestamp
 
         footer = f"Created by {data.creators[0].name}"
+        self.set_footer(text=footer, icon_url=data.creators[0].avatar.url)
         for i in range(1, len(data.creators)):
             footer += f" & {data.creators[i].name}"
-        self.set_footer(text=footer, icon_url=data.creators[0].avatar.url)
+
+
+class ViolationListEmbed(discord.Embed):
+    def __init__(
+        self, data: list[moderation.WarningData]
+    ):
+        super().__init__(title=f"Violations History", color=0xFFFFFF)
+        self.description = f"{data[0].offender.mention}"
+
+        for violation in data:
+            self.description += f'- <t:{round(violation.timestamp.timestamp())}:d> - **Rule**: Rule `{violation.rule}` - **Verdict**: "{violation.verdict}"\n'
+
+        self.set_thumbnail(url=data[0].offender.avatar.url)
 
 
 class RegionFilterSelect(discord.ui.View):

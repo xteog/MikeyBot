@@ -2,21 +2,53 @@ import random
 import utils
 import config
 import discord
+import datetime
+import pandas
 
 SWEAR_WORD_PATH = ""
 HISTORY_PATH = ""
 
 
-class WarningData():#TODO rule è una struttura
-    def __init__(self, offender:discord.Member, rule:str, creator:discord.Member, proof:str = "", verdict:str = "") -> None:
-        self.id = utils.randomString(4)
+class WarningData:  # TODO rule è una struttura
+    def __init__(
+        self,
+        rule: str,
+        id: str = None,
+        offender: discord.Member = None,
+        creator: discord.Member = None,
+        proof: str = "",
+        verdict: str = "",
+        timestamp: str = None,
+    ) -> None:
+        if id == None:
+            self.id = utils.randomString(4)
+        else:
+            self.id = id
         self.offender = offender
         self.rule = rule
         self.creators = [creator]
         self.proof = proof
         self.verdict = verdict
+        if timestamp == None:
+            self.timestamp = datetime.datetime.utcnow()
+        else:
+            self.timestamp = datetime.datetime.strptime(
+                timestamp, config.Config.timeFormat
+            )
 
-def setPaths(swearWordsPath: str, historyPath: str):
+    async def setUsers(
+        self, bot, offenderId: int = None, creatorsId: list[int] = None
+    ) -> None:
+        if offenderId != None:
+            self.offender = await bot.fetch_user(offenderId)  # TODO gestisci errori
+
+        if creatorsId != None:
+            self.creators = []
+            for id in creatorsId:
+                self.creators.append(await bot.fetch_user(id))
+
+
+def setPaths(swearWordsPath: str, historyPath: str):  # TODO aggiusta
     global SWEAR_WORD_PATH, HISTORY_PATH
     SWEAR_WORD_PATH = swearWordsPath
     HISTORY_PATH = historyPath
@@ -37,13 +69,6 @@ def formatSwearWords(msg: str) -> str:  # TODO cut the message if too long
     return formattedMsg
 
 
-"""
-@param msg
-@param badWords
-@return 
-"""
-
-
 def findSwearWords(msg: str) -> list:
     badWords = utils.read(SWEAR_WORD_PATH)
     badWordsSaid = []
@@ -60,15 +85,13 @@ def findSwearWords(msg: str) -> list:
             flag = True
             if msg[i] != " ":
                 while i + j < msgLen and k < wordLen:
-                    if msg[i + j] == " ":
-                        j += 1
-                    else:
+                    if msg[i + j] != " ":
                         if msg[i + j] != word[k]:
                             flag = False
-                        j += 1
                         k += 1
+                    j += 1
 
-                if flag:
+                if flag and k == wordLen:
                     badWordsSaid.append((i, i + j))
 
             i += 1
@@ -132,9 +155,7 @@ def getRule(rule: str) -> str | None:
     return None
 
 
-def addToHistory(
-    data: WarningData
-) -> None:
+def addToHistory(data: WarningData) -> None:
     history = utils.read(HISTORY_PATH)
 
     if history == None:
@@ -143,10 +164,65 @@ def addToHistory(
     if str(data.offender.id) in history.keys():
         history[str(data.offender.id)]["name"] = data.offender.name
     else:
-        history[str(data.offender.id)] = {"name": data.offender.name, "history": {}}
+        history[str(data.offender.id)] = {"name": data.offender.name, "violations": {}}
 
-    history[str(data.offender.id)]["history"][data.id] = {"rule": data.rule, "proof": data.proof, "verdict": data.verdict}
+    creators = []
+    for c in data.creators:
+        creators.append(c.id)
+
+    history[str(data.offender.id)]["violations"][data.id] = {
+        "rule": data.rule,
+        "creators": creators,
+        "proof": data.proof,
+        "verdict": data.verdict,
+        "timestamp": data.timestamp.strftime(config.Config.timeFormat),
+    }
 
     utils.write(HISTORY_PATH, history)
 
 
+async def getViolations(
+    bot, id: int = None, user: discord.Member = None
+) -> list[WarningData]:
+    history = utils.read(HISTORY_PATH)
+    violations = []
+
+    if id != None:
+        for member in history.keys():
+            for v in history[member]["violations"].keys():
+                if v == str(id):
+                    report = history[member]["violations"][v]
+                    struct = WarningData(
+                        id=str(id),
+                        rule=report["rule"],
+                        proof=report["proof"],
+                        verdict=report["verdict"],
+                        timestamp=report["timestamp"],
+                    )
+                    await struct.setUsers(
+                        bot, offenderId=member, creatorsId=report["creators"]
+                    )
+
+                    violations.append(struct)
+
+    elif user != None and str(user.id) in history.keys():
+        data = history[str(user.id)]["violations"]
+
+        for v in data.keys():
+            struct = WarningData(
+                id=v,
+                offender=user,
+                rule=data[v]["rule"],
+                proof=data[v]["proof"],
+                verdict=data[v]["verdict"],
+                timestamp=data[v]["timestamp"],
+            )
+
+            await struct.setUsers(bot, creatorsId=data[v]["creators"])
+
+            violations.append(struct)
+
+    if len(violations) == 0:
+        return None
+
+    return violations
