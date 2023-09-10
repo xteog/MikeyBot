@@ -42,6 +42,10 @@ class MyBot(commands.Bot):
     async def on_message(self, message: discord.Message):
         if message.author == self.user:
             return
+        
+        if isinstance(message.channel,discord.DMChannel):
+            if message.attachments:
+                print(message.attachments[0].url)
 
         if len(moderation.findSwearWords(message.content)) > 0:
             await message.add_reaction("<:WarningFlag:1150224008881647657>")
