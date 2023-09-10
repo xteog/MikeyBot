@@ -46,7 +46,7 @@ class MyBot(commands.Bot):
             return
 
         if len(moderation.findSwearWords(message.content)) > 0:
-            await message.add_reaction("🛑")
+            await message.add_reaction("<:WarningFlag:1150224008881647657>")
             await self.issueWarning(message)
 
     async def issueWarning(self, message: discord.Message):
@@ -54,12 +54,8 @@ class MyBot(commands.Bot):
         await self.warningChannel.send(embed=view.embed, view=view)
 
     async def sendWarning(self, data: moderation.WarningData):
-        await self.dmsChannel.send(
-            embed=views.ViolationReportEmbed(
-                data=data,
-                title="Warning Report",
-            )
-        )
+        view = views.AppealView(bot=self, data=data)
+        await self.dmsChannel.send(embed=view.embed, view=view)
 
     async def prova(self, id):
         user = await self.fetch_user(id)

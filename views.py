@@ -29,6 +29,8 @@ class ViolationReportView(discord.ui.View):  # TODO ReportMessageView
             proof=f'"{moderation.formatSwearWords(message.content)}" on {message.channel.mention}\n',
         )
 
+        moderation.addToHistory(self.data)
+
         self.embed = ViolationReportEmbed(self.data)
         self.add_item(DeleteMsgButton(bot, message, creator, disabled))
 
@@ -45,6 +47,9 @@ class ViolationReportView(discord.ui.View):  # TODO ReportMessageView
             "No offence, this word/s will no more be detected as swear words"
         )
         self.data.creators.append(interaction.user)
+
+        moderation.addToHistory(self.data)
+
         newEmbed = ViolationReportEmbed(data=self.data)
         await interaction.response.edit_message(embed=newEmbed, view=discord.ui.View())
 
@@ -64,6 +69,8 @@ class ViolationReportView(discord.ui.View):  # TODO ReportMessageView
             self.data.verdict = "The driver was warned"
         else:
             self.data.verdict = modal.notes.value
+
+        self.data.creators.append(interaction.user)
 
         moderation.addToHistory(self.data)
 
@@ -107,10 +114,106 @@ class DeleteMsgButton(discord.ui.Button):
         await interaction.followup.send("Message deleted", ephemeral=True)
 
 
-class ViolationReportEmbed(discord.Embed):
+class AppealView(discord.ui.View):
     def __init__(
-        self, data: moderation.WarningData, title: str = "Violation Report"
+        self,
+        bot,
+        data: list[moderation.WarningData],
+        disabled=False,
     ):
+        super().__init__()
+        self.bot = bot
+        self.data = data
+        self.timeout = self.bot.config.defaultTimeout
+
+        self.embed = ViolationReportEmbed(self.data, title="Warning")
+        self.add_item(AppealButton(self.bot, self.data, disabled))
+
+    async def on_timeout(self) -> None:
+        # self.clear_items()  # TODO make it work
+        print("Appeal timeout")
+
+
+class AppealButton(discord.ui.Button):
+    def __init__(
+        self,
+        bot,
+        data: list[moderation.WarningData],
+        disabled: bool,
+    ):
+        super().__init__(
+            label="Appeal",
+            custom_id=f"{random.randint(0, 100)}",
+            style=discord.ButtonStyle.secondary,
+            disabled=disabled,
+        )
+        self.bot = bot
+        self.data = data
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        modal = WarningModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
+        await modal.interaction.delete_original_response()
+
+        if len(modal.notes.value) == 0:
+            return
+
+        view = AppealRequestView(self.bot, self.data, modal.notes.value)
+        await self.bot.warningChannel.send(embed=view.embed, view=view)
+
+        newView = AppealView(self.bot, self.data, disabled=True)
+        await interaction.followup.edit_message(message_id=interaction.message.id, embed=newView.embed, view=newView)
+
+        await interaction.followup.send("Appeal sent",  ephemeral=True)
+
+
+class AppealRequestView(discord.ui.View):
+    def __init__(self, bot, data: list[moderation.WarningData], notes: str, accepted: list[int] = []):
+        super().__init__()
+        self.bot = bot
+        self.data = data
+        self.notes = notes
+        self.accepted = accepted
+        self.timeout = self.bot.config.defaultTimeout
+
+        self.embed = AppealRequestEmbed(self.data, notes, accepted)
+
+    @discord.ui.button(
+        label="Accept appeal",
+        custom_id=f"{random.randint(0, 100)}",
+        style=discord.ButtonStyle.green,
+    )
+    async def acceptAppeal(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        if interaction.user.id in self.accepted:
+            await interaction.response.send_message("You have already voted", ephemeral=True)
+        elif len(self.accepted) + 1 < 3:
+            newView = AppealRequestView(
+                bot=self.bot, data=self.data, notes=self.notes, accepted=self.accepted.append(interaction.user.id)
+            )
+            await interaction.response.edit_message(
+                embed=newView.embed, view=newView
+            )
+        else:
+            newEmbed = AppealRequestEmbed(
+                bot=self.bot, data=self.data, appealNotes=self.notes, accepted=self.accepted.append(interaction.user.id)
+            )
+            await interaction.response.edit_message(
+                embed=newEmbed, view=discord.ui.View()
+            )
+
+            moderation.addToHistory(self.data)
+
+
+    async def on_timeout(self) -> None:
+        print("Request of appeal timeout")
+
+
+class ViolationReportEmbed(discord.Embed):
+    def __init__(self, data: moderation.WarningData, title: str = "Violation Report"):
         super().__init__(title=title, color=0xFFFFFF)
         self.description = f"**ID:** `{data.id}`\n"
         self.description += (
@@ -138,10 +241,16 @@ class ViolationReportEmbed(discord.Embed):
             footer += f" & {data.creators[i].name}"
 
 
+class AppealRequestEmbed(ViolationReportEmbed):
+    def __init__(self, data: moderation.WarningData, appealNotes: str, accepted: list[int] = []):
+        super().__init__(data, title="Appeal Request")
+        self.description += f"\n**Appeal reason:** {appealNotes}\n"
+
+        self.description += f"Appeal accepted: `{len(accepted)}/3`"
+
+
 class ViolationListEmbed(discord.Embed):
-    def __init__(
-        self, data: list[moderation.WarningData]
-    ):
+    def __init__(self, data: list[moderation.WarningData]):
         super().__init__(title=f"Violations History", color=0xFFFFFF)
         self.description = f"{data[0].offender.mention}"
 
