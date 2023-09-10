@@ -3,10 +3,9 @@ from typing import Any
 import discord
 from discord.ext import commands
 import slashCommands
-import views
-import moderation
+import moderation.views as views
+import moderation.moderation as moderation
 import config
-import utils
 import logging
 import sys
 
@@ -16,12 +15,12 @@ class MyBot(commands.Bot):
         super().__init__(*args, **kwargs)
 
         if sys.argv[1] == "run":
-            self.config = config.Run
+            config.RUN()
         elif sys.argv[1] == "test":
-            self.config = config.Test
+            config.TEST()
         else:
             raise ValueError
-        self.server = self.config.serverId
+        self.server = config.serverId
         self.day = datetime.date.today() + datetime.timedelta(days=1)
         self.warningChannel = None
         self.dmsChannel = None
@@ -32,10 +31,9 @@ class MyBot(commands.Bot):
             slashCommands.setup(self), guild=discord.Object(id=self.server)
         )
         await self.tree.sync(guild=discord.Object(id=self.server))
-        self.errorChannel = self.get_channel(self.config.errorChannelId)
-        self.warningChannel = self.get_channel(self.config.warningsChannelId)
-        self.dmsChannel = self.get_channel(self.config.dmsChannelId)
-        moderation.setPaths(self.config.swearWordsPath, self.config.historyPath)
+        self.errorChannel = self.get_channel(config.errorChannelId)
+        self.warningChannel = self.get_channel(config.warningsChannelId)
+        self.dmsChannel = self.get_channel(config.dmsChannelId)
         # await self.change_presence(status=discord.Status.online)
         print("Mikey is up".format(self.user.name))
 
@@ -50,7 +48,7 @@ class MyBot(commands.Bot):
             await self.issueWarning(message)
 
     async def issueWarning(self, message: discord.Message):
-        view = views.ViolationReportView(self, message, self.user)
+        view = views.ReportMessageView(message, self.user)
         await self.warningChannel.send(embed=view.embed, view=view)
 
     async def sendWarning(self, data: moderation.WarningData):
@@ -77,7 +75,7 @@ def runBot():
     intents = discord.Intents.default()
     intents.message_content = True
     bot = MyBot(intents=intents, command_prefix=".")
-    bot.run(bot.config.Token, reconnect=True)
+    bot.run(config.Token, reconnect=True)
 
 
 async def reconnect(bot):

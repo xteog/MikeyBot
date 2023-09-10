@@ -1,12 +1,8 @@
-import random
+import logging
 import utils
 import config
 import discord
 import datetime
-import pandas
-
-SWEAR_WORD_PATH = ""
-HISTORY_PATH = ""
 
 
 class WarningData:  # TODO rule è una struttura
@@ -32,26 +28,21 @@ class WarningData:  # TODO rule è una struttura
         if timestamp == None:
             self.timestamp = datetime.datetime.utcnow()
         else:
-            self.timestamp = datetime.datetime.strptime(
-                timestamp, config.Config.timeFormat
-            )
+            self.timestamp = datetime.datetime.strptime(timestamp, config.timeFormat)
 
     async def setUsers(
         self, bot, offenderId: int = None, creatorsId: list[int] = None
     ) -> None:
         if offenderId != None:
-            self.offender = await bot.fetch_user(offenderId)  # TODO gestisci errori
+            try:
+                self.offender = await bot.fetch_user(offenderId)
+            except:
+                logging.error("user not found")
 
         if creatorsId != None:
             self.creators = []
             for id in creatorsId:
                 self.creators.append(await bot.fetch_user(id))
-
-
-def setPaths(swearWordsPath: str, historyPath: str):  # TODO aggiusta
-    global SWEAR_WORD_PATH, HISTORY_PATH
-    SWEAR_WORD_PATH = swearWordsPath
-    HISTORY_PATH = historyPath
 
 
 def formatSwearWords(msg: str) -> str:  # TODO cut the message if too long
@@ -70,7 +61,7 @@ def formatSwearWords(msg: str) -> str:  # TODO cut the message if too long
 
 
 def findSwearWords(msg: str) -> list:
-    badWords = utils.read(SWEAR_WORD_PATH)
+    badWords = utils.read(config.swearWordsPath)
     badWordsSaid = []
     msg = msg.lower()
 
@@ -100,18 +91,18 @@ def findSwearWords(msg: str) -> list:
 
 
 def addSwearWord(swear_word: str) -> bool:
-    badWords = utils.read(SWEAR_WORD_PATH)
+    badWords = utils.read(config.swearWordsPath)
 
     if not (swear_word in badWords):
         badWords.append(swear_word)
-        utils.write(SWEAR_WORD_PATH, badWords)
+        utils.write(config.swearWordsPath, badWords)
         return True
 
     return False
 
 
 def removeSwearWords(swear_frase: str) -> bool:
-    badWords = utils.read(SWEAR_WORD_PATH)
+    badWords = utils.read(config.swearWordsPath)
 
     badWordsSaid = findSwearWords(swear_frase)
 
@@ -121,11 +112,11 @@ def removeSwearWords(swear_frase: str) -> bool:
         else:
             print("word not present")
 
-    utils.write(SWEAR_WORD_PATH, badWords)
+    utils.write(config.swearWordsPath, badWords)
 
 
 def loadRules() -> dict:
-    rules = utils.read(config.Config.rulesPath)
+    rules = utils.read(config.rulesPath)
     rulesFormatted = {}
 
     for i in rules.keys():
@@ -156,7 +147,7 @@ def getRule(rule: str) -> str | None:
 
 
 def addToHistory(data: WarningData) -> None:
-    history = utils.read(HISTORY_PATH)
+    history = utils.read(config.historyPath)
 
     if history == None:
         history = {}
@@ -175,16 +166,16 @@ def addToHistory(data: WarningData) -> None:
         "creators": creators,
         "proof": data.proof,
         "verdict": data.verdict,
-        "timestamp": data.timestamp.strftime(config.Config.timeFormat),
+        "timestamp": data.timestamp.strftime(config.timeFormat),
     }
 
-    utils.write(HISTORY_PATH, history)
+    utils.write(config.historyPath, history)
 
 
 async def getViolations(
     bot, id: int = None, user: discord.Member = None
 ) -> list[WarningData]:
-    history = utils.read(HISTORY_PATH)
+    history = utils.read(config.historyPath)
     violations = []
 
     if id != None:
@@ -218,7 +209,7 @@ async def getViolations(
                 timestamp=data[v]["timestamp"],
             )
 
-            await struct.setUsers(bot, creatorsId=data[v]["creators"])
+            await struct.setUsers(bot, creatorsId=data[v]["creators"]) #TODO controlla se necessario
 
             violations.append(struct)
 
