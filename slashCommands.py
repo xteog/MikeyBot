@@ -4,6 +4,7 @@ import main
 import config
 import moderation.moderation as moderation
 import moderation.views as views
+import utils
 
 
 def check_permissions(interaction: discord.Interaction):
@@ -44,22 +45,26 @@ async def rules_autocomplete(interaction: discord.Interaction, current: str) -> 
     return list[0:25]
 
 
-async def report(interaction: discord.Interaction, message: discord.Message):
-    logging.info(f'"\\report" used by {interaction.user.name}')
-
-    await interaction.response.send_message("reportato")
+async def league_autocomplete(interaction: discord.Interaction, current: str) -> list:
+    return [
+        discord.app_commands.Choice(name="Ultimate League", value="UL"),
+        discord.app_commands.Choice(name="Challenger League", value="CL"),
+        discord.app_commands.Choice(name="Journeyman League", value="JL"),
+    ]
 
 
 class CommandsCog(discord.ext.commands.Cog):
     def __init__(self, client: main.MyBot):
         self.client = client
         self.rules = moderation.loadRules()  # TODO togli
+        """
         client.tree.add_command(
             discord.app_commands.ContextMenu(
                 name="Report Message",
                 callback=report,  # set the callback of the context menu to "my_cool_context_menu"
             )
         )
+        """
 
     @discord.app_commands.command(
         name="issue_warning",
@@ -111,47 +116,106 @@ class CommandsCog(discord.ext.commands.Cog):
             )
 
     @discord.app_commands.command(
-        name="history",
-        description="Search a violation in the history by id or user",
+        name="search_report",
+        description="Search a report in the log by id or user",
     )
-    @discord.app_commands.describe(warning_id="The violation's ID composed by 4 digits")
-    @discord.app_commands.describe(user="Returns a list of the user's violations")
+    @discord.app_commands.describe(id="The report's ID composed by 4 digits")
+    @discord.app_commands.describe(user="Returns a list of the user's reports")
     @discord.app_commands.check(check_permissions)
-    async def history(
+    async def search_violation(
         self,
         interaction: discord.Interaction,
-        warning_id: int = None,
+        id: int = None,
         user: discord.Member = None,
     ):
-        logging.info(f'"\\history" used by {interaction.user.name}')
+        logging.info(f'"\\search_violation" used by {interaction.user.name}')
 
-        if (warning_id == None and user == None) or (warning_id != None and user != None):
+        if (id == None and user == None) or (id != None and user != None):
             await interaction.response.send_message(
-                "You must fill one of the parameters", ephemeral=True
+                "You must fill only one of the parameters", ephemeral=True
             )
             return
 
-        if warning_id != None:
-            violations = await moderation.getViolations(bot=self.client, id=warning_id)
-            if violations == None:
+        if id != None:
+            violations = await moderation.getViolations(bot=self.client, id=id)
+            if len(violations) == 0:
                 await interaction.response.send_message(
-                    f"No violations found with ID `{warning_id}`", ephemeral=True
+                    f"No reports found with ID `{id}`", ephemeral=True
                 )
             else:
-                embed = views.ViolationReportEmbed(violations[0])
+                embed = views.ReportEmbed(violations[0])
                 await interaction.response.send_message(embed=embed)
 
         if user != None:
             await interaction.response.defer(ephemeral=True)
             violations = await moderation.getViolations(bot=self.client, user=user)
             await interaction.delete_original_response()
-            if violations == None:
+            if len(violations) == 0:
                 await interaction.followup.send(
-                    f"The user {user.mention} doesn't have violations", ephemeral=True
+                    f"The user {user.mention} doesn't have reports", ephemeral=True
                 )
             else:
-                embed = views.ViolationListEmbed(violations)
-                await interaction.followup.send(embed=embed)
+                view = views.ReportListView(self.client, violations)
+                await interaction.followup.send(
+                    view=view, embed=view.embed, ephemeral=True
+                )
+
+    @discord.app_commands.command(
+        name="report",
+        description="Report a driver",
+    )
+    @discord.app_commands.describe(user="The driver you want to report")
+    @discord.app_commands.describe(league="The league where the accident happened")
+    @discord.app_commands.describe(round="The driver you want to report")
+    @discord.app_commands.autocomplete(league=league_autocomplete)
+    async def report(
+        self,
+        interaction: discord.Interaction,
+        user: discord.Member,
+        league: str,
+        round: int,
+    ):
+        logging.info(f'"\\report" used by {interaction.user.name}')
+
+        if not check_permissions(interaction.user, config.fiaRole):
+            if not interaction.user.id == user.id:
+                await interaction.followup.send(
+                    "The link provided is not a Youtube link", ephemeral=True
+                )
+                return
+        modal = views.ReportModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
+        if not utils.isLink(modal.link.value):
+            await modal.interaction.delete_original_response()
+            await interaction.followup.send(
+                "The link provided is not a Youtube link", ephemeral=True
+            )
+            return
+
+        if not utils.linkHasTimestamp(modal.link.value):
+            await modal.interaction.delete_original_response()
+            await interaction.followup.send(
+                f"The link provided doesn't have a timestamp", ephemeral=True
+            )
+            return
+
+        data = moderation.ReportData(
+            offender=user,
+            league=league,
+            round=round,
+            creator=interaction.user,
+            proof=modal.link.value,
+            notes=modal.notes.value,
+        )
+
+        moderation.addToHistory(data)
+
+        await self.client.sendReport(data)
+
+        await modal.interaction.delete_original_response()
+        await interaction.followup.send(f"Report `{data.id}` created", ephemeral=True)
 
     @discord.app_commands.command(
         name="help",

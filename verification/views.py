@@ -80,7 +80,7 @@ class VerifyView(discord.ui.View):
     )
     async def verify(
         self, interaction: discord.Interaction, button: discord.ui.Button
-    ) -> None:
+    ) -> None: #TODO controlla se ci sono bug se l'utente manda le verifiche contemporanemente
         if self.connection:
             setVerificationStatus(userId=self.user.id, connection="done")
             self.embed.description = f"Is {self.user.name}'s connection verified?"

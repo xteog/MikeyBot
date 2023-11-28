@@ -49,14 +49,38 @@ def read(path: str) -> list | None:
         with open(path, "r") as f:
             file = f.read()
         return json.loads(file)
-    except: #TODO catch
+    except:  # TODO catch
         return None
-    
 
-def randomString(len:int) -> str:
+
+def randomString(len: int) -> str:
     alphabet = "0123456789"
 
-    return random.choices(alphabet[1:])[0] + "".join(random.choices(alphabet, k=len - 1))
+    return random.choices(alphabet[1:])[0] + "".join(
+        random.choices(alphabet, k=len - 1)
+    )
+
 
 def isLink(str: str) -> bool:
-    return len(str) > 5 and str[0:5] == "https"
+    cond = len(str) > 5
+    cond = cond and (
+        str.startswith("https://youtube.com")
+        or str.startswith("https://www.youtube.com")
+        or str.startswith("youtube.com")
+        or str.startswith("https://youtu.be")
+        or str.startswith("https://www.youtu.be")
+        or str.startswith("youtu.be")
+    )
+    return cond
+
+
+def linkHasTimestamp(str: str) -> bool:
+    start = str.find("t=")
+
+    if start == -1:
+        return False
+
+    if len(str[start:]) <= 2:
+        return False
+
+    return str[start + 2 :].isdigit()

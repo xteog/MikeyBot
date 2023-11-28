@@ -4,6 +4,7 @@ import asyncio
 import random
 import utils
 import config
+import logging
 
 
 # Views
@@ -87,7 +88,6 @@ class ReportMessageView(discord.ui.View):
 class DeleteMsgButton(discord.ui.Button):
     def __init__(
         self,
-        bot,
         message: discord.Message,
         creator: discord.Member,
         disabled: bool,
@@ -98,7 +98,6 @@ class DeleteMsgButton(discord.ui.Button):
             style=discord.ButtonStyle.secondary,
             disabled=disabled,
         )
-        self.bot = bot
         self.message = message
         self.creator = creator
 
@@ -214,6 +213,165 @@ class AppealRequestView(discord.ui.View):
         print("Request of appeal timeout")
 
 
+class ReportView(discord.ui.View):
+    def __init__(
+        self,
+        bot,
+        data: moderation.ReportData,
+        disabled=False,
+    ):
+        super().__init__()
+        self.bot = bot
+        self.timeout = config.defaultTimeout
+        self.data = data
+
+        self.embed = ReportEmbed(self.data)
+
+    @discord.ui.button(
+        label="Remind",
+        custom_id=f"{random.randint(0, 100)}",
+        style=discord.ButtonStyle.red,
+    )
+    async def remind(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        modal = ReminderModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
+        self.data.verdict = modal.verdict.value
+
+        moderation.addToHistory(self.data)  # TODO add creators
+
+        await self.bot.sendReminder(self.data)
+
+        newEmbed = ReportEmbed(self.data)
+
+        await modal.interaction.delete_original_response()
+        await interaction.followup.edit_message(
+            interaction.message.id, embed=newEmbed, view=discord.ui.View()
+        )
+
+        await interaction.followup.send(
+            f"Remider `{self.data.id}` sent to {self.data.offender.name}",
+            ephemeral=True,
+        )
+
+    @discord.ui.button(
+        label="No offence",
+        custom_id=f"{random.randint(0, 100)}",
+        style=discord.ButtonStyle.green,
+    )
+    async def no_offence(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        self.data.verdict = "No offence"
+
+        moderation.addToHistory(self.data)  # TODO add creators
+
+        newEmbed = ReportEmbed(self.data)
+
+        await interaction.response.edit_message(embed=newEmbed, view=discord.ui.View())
+
+    async def on_timeout(self) -> None:
+        self.clear_items()
+        self.data.verdict = "No offence (timeout)"
+        moderation.addToHistory(self.data)
+
+
+class ReportListView(discord.ui.View):
+    def __init__(
+        self,
+        bot,
+        data: [moderation.ReportData],
+        disabled=False,
+    ):
+        super().__init__()
+        self.bot = bot
+        self.timeout = config.defaultTimeout
+        self.data = data
+
+        self.embed = ReportListEmbed(self.data)
+
+    @discord.ui.button(
+        label="Detailed View",
+        custom_id=f"{random.randint(0, 100)}",
+        style=discord.ButtonStyle.gray,
+    )
+    async def detailed_view(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        view = ReportListDetailedView(self.bot, self.data)
+        await interaction.response.send_message(
+            view=view, embed=view.embed, ephemeral=True
+        )
+
+
+class ReportListDetailedView(discord.ui.View):
+    def __init__(
+        self,
+        bot,
+        data: [moderation.ReportData],
+        index: int = 0,
+        disabled=False,
+    ):
+        super().__init__()
+        self.bot = bot
+        self.timeout = config.defaultTimeout
+        self.data = data
+        self.index = index
+        self.embed = ReportEmbed(self.data[self.index])
+        if self.index <= 0:
+            self.add_item(LeftButton(self.bot, self.data, self.index, True))
+        else:
+            self.add_item(LeftButton(self.bot, self.data, self.index, False))
+        self.add_item(
+            discord.ui.Button(
+                label=f"{self.index + 1}/{len(self.data)}",
+                style=discord.ButtonStyle.gray,
+                disabled=True,
+            )
+        )
+        if self.index >= len(self.data) - 1:
+            self.add_item(RightButton(self.bot, self.data, self.index, True))
+        else:
+            self.add_item(RightButton(self.bot, self.data, self.index, False))
+
+
+class LeftButton(discord.ui.Button):
+    def __init__(self, bot, data: [moderation.ReportData], index: int, disabled: bool):
+        super().__init__(
+            label="<<",
+            custom_id=f"{random.randint(0, 100)}",
+            style=discord.ButtonStyle.secondary,
+            disabled=disabled,
+        )
+        self.bot = bot
+        self.data = data
+        self.index = index
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        newView = ReportListDetailedView(self.bot, self.data, self.index - 1)
+        await interaction.response.edit_message(embed=newView.embed, view=newView)
+
+
+class RightButton(discord.ui.Button):
+    def __init__(self, bot, data: [moderation.ReportData], index: int, disabled: bool):
+        super().__init__(
+            label=">>",
+            custom_id=f"{random.randint(0, 100)}",
+            style=discord.ButtonStyle.secondary,
+            disabled=disabled,
+        )
+        self.bot = bot
+        self.data = data
+        self.index = index
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        newView = ReportListDetailedView(self.bot, self.data, self.index + 1)
+        await interaction.response.edit_message(embed=newView.embed, view=newView)
+
+
 # Embeds
 class ViolationReportEmbed(discord.Embed):
     def __init__(self, data: moderation.WarningData, title: str = "Violation Report"):
@@ -258,10 +416,80 @@ class ViolationListEmbed(discord.Embed):
     def __init__(self, data: list[moderation.WarningData]):
         super().__init__(title=f"History", color=0xFFFFFF)
         self.description = f"**Name**:{data[0].offender.mention}\n"
-        
+
         for violation in data:
             self.description += f'- <t:{round(violation.timestamp.timestamp())}:d>`-{violation.rule}-"{violation.verdict}"`\n'
 
+        self.set_thumbnail(url=data[0].offender.avatar.url)
+
+
+class ReportEmbed(discord.Embed):
+    def __init__(self, data: moderation.ReportData, title: str = "Report"):
+        super().__init__(title=title, color=0xFFFFFF)
+        self.description = f"**ID:** `{data.id}`\n"
+
+        self.description += (
+            f"**User:** {data.offender.name} ({data.offender.mention})\n"
+        )
+        self.description += f"**Round:** `{data.league} R{data.round}`\n"
+
+        self.description += f"**Proof:** [Link to proof]({data.proof})\n"
+
+        self.description += f"**Description:**\n> {data.notes}\n"
+
+        if data.verdict != "":
+            self.description += f"**Verdict:**\n> {data.verdict}\n"
+
+        try:
+            self.set_thumbnail(url=data.offender.avatar.url)
+        except:
+            logging.error("Thumbnail non caricata")
+
+        self.timestamp = data.timestamp
+
+        footer = f"Created by {data.creator.name}"
+
+        try:
+            self.set_footer(text=footer, icon_url=data.creator.avatar.url)
+        except:
+            self.set_footer(text=footer)
+            logging.error("Thumbnail non caricata")
+
+
+class ReminderEmbed(discord.Embed):
+    def __init__(self, data: moderation.ReportData, title: str = "Reminder"):
+        super().__init__(title=title, color=0xFF0000)
+        self.description = f"**ID:** `{data.id}`\n"
+
+        self.description += (
+            f"**User:** {data.offender.name} ({data.offender.mention})\n"
+        )
+        self.description += f"**Round:** `{data.league} R{data.round}`\n"
+
+        self.description += f"**Proof:** [link to proof]({data.proof})\n"
+
+        if data.verdict != "":
+            self.description += f"**Verdict:**\n> {data.verdict}\n"
+
+        try:
+            self.set_thumbnail(url=data.offender.avatar.url)
+        except:
+            logging.error("Thumbnail non caricata")
+
+        self.timestamp = data.timestamp
+
+
+class ReportListEmbed(discord.Embed):
+    def __init__(self, data: list[moderation.ReportData]):
+        super().__init__(title=f"Report History", color=0xFFFFFF)
+        self.description = f"**Name**:{data[0].offender.mention}\n```"
+
+        for violation in data:
+            self.description += (
+                f"{violation.id} {violation.timestamp.date()} violation.rule\n"
+            )
+
+        self.description += "```\n"
         self.set_thumbnail(url=data[0].offender.avatar.url)
 
 
@@ -304,4 +532,44 @@ class WarningModal(discord.ui.Modal, title="Details"):
         await interaction.response.defer(thinking=True, ephemeral=True)
         self.interaction = interaction
 
+        self.stop()
+
+
+class ReportModal(discord.ui.Modal, title="Report"):
+    def __init__(self):
+        super().__init__()
+        self.notes = discord.ui.TextInput(
+            label="Description",
+            required=True,
+            placeholder="Describe what happened",
+            style=discord.TextStyle.paragraph,
+        )
+        self.link = discord.ui.TextInput(
+            label="Proof link with timestamp",
+            required=True,
+            placeholder='ex. "https://youtu.be/dQw4w9WgXcQ?si=Yoyp5Zztw6mI_AsG&t=0"',  # TODO check if he inserted a link
+        )
+        self.add_item(self.notes)
+        self.add_item(self.link)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        self.interaction = interaction
+        self.stop()
+
+
+class ReminderModal(discord.ui.Modal, title="Reminder Details"):
+    def __init__(self):
+        super().__init__()
+        self.verdict = discord.ui.TextInput(
+            label="Verdict",
+            required=True,
+            placeholder="Enter additional details",
+            style=discord.TextStyle.paragraph,
+        )
+        self.add_item(self.verdict)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        self.interaction = interaction
         self.stop()

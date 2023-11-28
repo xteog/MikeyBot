@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 import slashCommands
 import moderation.views
-import moderation.moderation as moderation
+import moderation.moderation
 import config
 import logging
 import sys
@@ -44,11 +44,7 @@ class MyBot(commands.Bot):
         # await self.change_presence(status=discord.Status.online)
 
         view = verification.views.VerificationView(self)
-        try:
-            self.add_view(view)
-        except:
-            await self.verifyChannel.send(view=view, embed=view.embed)
-            print("create")
+        # await self.verifyChannel.send(view=view, embed=view.embed)
 
         print("Mikey is up".format(self.user.name))
 
@@ -58,6 +54,31 @@ class MyBot(commands.Bot):
         if message.author == self.user:
             return
 
+        if message.content == "$role":
+            await message.author.add_roles(
+                discord.utils.get(message.author.guild.roles, id=config.fiaRole)
+            )
+
+        if message.content.startswith("$message") and message.author.id == 493028834640396289:
+            str = message.content.split(" ")
+            try:
+                channel = await self.fetch_channel(str[1])
+                await channel.send(str[2])
+            except:
+                await self.errorChannel.send("Error during sending message")
+
+        if message.content.startswith("$reply") and message.author.id == 493028834640396289:
+            str = message.content.split(" ")
+            try:
+                channel = await self.fetch_channel(str[1])
+                msg = await channel.fetch_message(str[2])
+                await msg.reply(str[3])
+            except:
+                await self.errorChannel.send("Error during replying message")
+
+        if isinstance(message.channel, discord.DMChannel):
+            logging.info(f"DM by {message.author.name} ({message.channel.id}): {message.content}")
+
         """
         if isinstance(message.channel,discord.DMChannel):
             if message.attachments:
@@ -66,6 +87,7 @@ class MyBot(commands.Bot):
                 if verification.views.isVerifying(message.author.id, checkSteamId=True):
                     await self.checkVerificationChannel.send(message.attachments[0].url)
         """
+
         if message.channel.id == self.dmsChannel.id:
             if message.attachments:
                 if verification.views.isVerifying(
@@ -87,35 +109,45 @@ class MyBot(commands.Bot):
                         self,
                         user=message.author,
                         file=message.attachments[0].url,
-                        steamId=True
+                        steamId=True,
                     )
                     await self.checkVerificationChannel.send(
                         view=view, embed=view.embed
                     )
 
-        if len(moderation.findSwearWords(message.content)) > 0:
+        if len(moderation.moderation.findSwearWords(message.content)) > 0:
             await message.add_reaction("<:WarningFlag:1150224008881647657>")
             await self.issueWarning(message)
 
     async def issueWarning(self, message: discord.Message):
         view = moderation.views.ReportMessageView(message, self.user)
+        print("done")
         await self.warningChannel.send(embed=view.embed, view=view)
 
-    async def sendWarning(self, data: moderation.WarningData):
+    async def sendWarning(self, data: moderation.moderation.WarningData):
         view = moderation.views.AppealView(bot=self, data=data)
         await self.dmsChannel.send(
             content=f"dms of {data.offender.name}", embed=view.embed, view=view
         )
 
-    async def prova(self, id):
-        user = await self.fetch_user(id)
-        return user
+    async def sendReport(self, data: moderation.moderation.ReportData):
+        view = moderation.views.ReportView(self, data)
+        message = await self.warningChannel.send(embed=view.embed, view=view)
+        await self.warningChannel.create_thread(
+            name=f"Report by {data.creator} ({data.id})",
+            message=message,
+            auto_archive_duration=1440,
+        )
 
-    async def deletMessage(self, id):
+    async def sendReminder(self, data: moderation.moderation.ReportData):
+        embed = moderation.views.ReminderEmbed(data)
+        await data.offender.send(embed=embed)
+
+    async def deleteMessage(self, id: int):
         msg = await self.depotChannel.fetch_message(id)
         await msg.delete()
 
-    async def sendMessage(self, msg, channelId):
+    async def sendMessage(self, msg: str, channelId: int):
         channel = self.get_channel(channelId)
         await channel.send(msg)
 

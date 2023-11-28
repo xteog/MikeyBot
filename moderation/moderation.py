@@ -35,7 +35,7 @@ class WarningData:  # TODO rule è una struttura
     ) -> None:
         if offenderId != None:
             try:
-                self.offender = await bot.fetch_user(offenderId)
+                self.offender = await bot.fetch_user(offenderId)  # TODO handle errors
             except:
                 logging.error("user not found")
 
@@ -43,6 +43,51 @@ class WarningData:  # TODO rule è una struttura
             self.creators = []
             for id in creatorsId:
                 self.creators.append(await bot.fetch_user(id))
+
+
+class ReportData:  # TODO rule è una struttura
+    def __init__(
+        self,
+        league: str,
+        round: int,
+        proof: str,
+        notes: str,
+        offender: discord.Member = None,
+        creator: discord.Member = None,
+        id: str = None,
+        verdict: str = "",
+        timestamp: str = None,
+    ) -> None:
+        if id == None:
+            self.id = utils.randomString(4)
+        else:
+            self.id = id
+        self.offender = offender
+        self.creator = creator
+        self.league = league
+        self.round = round
+        self.proof = proof
+        self.notes = notes
+        self.verdict = verdict
+        if timestamp == None:
+            self.timestamp = datetime.datetime.utcnow()
+        else:
+            self.timestamp = datetime.datetime.strptime(timestamp, config.timeFormat)
+
+    async def setUsers(
+        self, bot, offenderId: int = None, creatorId: int = None
+    ) -> None:
+        if offenderId != None:
+            try:
+                self.offender = await bot.fetch_user(offenderId)
+            except:
+                logging.error("user not found")
+
+        if creatorId != None:
+            try:
+                self.creator = await bot.fetch_user(creatorId)
+            except:
+                logging.error("user not found")
 
 
 def formatSwearWords(msg: str) -> str:  # TODO cut the message if too long
@@ -76,7 +121,7 @@ def findSwearWords(msg: str) -> list:
             flag = True
             if msg[i] != " ":
                 while i + j < msgLen and k < wordLen:
-                    if msg[i + j] != " ":
+                    if msg[i + j] != " " or wordLen <= 3:
                         if msg[i + j] != word[k]:
                             flag = False
                         k += 1
@@ -146,6 +191,7 @@ def getRule(rule: str) -> str | None:
     return None
 
 
+"""
 def addToHistory(data: WarningData) -> None:
     history = utils.read(config.historyPath)
 
@@ -170,6 +216,32 @@ def addToHistory(data: WarningData) -> None:
     }
 
     utils.write(config.historyPath, history)
+"""
+
+
+def addToHistory(data: ReportData) -> None:
+    history = utils.read(config.historyPath)
+
+    if history == None:
+        history = {}
+
+    if str(data.offender.id) in history.keys():
+        history[str(data.offender.id)]["name"] = data.offender.name
+    else:
+        history[str(data.offender.id)] = {"name": data.offender.name, "violations": {}}
+
+    history[str(data.offender.id)]["violations"][data.id] = {
+        "creator": data.creator.id,
+        "league": data.league,
+        "round": data.round,
+        "rule": "",
+        "proof": data.proof,
+        "notes": data.notes,
+        "verdict": data.verdict,
+        "timestamp": data.timestamp.strftime(config.timeFormat),
+    }
+
+    utils.write(config.historyPath, history)
 
 
 async def getViolations(
@@ -183,15 +255,17 @@ async def getViolations(
             for v in history[member]["violations"].keys():
                 if v == str(id):
                     report = history[member]["violations"][v]
-                    struct = WarningData(
+                    struct = ReportData(
                         id=str(id),
-                        rule=report["rule"],
+                        league=report["league"],
+                        round=report["round"],
+                        notes=report["notes"],
                         proof=report["proof"],
                         verdict=report["verdict"],
                         timestamp=report["timestamp"],
                     )
                     await struct.setUsers(
-                        bot, offenderId=member, creatorsId=report["creators"]
+                        bot, offenderId=member, creatorId=report["creator"]
                     )
 
                     violations.append(struct)
@@ -200,20 +274,21 @@ async def getViolations(
         data = history[str(user.id)]["violations"]
 
         for v in data.keys():
-            struct = WarningData(
+            struct = ReportData(
                 id=v,
                 offender=user,
-                rule=data[v]["rule"],
+                league=data[v]["league"],
+                round=data[v]["round"],
+                notes=data[v]["notes"],
                 proof=data[v]["proof"],
                 verdict=data[v]["verdict"],
                 timestamp=data[v]["timestamp"],
             )
 
-            await struct.setUsers(bot, creatorsId=data[v]["creators"]) #TODO controlla se necessario
+            await struct.setUsers(
+                bot, creatorId=data[v]["creator"]
+            )  # TODO controlla se necessario
 
             violations.append(struct)
-
-    if len(violations) == 0:
-        return None
 
     return violations
