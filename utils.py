@@ -1,5 +1,7 @@
 import json
 import random
+import discord
+import config
 
 
 def lev_dist(s, t):
@@ -84,3 +86,15 @@ def linkHasTimestamp(str: str) -> bool:
         return False
 
     return str[start + 2 :].isdigit()
+
+
+def check_permissions(user: discord.Member, role: int = None, roles: list[int]=None):
+    if role != None:
+        roles = [role]
+
+    for i in roles:
+        for j in user.roles:
+            if j.id == i:
+                return True
+            
+    return False

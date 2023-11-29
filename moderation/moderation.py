@@ -45,6 +45,44 @@ class WarningData:  # TODO rule è una struttura
                 self.creators.append(await bot.fetch_user(id))
 
 
+def loadRules() -> dict:
+    rules = utils.read(config.rulesPath)
+    rulesFormatted = {}
+
+    for i in rules.keys():
+        if isinstance(rules[i], dict):
+            for j in rules[i].keys():
+                if isinstance(rules[i][j], dict):
+                    for m in rules[i][j].keys():
+                        if isinstance(rules[i][j][m], dict):
+                            for n in rules[i][j][m].keys():
+                                rulesFormatted[f"{i}.{j}.{m}.{n}"] = rules[i][j][m][n]
+                        else:
+                            rulesFormatted[f"{i}.{j}.{m}"] = rules[i][j][m]
+                else:
+                    rulesFormatted[f"{i}.{j}"] = rules[i][j]
+        else:
+            rulesFormatted[f"{i}"] = rules[i]
+
+    return rulesFormatted
+
+
+class Rule:
+    def __init__(self, code: str = "") -> None:
+        rules = loadRules()
+
+        self.name = "None"
+        self.description = "None"
+        self.code = code
+
+        if code in rules.keys():
+            self.name = rules[code]["name"]
+            self.description = rules[code]["description"]
+
+    def isNone(self) -> bool:
+        return self.code == ""
+
+
 class ReportData:  # TODO rule è una struttura
     def __init__(
         self,
@@ -52,6 +90,7 @@ class ReportData:  # TODO rule è una struttura
         round: int,
         proof: str,
         notes: str,
+        rule: Rule = Rule(),
         offender: discord.Member = None,
         creator: discord.Member = None,
         id: str = None,
@@ -66,6 +105,7 @@ class ReportData:  # TODO rule è una struttura
         self.creator = creator
         self.league = league
         self.round = round
+        self.rule = rule
         self.proof = proof
         self.notes = notes
         self.verdict = verdict
@@ -160,28 +200,6 @@ def removeSwearWords(swear_frase: str) -> bool:
     utils.write(config.swearWordsPath, badWords)
 
 
-def loadRules() -> dict:
-    rules = utils.read(config.rulesPath)
-    rulesFormatted = {}
-
-    for i in rules.keys():
-        if isinstance(rules[i], dict):
-            for j in rules[i].keys():
-                if isinstance(rules[i][j], dict):
-                    for m in rules[i][j].keys():
-                        if isinstance(rules[i][j][m], dict):
-                            for n in rules[i][j][m].keys():
-                                rulesFormatted[f"{i}.{j}.{m}.{n}"] = rules[i][j][m][n]
-                        else:
-                            rulesFormatted[f"{i}.{j}.{m}"] = rules[i][j][m]
-                else:
-                    rulesFormatted[f"{i}.{j}"] = rules[i][j]
-        else:
-            rulesFormatted[f"{i}"] = rules[i]
-
-    return rulesFormatted
-
-
 def getRule(rule: str) -> str | None:
     rules = loadRules()
 
@@ -234,7 +252,7 @@ def addToHistory(data: ReportData) -> None:
         "creator": data.creator.id,
         "league": data.league,
         "round": data.round,
-        "rule": "",
+        "rule": data.rule.code,
         "proof": data.proof,
         "notes": data.notes,
         "verdict": data.verdict,
@@ -244,7 +262,7 @@ def addToHistory(data: ReportData) -> None:
     utils.write(config.historyPath, history)
 
 
-async def getViolations(
+async def getReports(
     bot, id: int = None, user: discord.Member = None
 ) -> list[WarningData]:
     history = utils.read(config.historyPath)
@@ -259,6 +277,7 @@ async def getViolations(
                         id=str(id),
                         league=report["league"],
                         round=report["round"],
+                        rule=Rule(report["rule"]),
                         notes=report["notes"],
                         proof=report["proof"],
                         verdict=report["verdict"],
@@ -279,6 +298,7 @@ async def getViolations(
                 offender=user,
                 league=data[v]["league"],
                 round=data[v]["round"],
+                rule=Rule(data[v]["rule"]),
                 notes=data[v]["notes"],
                 proof=data[v]["proof"],
                 verdict=data[v]["verdict"],

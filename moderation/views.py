@@ -1,4 +1,11 @@
+from typing import Any, List, Optional, Union
 import discord
+from discord.components import SelectOption
+from discord.emoji import Emoji
+from discord.enums import ButtonStyle
+from discord.interactions import Interaction
+from discord.partial_emoji import PartialEmoji
+from discord.utils import MISSING
 import moderation.moderation as moderation
 import asyncio
 import random
@@ -218,49 +225,28 @@ class ReportView(discord.ui.View):
         self,
         bot,
         data: moderation.ReportData,
-        disabled=False,
+        rule_selected: moderation.Rule = moderation.Rule(),
     ):
         super().__init__()
         self.bot = bot
         self.timeout = config.defaultTimeout
         self.data = data
+        self.rule_selected = rule_selected
 
         self.embed = ReportEmbed(self.data)
+        self.add_item(ReportRuleSelect(self))
 
-    @discord.ui.button(
-        label="Remind",
-        custom_id=f"{random.randint(0, 100)}",
-        style=discord.ButtonStyle.red,
-    )
-    async def remind(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ) -> None:
-        modal = ReminderModal()
-        await interaction.response.send_modal(modal)
-        await modal.wait()
+        if not self.rule_selected.isNone():
+            self.add_item(RemindButton(self, False))
+        else:
+            self.add_item(RemindButton(self, True))
 
-        self.data.verdict = modal.verdict.value
-
-        moderation.addToHistory(self.data)  # TODO add creators
-
-        await self.bot.sendReminder(self.data)
-
-        newEmbed = ReportEmbed(self.data)
-
-        await modal.interaction.delete_original_response()
-        await interaction.followup.edit_message(
-            interaction.message.id, embed=newEmbed, view=discord.ui.View()
-        )
-
-        await interaction.followup.send(
-            f"Remider `{self.data.id}` sent to {self.data.offender.name}",
-            ephemeral=True,
-        )
 
     @discord.ui.button(
         label="No offence",
         custom_id=f"{random.randint(0, 100)}",
         style=discord.ButtonStyle.green,
+        row=1,
     )
     async def no_offence(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -278,6 +264,78 @@ class ReportView(discord.ui.View):
         self.data.verdict = "No offence (timeout)"
         moderation.addToHistory(self.data)
 
+
+class ReportRuleSelect(discord.ui.Select):
+    def __init__(self, view: ReportView) -> None:
+        super().__init__(
+            placeholder="Select a Rule",
+            max_values=1,
+            options=self.getRuleSelectOptions(view.rule_selected),
+            row=0,
+        )
+        self._view = view
+
+    def getRuleSelectOptions(
+        self,
+        selected: moderation.Rule = moderation.Rule(),
+    ) -> list[discord.SelectOption]:
+        options = []
+
+        rules = [moderation.Rule("1"), moderation.Rule("2"), moderation.Rule("3")]
+
+        for rule in rules:
+            if rule.code == selected.code:
+                options.append(
+                    discord.SelectOption(
+                        label=rule.name,
+                        description=rule.description,
+                        value=rule.code,
+                        default=True,
+                    )
+                )
+            else:
+                options.append(
+                    discord.SelectOption(
+                        label=rule.name, description=rule.description, value=rule.code
+                    )
+                )
+
+        return options
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        newView = ReportView(self._view.bot, self._view.data, moderation.Rule(self.values[0]))
+
+        await interaction.response.edit_message(view=newView, embed=newView.embed)
+
+
+class RemindButton(discord.ui.Button):
+    def __init__(self, view: ReportView, disabled: bool = False):
+        super().__init__(style=discord.ButtonStyle.red, label="Remind", disabled=disabled, row = 1)
+        self._view = view
+
+    async def callback(self, interaction: Interaction) -> None:
+        modal = ReminderModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
+        self._view.data.verdict = modal.verdict.value
+        self._view.data.rule = self._view.rule_selected
+
+        moderation.addToHistory(self._view.data)  # TODO add creators
+
+        await self._view.bot.sendReminder(self._view.data)
+
+        newEmbed = ReportEmbed(self._view.data)
+
+        await modal.interaction.delete_original_response()
+        await interaction.followup.edit_message(
+            interaction.message.id, embed=newEmbed, view=discord.ui.View()
+        )
+
+        await interaction.followup.send(
+            f"Remider `{self._view.data.id}` sent to {self._view.data.offender.name}",
+            ephemeral=True,
+        )
 
 class ReportListView(discord.ui.View):
     def __init__(
@@ -341,7 +399,7 @@ class ReportListDetailedView(discord.ui.View):
 class LeftButton(discord.ui.Button):
     def __init__(self, bot, data: [moderation.ReportData], index: int, disabled: bool):
         super().__init__(
-            label="<<",
+            label="⇦",
             custom_id=f"{random.randint(0, 100)}",
             style=discord.ButtonStyle.secondary,
             disabled=disabled,
@@ -358,7 +416,7 @@ class LeftButton(discord.ui.Button):
 class RightButton(discord.ui.Button):
     def __init__(self, bot, data: [moderation.ReportData], index: int, disabled: bool):
         super().__init__(
-            label=">>",
+            label="⇨",
             custom_id=f"{random.randint(0, 100)}",
             style=discord.ButtonStyle.secondary,
             disabled=disabled,
@@ -432,6 +490,11 @@ class ReportEmbed(discord.Embed):
             f"**User:** {data.offender.name} ({data.offender.mention})\n"
         )
         self.description += f"**Round:** `{data.league} R{data.round}`\n"
+
+        if not data.rule.isNone():
+            self.description += (
+                f"**Rule:** {data.rule.name}\n> {data.rule.description}\n"
+            )
 
         self.description += f"**Proof:** [Link to proof]({data.proof})\n"
 

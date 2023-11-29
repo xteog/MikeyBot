@@ -7,13 +7,6 @@ import moderation.views as views
 import utils
 
 
-def check_permissions(interaction: discord.Interaction):
-    for role in interaction.user.roles:
-        if role.id == config.fiaRole or role.id == config.devRole:
-            return True
-    return False
-
-
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
     global cog
 
@@ -72,7 +65,6 @@ class CommandsCog(discord.ext.commands.Cog):
     )
     @discord.app_commands.describe(user="The user that you want to warn")
     @discord.app_commands.describe(rule="The rule violated (ex. G.1.4)")
-    @discord.app_commands.check(check_permissions)
     @discord.app_commands.autocomplete(rule=rules_autocomplete)
     async def issue_warning(
         self, interaction: discord.Interaction, user: discord.Member, rule: str
@@ -102,7 +94,6 @@ class CommandsCog(discord.ext.commands.Cog):
         description="Adds a a word that it is considered to violate the rules",
     )
     @discord.app_commands.describe(swear_word="The word you want to add")
-    @discord.app_commands.check(check_permissions)
     async def add_swear_word(self, interaction: discord.Interaction, swear_word: str):
         logging.info(f'"\\add_swear_word" used by {interaction.user.name}')
 
@@ -116,19 +107,25 @@ class CommandsCog(discord.ext.commands.Cog):
             )
 
     @discord.app_commands.command(
-        name="search_report",
-        description="Search a report in the log by id or user",
+        name="search_reports",
+        description="Search a report from the penalty log by id or by user",
     )
     @discord.app_commands.describe(id="The report's ID composed by 4 digits")
     @discord.app_commands.describe(user="Returns a list of the user's reports")
-    @discord.app_commands.check(check_permissions)
-    async def search_violation(
+    async def search_reports(
         self,
         interaction: discord.Interaction,
         id: int = None,
         user: discord.Member = None,
     ):
-        logging.info(f'"\\search_violation" used by {interaction.user.name}')
+        logging.info(f'"\\search_violation" used by {interaction.user.name} (id = {id}, user = {user}')
+
+        if not utils.check_permissions(interaction.user, config.fiaRole):
+            if not interaction.user.id == user.id:
+                await interaction.followup.send(
+                    "The link provided is not a Youtube link", ephemeral=True
+                )
+                return
 
         if (id == None and user == None) or (id != None and user != None):
             await interaction.response.send_message(
@@ -137,7 +134,7 @@ class CommandsCog(discord.ext.commands.Cog):
             return
 
         if id != None:
-            violations = await moderation.getViolations(bot=self.client, id=id)
+            violations = await moderation.getReports(bot=self.client, id=id)
             if len(violations) == 0:
                 await interaction.response.send_message(
                     f"No reports found with ID `{id}`", ephemeral=True
@@ -148,7 +145,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
         if user != None:
             await interaction.response.defer(ephemeral=True)
-            violations = await moderation.getViolations(bot=self.client, user=user)
+            violations = await moderation.getReports(bot=self.client, user=user)
             await interaction.delete_original_response()
             if len(violations) == 0:
                 await interaction.followup.send(
@@ -177,12 +174,6 @@ class CommandsCog(discord.ext.commands.Cog):
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
 
-        if not check_permissions(interaction.user, config.fiaRole):
-            if not interaction.user.id == user.id:
-                await interaction.followup.send(
-                    "The link provided is not a Youtube link", ephemeral=True
-                )
-                return
         modal = views.ReportModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
@@ -233,7 +224,6 @@ class CommandsCog(discord.ext.commands.Cog):
         name="reset",
         description="Resets the bot. Use it if there is a bug or it stopped working. (todo)",
     )
-    @discord.app_commands.check(check_permissions)
     async def reset(self, interaction: discord.Interaction):
         logging.info(f'"\\reset" used by {interaction.user.name}')
         # TODO finisci
@@ -242,13 +232,13 @@ class CommandsCog(discord.ext.commands.Cog):
         main.reconnect(self.client)
 
     @reset.error
-    @add_swear_word.error
-    @issue_warning.error
+    @report.error
+    @search_reports.error
     async def error(self, interaction: discord.Interaction, error):
-        await interaction.response.send_message("Error: " + error, ephemeral=True)
+        await interaction.response.send_message("Error: " + str(error), ephemeral=True)
 
     async def on_error(self, interaction: discord.Interaction, error):
-        await interaction.response.send_message("Error: " + error, ephemeral=True)
+        await interaction.response.send_message("Error: " + str(error), ephemeral=True)
 
 
 def setup(bot):
