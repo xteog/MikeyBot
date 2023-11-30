@@ -5,6 +5,7 @@ import config
 import moderation.moderation as moderation
 import moderation.views as views
 import utils
+from list_lobbies import getLobbiesList
 
 
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
@@ -207,6 +208,21 @@ class CommandsCog(discord.ext.commands.Cog):
 
         await modal.interaction.delete_original_response()
         await interaction.followup.send(f"Report `{data.id}` created", ephemeral=True)
+
+    @discord.app_commands.command(
+        name="lobbies_online",
+        description="ciao",
+    )
+    async def lobbies_online(self, interaction: discord.Interaction):
+        logging.info(f'"\\lobbies_online" used by {interaction.user.name}')
+
+        lobbies = getLobbiesList()
+
+        str = ""
+        for lobby in lobbies:
+            str += lobby
+
+        await interaction.response.send_message(str)
 
     @discord.app_commands.command(
         name="help",

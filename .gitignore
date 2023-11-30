@@ -3,5 +3,5 @@ config.py
 /.vscode
 /.env
 /data
-/moderation/__pycache__
-/verification/__pycache__
+/moderation/__pycache__/
+/verification/__pycache__/

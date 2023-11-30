@@ -241,7 +241,6 @@ class ReportView(discord.ui.View):
         else:
             self.add_item(RemindButton(self, True))
 
-
     @discord.ui.button(
         label="No offence",
         custom_id=f"{random.randint(0, 100)}",
@@ -303,14 +302,18 @@ class ReportRuleSelect(discord.ui.Select):
         return options
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        newView = ReportView(self._view.bot, self._view.data, moderation.Rule(self.values[0]))
+        newView = ReportView(
+            self._view.bot, self._view.data, moderation.Rule(self.values[0])
+        )
 
         await interaction.response.edit_message(view=newView, embed=newView.embed)
 
 
 class RemindButton(discord.ui.Button):
     def __init__(self, view: ReportView, disabled: bool = False):
-        super().__init__(style=discord.ButtonStyle.red, label="Remind", disabled=disabled, row = 1)
+        super().__init__(
+            style=discord.ButtonStyle.red, label="Remind", disabled=disabled, row=1
+        )
         self._view = view
 
     async def callback(self, interaction: Interaction) -> None:
@@ -336,6 +339,7 @@ class RemindButton(discord.ui.Button):
             f"Remider `{self._view.data.id}` sent to {self._view.data.offender.name}",
             ephemeral=True,
         )
+
 
 class ReportListView(discord.ui.View):
     def __init__(
@@ -528,6 +532,8 @@ class ReminderEmbed(discord.Embed):
             f"**User:** {data.offender.name} ({data.offender.mention})\n"
         )
         self.description += f"**Round:** `{data.league} R{data.round}`\n"
+
+        self.description += f"**Rule:** {data.rule.name}\n> {data.rule.description}\n"
 
         self.description += f"**Proof:** [link to proof]({data.proof})\n"
 

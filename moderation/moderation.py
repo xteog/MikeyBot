@@ -98,7 +98,7 @@ class ReportData:  # TODO rule è una struttura
         timestamp: str = None,
     ) -> None:
         if id == None:
-            self.id = utils.randomString(4)
+            self.id = self.getNewId()
         else:
             self.id = id
         self.offender = offender
@@ -128,6 +128,15 @@ class ReportData:  # TODO rule è una struttura
                 self.creator = await bot.fetch_user(creatorId)
             except:
                 logging.error("user not found")
+
+    async def getNewId():
+        id = utils.randomString(4)
+
+        while len(getReports(id)) > 0:
+            id = utils.randomString(4)
+
+        return id
+
 
 
 def formatSwearWords(msg: str) -> str:  # TODO cut the message if too long
@@ -264,7 +273,7 @@ def addToHistory(data: ReportData) -> None:
 
 async def getReports(
     bot, id: int = None, user: discord.Member = None
-) -> list[WarningData]:
+) -> list[ReportData]:
     history = utils.read(config.historyPath)
     violations = []
 
