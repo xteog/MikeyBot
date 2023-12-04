@@ -21,30 +21,33 @@ def addToHistory(data: moderation.ReportData, nick) -> None:
         "round": data.round,
         "rule": data.rule.code,
         "proof": data.proof,
+        "description": data.desc,
+        "penalty": data.penalty,
+        "severity": data.severity,
         "notes": data.notes,
-        "verdict": data.verdict,
+        "active": False,
         "timestamp": "2001-11-09 8:09",
     }
 
     utils.write(config.historyPath, history)
+
 
 file = open("pen_log.csv")
 
 csvreader = csv.reader(file)
 
 for row in csvreader:
-    if row[0] != "" and row[0] != "DRIVER ID":
+    if row[0] != "" and row[0] != "DISCORD ID":
         report = moderation.ReportData(
             creator=1150936522263101461,
             offender=row[0],
-            league=row[2],
-            round="",
-            proof="",
-            notes=row[7],
-            verdict=row[6] + "-" + row[3] + "-" + row[4],
+            round=row[2],
+            league="",
+            proof=row[7],
+            penalty=row[3],
+            severity=row[4],
+            notes=row[6],
+            desc=""
         )
 
         addToHistory(report, row[1])
-
-
-

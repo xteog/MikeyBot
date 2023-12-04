@@ -5,7 +5,7 @@ import discord
 import datetime
 
 
-class WarningData:  # TODO rule è una struttura
+class WarningData:
     def __init__(
         self,
         rule: str,
@@ -71,13 +71,16 @@ class Rule:
     def __init__(self, code: str = "") -> None:
         rules = loadRules()
 
-        self.name = "None"
-        self.description = "None"
+        self.name = ""
+        self.description = ""
         self.code = code
 
         if code in rules.keys():
-            self.name = rules[code]["name"]
-            self.description = rules[code]["description"]
+            if isinstance(rules[code], list):
+                self.name = rules[code][0]
+                self.description = rules[code][1]
+            else:
+                self.description = rules[code]
 
     def isNone(self) -> bool:
         return self.code == ""
@@ -89,12 +92,15 @@ class ReportData:  # TODO rule è una struttura
         league: str,
         round: int,
         proof: str,
-        notes: str,
+        desc: str,
         rule: Rule = Rule(),
         offender: discord.Member = None,
         creator: discord.Member = None,
         id: str = None,
-        verdict: str = "",
+        penalty: str = "",
+        severity: str = "",
+        notes: str = "",
+        active: bool = False,
         timestamp: str = None,
     ) -> None:
         if id == None:
@@ -107,8 +113,11 @@ class ReportData:  # TODO rule è una struttura
         self.round = round
         self.rule = rule
         self.proof = proof
+        self.desc = desc
+        self.penalty = penalty
+        self.severity = severity
         self.notes = notes
-        self.verdict = verdict
+        self.active = active
         if timestamp == None:
             self.timestamp = datetime.datetime.utcnow()
         else:
@@ -129,14 +138,13 @@ class ReportData:  # TODO rule è una struttura
             except:
                 logging.error("user not found")
 
-    async def getNewId():
+    def getNewId(self):
         id = utils.randomString(4)
 
-        while len(getReports(id)) > 0:
+        while isReportExist(id):
             id = utils.randomString(4)
 
         return id
-
 
 
 def formatSwearWords(msg: str) -> str:  # TODO cut the message if too long
@@ -261,10 +269,13 @@ def addToHistory(data: ReportData) -> None:
         "creator": data.creator.id,
         "league": data.league,
         "round": data.round,
+        "description": data.desc,
         "rule": data.rule.code,
         "proof": data.proof,
+        "penalty": data.penalty,
+        "severity": data.severity,
         "notes": data.notes,
-        "verdict": data.verdict,
+        "active": data.active,
         "timestamp": data.timestamp.strftime(config.timeFormat),
     }
 
@@ -287,9 +298,11 @@ async def getReports(
                         league=report["league"],
                         round=report["round"],
                         rule=Rule(report["rule"]),
-                        notes=report["notes"],
+                        desc=report["description"],
                         proof=report["proof"],
-                        verdict=report["verdict"],
+                        penalty=report["penalty"],
+                        severity=report["severity"],
+                        notes=report["notes"],
                         timestamp=report["timestamp"],
                     )
                     await struct.setUsers(
@@ -308,9 +321,11 @@ async def getReports(
                 league=data[v]["league"],
                 round=data[v]["round"],
                 rule=Rule(data[v]["rule"]),
-                notes=data[v]["notes"],
+                desc=data[v]["description"],
                 proof=data[v]["proof"],
-                verdict=data[v]["verdict"],
+                penalty=data[v]["penalty"],
+                severity=data[v]["severity"],
+                notes=data[v]["notes"],
                 timestamp=data[v]["timestamp"],
             )
 
@@ -321,3 +336,27 @@ async def getReports(
             violations.append(struct)
 
     return violations
+
+
+async def getActive(bot) -> list[ReportData]:
+    history = utils.read(config.historyPath)
+    violations = []
+
+    for member in history.keys():
+        for v in history[member]["violations"].keys():
+            report = history[member]["violations"][v]
+            if report["active"] == True:
+                violations.append(getReports(bot, id=report["id"]))
+
+    return violations
+
+
+def isReportExist(id: int) -> bool:
+    history = utils.read(config.historyPath)
+
+    for member in history.keys():
+        for v in history[member]["violations"].keys():
+            if v == str(id):
+                return True
+
+    return False

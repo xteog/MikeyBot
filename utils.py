@@ -1,10 +1,25 @@
 import json
 import random
 import discord
-import config
+import socket
+import codecs
 
 
-def lev_dist(s, t):
+def lev_dist(s: str, t: str) -> int:
+    """
+    Calculates the lev distance between two strings.
+
+    Parameters
+    -----------
+    - s : `str`\n
+        First string to confront.
+    - t : `str`\n
+        Second string to confront.
+
+    Returns
+    ----------
+    A `int` value representing the lev distance between the two strings.
+    """
     v0 = [i for i in range(len(t) + 1)]
     v1 = [0] * (len(t) + 1)
 
@@ -40,7 +55,7 @@ def loading(i, len):
     return str
 
 
-def write(path: str, data) -> None:
+def write(path: str, data: list | dict) -> None:
     data = json.dumps(data, indent=2)
     with open(path, "w+") as f:
         f.write(data)
@@ -63,9 +78,24 @@ def randomString(len: int) -> str:
     )
 
 
-def isLink(str: str) -> bool:
-    cond = len(str) > 5
-    cond = cond and (
+def isLink(str: str) -> dict[bool, str]:
+    """
+    Checks if the string provided is a YouTube or Discord link.
+
+    Parameters
+    -----------
+    - str : `str`\n
+        The string to check.
+
+    Returns
+    ----------
+    - `bool` value representing the outcome of the check.
+
+    - `str` containing the reason why the check failed.
+    """
+    cond = len(str) > 5 and str.find(" ") == -1
+
+    yt = cond and (
         str.startswith("https://youtube.com")
         or str.startswith("https://www.youtube.com")
         or str.startswith("youtube.com")
@@ -73,7 +103,23 @@ def isLink(str: str) -> bool:
         or str.startswith("https://www.youtu.be")
         or str.startswith("youtu.be")
     )
-    return cond
+
+    discord = cond and (
+        str.startswith("https://discord.com")
+        or str.startswith("discord.com")
+        or str.startswith("https://cdn.discordapp.com")
+        or str.startswith("cdn.discordapp.com")
+    )
+
+    if yt:
+        if linkHasTimestamp(str):
+            return True, None
+        else:
+            return False, "The YouTube link provided doesn't have a timestamp"
+    elif discord:
+        return True, None
+
+    return False, "The link provided ain't a YouTube or Discord link"
 
 
 def linkHasTimestamp(str: str) -> bool:
@@ -88,7 +134,28 @@ def linkHasTimestamp(str: str) -> bool:
     return str[start + 2 :].isdigit()
 
 
-def check_permissions(user: discord.Member, role: int = None, roles: list[int]=None):
+def hasPermissions(
+    user: discord.Member, role: int = None, roles: list[int] = None
+) -> bool:
+    """
+    Checks if the provided `Member` has a set of roles.
+
+    Only one of the parameters `role` or `roles` should be given.
+
+    Parameters
+    -----------
+    - user : `discord.Member`\n
+        User to check if has permissions.
+    - role : `Optional[int]`
+        The role code that the user should have.
+    - roles : `Optional[list[int]]`
+        The roles codes that the user should have.
+
+    Returns
+    ----------
+    `bool`
+        the outcome of the check.
+    """
     if role != None:
         roles = [role]
 
@@ -96,5 +163,95 @@ def check_permissions(user: discord.Member, role: int = None, roles: list[int]=N
         for j in user.roles:
             if j.id == i:
                 return True
-            
+
     return False
+
+
+def getLobbyInfo(data: str) -> str:
+    """
+    This is a reST style.
+
+    :param str: this is a first param
+    :returns: this is a description of what is returned
+    """
+    start, end = 0, 0
+    for i in range(len(data)):
+        if data[i] == "#":
+            start = i + 1
+        if data[i] == "|":
+            end = i
+            break
+    lobbyName = data[start:end]
+
+    start, end, cont = 0, 0, 0
+    for i in range(len(data)):
+        if data[i] == "|":
+            if start == 0:
+                cont += 1
+            else:
+                end = i
+                break
+
+        if data[i] == "|" and cont == 3:
+            start = i + 1
+    dim = data[start:end]
+
+    start, end, cont = 0, 0, 0
+    for i in range(len(data)):
+        if data[i] == "|":
+            if start == 0:
+                cont += 1
+            else:
+                end = i
+                break
+
+        if data[i] == "|" and cont == 9:
+            start = i + 1
+    players = data[start:end]
+
+    start, end, cont = 0, 0, 0
+    for i in range(len(data)):
+        if data[i] == "|":
+            if start == 0:
+                cont += 1
+            else:
+                end = i
+                break
+
+        if data[i] == "|" and cont == 10:
+            start = i + 1
+    password = data[start:end]
+
+    if password != "":
+        return f"- {lobbyName} {players}/{dim} :lock:\n"
+    else:
+        return f"- {lobbyName} {players}/{dim}\n"
+
+
+def getLobbiesList():
+    lobbies = []
+    IP = "46.101.147.176"
+    PORT = 6510
+    payload = f"39300a00"
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(("127.0.0.1", PORT))
+
+    data = codecs.decode(payload, "hex_codec")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.sendto(data, (IP, PORT))
+
+    run = True
+    sock.settimeout(2)
+    while run:
+        try:
+            data, addr = sock.recvfrom(1024)
+            data = data.decode()
+
+            lobbies.append(getLobbyInfo(data))
+        except:
+            run = False
+
+    sock.close()
+
+    return lobbies

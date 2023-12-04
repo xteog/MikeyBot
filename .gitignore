@@ -5,3 +5,4 @@ config.py
 /data
 /moderation/__pycache__/
 /verification/__pycache__/
+pen_log.csv

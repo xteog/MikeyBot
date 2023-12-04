@@ -5,7 +5,6 @@ import config
 import moderation.moderation as moderation
 import moderation.views as views
 import utils
-from list_lobbies import getLobbiesList
 
 
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
@@ -119,9 +118,11 @@ class CommandsCog(discord.ext.commands.Cog):
         id: int = None,
         user: discord.Member = None,
     ):
-        logging.info(f'"\\search_violation" used by {interaction.user.name} (id = {id}, user = {user}')
+        logging.info(
+            f'"\\search_violation" used by {interaction.user.name} (id = {id}, user = {user}'
+        )
 
-        if not utils.check_permissions(interaction.user, config.fiaRole):
+        if not utils.hasPermissions(interaction.user, config.fiaRole):
             if not interaction.user.id == user.id:
                 await interaction.followup.send(
                     "The link provided is not a Youtube link", ephemeral=True
@@ -142,7 +143,7 @@ class CommandsCog(discord.ext.commands.Cog):
                 )
             else:
                 embed = views.ReportEmbed(violations[0])
-                await interaction.response.send_message(embed=embed)
+                await interaction.response.send_message(embed=embed, ephemeral=True)
 
         if user != None:
             await interaction.response.defer(ephemeral=True)
@@ -164,7 +165,7 @@ class CommandsCog(discord.ext.commands.Cog):
     )
     @discord.app_commands.describe(user="The driver you want to report")
     @discord.app_commands.describe(league="The league where the accident happened")
-    @discord.app_commands.describe(round="The driver you want to report")
+    @discord.app_commands.describe(round="The league where the accident happened")
     @discord.app_commands.autocomplete(league=league_autocomplete)
     async def report(
         self,
@@ -179,18 +180,10 @@ class CommandsCog(discord.ext.commands.Cog):
         await interaction.response.send_modal(modal)
         await modal.wait()
 
-        if not utils.isLink(modal.link.value):
+        cond, error = utils.isLink(modal.link.value)
+        if not cond:
             await modal.interaction.delete_original_response()
-            await interaction.followup.send(
-                "The link provided is not a Youtube link", ephemeral=True
-            )
-            return
-
-        if not utils.linkHasTimestamp(modal.link.value):
-            await modal.interaction.delete_original_response()
-            await interaction.followup.send(
-                f"The link provided doesn't have a timestamp", ephemeral=True
-            )
+            await interaction.followup.send(error, ephemeral=True)
             return
 
         data = moderation.ReportData(
@@ -199,7 +192,8 @@ class CommandsCog(discord.ext.commands.Cog):
             round=round,
             creator=interaction.user,
             proof=modal.link.value,
-            notes=modal.notes.value,
+            desc=modal.notes.value,
+            active=True,
         )
 
         moderation.addToHistory(data)
@@ -216,7 +210,7 @@ class CommandsCog(discord.ext.commands.Cog):
     async def lobbies_online(self, interaction: discord.Interaction):
         logging.info(f'"\\lobbies_online" used by {interaction.user.name}')
 
-        lobbies = getLobbiesList()
+        lobbies = utils.getLobbiesList()
 
         str = ""
         for lobby in lobbies:
@@ -251,10 +245,12 @@ class CommandsCog(discord.ext.commands.Cog):
     @report.error
     @search_reports.error
     async def error(self, interaction: discord.Interaction, error):
-        await interaction.response.send_message("Error: " + str(error), ephemeral=True)
+        await interaction.followup.send("Error: " + str(error), ephemeral=True)
+        await self.client.errorChannel.send("Error: " + str(error))
 
     async def on_error(self, interaction: discord.Interaction, error):
-        await interaction.response.send_message("Error: " + str(error), ephemeral=True)
+        await interaction.followup.send("Error: " + str(error), ephemeral=True)
+        await self.client.errorChannel.send("Error: " + str(error))
 
 
 def setup(bot):

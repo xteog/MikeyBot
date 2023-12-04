@@ -9,6 +9,7 @@ import config
 import logging
 import sys
 import verification.views
+import utils
 
 
 class MyBot(commands.Bot):
@@ -46,6 +47,11 @@ class MyBot(commands.Bot):
         view = verification.views.VerificationView(self)
         # await self.verifyChannel.send(view=view, embed=view.embed)
 
+        reports = await moderation.moderation.getActive(self)
+        for r in reports:
+            view = moderation.views.ReportView(bot=self, data=r)
+            self.add_view(view)
+
         print("Mikey is up".format(self.user.name))
 
         self.ready = True
@@ -54,12 +60,10 @@ class MyBot(commands.Bot):
         if message.author == self.user:
             return
 
-        if message.content == "$role":
-            await message.author.add_roles(
-                discord.utils.get(message.author.guild.roles, id=config.fiaRole)
-            )
-
-        if message.content.startswith("$message") and message.author.id == 493028834640396289:
+        if (
+            message.content.startswith("$message")
+            and message.author.id == 493028834640396289
+        ):
             str = message.content.split(" ")
             try:
                 channel = await self.fetch_channel(str[1])
@@ -67,7 +71,10 @@ class MyBot(commands.Bot):
             except:
                 await self.errorChannel.send("Error during sending message")
 
-        if message.content.startswith("$reply") and message.author.id == 493028834640396289:
+        if (
+            message.content.startswith("$reply")
+            and message.author.id == 493028834640396289
+        ):
             str = message.content.split(" ")
             try:
                 channel = await self.fetch_channel(str[1])
@@ -76,17 +83,29 @@ class MyBot(commands.Bot):
             except:
                 await self.errorChannel.send("Error during replying message")
 
-        if isinstance(message.channel, discord.DMChannel):
-            logging.info(f"DM by {message.author.name} ({message.channel.id}): {message.content}")
+        if (
+            message.content.startswith("$logs")
+            and message.author.id == 493028834640396289
+        ):
+            file = discord.File("./data/logging.log")
+            await message.channel.send(file=file)
 
-        """
-        if isinstance(message.channel,discord.DMChannel):
-            if message.attachments:
-                if verification.views.isVerifying(message.author.id, checkConnection=True):
-                    await self.checkVerificationChannel.send(message.attachments[0].url)
-                if verification.views.isVerifying(message.author.id, checkSteamId=True):
-                    await self.checkVerificationChannel.send(message.attachments[0].url)
-        """
+        if (
+            message.content.find("lobb") != -1 or message.content.find("Lobb") != -1
+        ) and message.content.find("?") != -1:
+            lobbies = utils.getLobbiesList()
+
+            str = ""
+            for lobby in lobbies:
+                str += lobby
+            await message.reply(
+                f"Did you ask if there are any lobbies up?\nHere they are:\n{str}"
+            )
+
+        if isinstance(message.channel, discord.DMChannel):
+            logging.info(
+                f"DM by {message.author.name} ({message.channel.id}): {message.content}"
+            )
 
         if message.channel.id == self.dmsChannel.id:
             if message.attachments:
@@ -139,20 +158,20 @@ class MyBot(commands.Bot):
             auto_archive_duration=1440,
         )
 
-    async def sendReminder(self, data: moderation.moderation.ReportData):
+    async def sendReminder(self, data: moderation.moderation.ReportData) -> None:
         embed = moderation.views.ReminderEmbed(data)
         await data.offender.send(embed=embed)
 
-    async def deleteMessage(self, id: int):
+    async def deleteMessage(self, id: int) -> None:
         msg = await self.depotChannel.fetch_message(id)
         await msg.delete()
 
-    async def sendMessage(self, msg: str, channelId: int):
+    async def sendMessage(self, msg: str, channelId: int) -> None:
         channel = self.get_channel(channelId)
         await channel.send(msg)
 
-    async def on_error(self, event_method: str) -> None:
-        print(f"Error: {event_method}")
+    async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
+        logging.error(f"Error: {event_method}")
 
 
 def runBot():
