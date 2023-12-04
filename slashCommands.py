@@ -49,83 +49,27 @@ async def league_autocomplete(interaction: discord.Interaction, current: str) ->
 class CommandsCog(discord.ext.commands.Cog):
     def __init__(self, client: main.MyBot):
         self.client = client
-        self.rules = moderation.loadRules()  # TODO togli
-        """
-        client.tree.add_command(
-            discord.app_commands.ContextMenu(
-                name="Report Message",
-                callback=report,  # set the callback of the context menu to "my_cool_context_menu"
-            )
-        )
-        """
 
     @discord.app_commands.command(
-        name="issue_warning",
-        description="Warns a user of a violation",
-    )
-    @discord.app_commands.describe(user="The user that you want to warn")
-    @discord.app_commands.describe(rule="The rule violated (ex. G.1.4)")
-    @discord.app_commands.autocomplete(rule=rules_autocomplete)
-    async def issue_warning(
-        self, interaction: discord.Interaction, user: discord.Member, rule: str
-    ):
-        logging.info(f'"\\issue_warning" used by {interaction.user.name}')
-        modal = views.ViolationModal()
-        await interaction.response.send_modal(modal)
-        await modal.wait()
-
-        data = moderation.WarningData(
-            offender=user,
-            rule=rule,
-            creator=interaction.user,
-            proof=modal.link.value,
-            verdict=modal.notes.value,
-        )
-
-        await self.client.sendWarning(data)
-
-        moderation.addToHistory(data)
-
-        await modal.interaction.delete_original_response()
-        await interaction.followup.send(f"Warning `{data.id}` sent", ephemeral=True)
-
-    @discord.app_commands.command(
-        name="add_swear_word",
-        description="Adds a a word that it is considered to violate the rules",
-    )
-    @discord.app_commands.describe(swear_word="The word you want to add")
-    async def add_swear_word(self, interaction: discord.Interaction, swear_word: str):
-        logging.info(f'"\\add_swear_word" used by {interaction.user.name}')
-
-        if moderation.addSwearWord(swear_word):
-            await interaction.response.send_message(
-                f'Swear word "{swear_word}" added', ephemeral=True
-            )
-        else:
-            await interaction.response.send_message(
-                f'Swear word "{swear_word}" already present', ephemeral=True
-            )
-
-    @discord.app_commands.command(
-        name="search_reports",
+        name="search_violation",
         description="Search a report from the penalty log by id or by user",
     )
     @discord.app_commands.describe(id="The report's ID composed by 4 digits")
     @discord.app_commands.describe(user="Returns a list of the user's reports")
-    async def search_reports(
+    async def search_violation(
         self,
         interaction: discord.Interaction,
         id: int = None,
         user: discord.Member = None,
     ):
         logging.info(
-            f'"\\search_violation" used by {interaction.user.name} (id = {id}, user = {user}'
+            f'"\\search_violation" used by {interaction.user.name} (id = {id}, user = {user})'
         )
 
-        if not utils.hasPermissions(interaction.user, config.fiaRole):
-            if not interaction.user.id == user.id:
+        if not utils.hasPermissions(interaction.user, config.stewardsRole):
+            if user != None and interaction.user.id != user.id:
                 await interaction.followup.send(
-                    "The link provided is not a Youtube link", ephemeral=True
+                    "You can't search someone else reports", ephemeral=True
                 )
                 return
 
@@ -204,8 +148,8 @@ class CommandsCog(discord.ext.commands.Cog):
         await interaction.followup.send(f"Report `{data.id}` created", ephemeral=True)
 
     @discord.app_commands.command(
-        name="lobbies_online",
-        description="ciao",
+        name="lobbies",
+        description="Returns the list of lobbies currently active",
     )
     async def lobbies_online(self, interaction: discord.Interaction):
         logging.info(f'"\\lobbies_online" used by {interaction.user.name}')
@@ -220,7 +164,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
     @discord.app_commands.command(
         name="help",
-        description="Shows the documentation of the bot",
+        description="Shows the documentation of the bot (todo)",
     )
     async def help(self, interaction: discord.Interaction):
         logging.info(f'"\\help" used by {interaction.user.name}')
@@ -228,7 +172,7 @@ class CommandsCog(discord.ext.commands.Cog):
         with open("README.md") as f:
             text = f.read()
 
-        await interaction.response.send_message(text, ephemeral=True)
+        await interaction.response.send_message("Not done yet", ephemeral=True)
 
     @discord.app_commands.command(
         name="reset",
@@ -239,11 +183,12 @@ class CommandsCog(discord.ext.commands.Cog):
         # TODO finisci
         await self.client.change_presence(status=discord.Status.offline)
 
-        main.reconnect(self.client)
+        #main.reconnect(self.client)
+        await interaction.response.send_message("Not done yet", ephemeral=True)
 
     @reset.error
     @report.error
-    @search_reports.error
+    @search_violation.error
     async def error(self, interaction: discord.Interaction, error):
         await interaction.followup.send("Error: " + str(error), ephemeral=True)
         await self.client.errorChannel.send("Error: " + str(error))

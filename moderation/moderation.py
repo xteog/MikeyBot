@@ -5,46 +5,6 @@ import discord
 import datetime
 
 
-class WarningData:
-    def __init__(
-        self,
-        rule: str,
-        id: str = None,
-        offender: discord.Member = None,
-        creator: discord.Member = None,
-        proof: str = "",
-        verdict: str = "",
-        timestamp: str = None,
-    ) -> None:
-        if id == None:
-            self.id = utils.randomString(4)
-        else:
-            self.id = id
-        self.offender = offender
-        self.rule = rule
-        self.creators = [creator]
-        self.proof = proof
-        self.verdict = verdict
-        if timestamp == None:
-            self.timestamp = datetime.datetime.utcnow()
-        else:
-            self.timestamp = datetime.datetime.strptime(timestamp, config.timeFormat)
-
-    async def setUsers(
-        self, bot, offenderId: int = None, creatorsId: list[int] = None
-    ) -> None:
-        if offenderId != None:
-            try:
-                self.offender = await bot.fetch_user(offenderId)  # TODO handle errors
-            except:
-                logging.error("user not found")
-
-        if creatorsId != None:
-            self.creators = []
-            for id in creatorsId:
-                self.creators.append(await bot.fetch_user(id))
-
-
 def loadRules() -> dict:
     rules = utils.read(config.rulesPath)
     rulesFormatted = {}
@@ -147,111 +107,13 @@ class ReportData:  # TODO rule è una struttura
         return id
 
 
-def formatSwearWords(msg: str) -> str:  # TODO cut the message if too long
-    badWordsSaid = findSwearWords(msg)
-
-    if len(badWordsSaid) > 0:
-        formattedMsg = f"{msg[0: badWordsSaid[0][0]]}||{msg[badWordsSaid[0][0]: badWordsSaid[0][1]]}||"
-        for i in range(1, len(badWordsSaid)):
-            formattedMsg += f"{msg[badWordsSaid[i - 1][1]: badWordsSaid[i][0] - 1]}||{msg[badWordsSaid[i][0]: badWordsSaid[i][0]]}||"
-
-        formattedMsg += f"{msg[badWordsSaid[len(badWordsSaid) - 1][1]: len(msg)]}"
-    else:
-        formattedMsg = msg
-
-    return formattedMsg
-
-
-def findSwearWords(msg: str) -> list:
-    badWords = utils.read(config.swearWordsPath)
-    badWordsSaid = []
-    msg = msg.lower()
-
-    for word in badWords:
-        word = word.lower()
-        wordLen = len(word)
-        msgLen = len(msg)
-        i = 0
-        while i < msgLen:
-            j = 0
-            k = 0
-            flag = True
-            if msg[i] != " ":
-                while i + j < msgLen and k < wordLen:
-                    if msg[i + j] != " " or wordLen <= 3:
-                        if msg[i + j] != word[k]:
-                            flag = False
-                        k += 1
-                    j += 1
-
-                if flag and k == wordLen:
-                    badWordsSaid.append((i, i + j))
-
-            i += 1
-
-    return badWordsSaid
-
-
-def addSwearWord(swear_word: str) -> bool:
-    badWords = utils.read(config.swearWordsPath)
-
-    if not (swear_word in badWords):
-        badWords.append(swear_word)
-        utils.write(config.swearWordsPath, badWords)
-        return True
-
-    return False
-
-
-def removeSwearWords(swear_frase: str) -> bool:
-    badWords = utils.read(config.swearWordsPath)
-
-    badWordsSaid = findSwearWords(swear_frase)
-
-    for word in badWordsSaid:
-        if swear_frase[word[0] : word[1]] in badWords:
-            badWords.remove(swear_frase[word[0] : word[1]])
-        else:
-            print("word not present")
-
-    utils.write(config.swearWordsPath, badWords)
-
-
-def getRule(rule: str) -> str | None:
+def getRule(rule: str) -> str:
     rules = loadRules()
 
     if rule in rules.keys():
         return rules[rule]
 
     return None
-
-
-"""
-def addToHistory(data: WarningData) -> None:
-    history = utils.read(config.historyPath)
-
-    if history == None:
-        history = {}
-
-    if str(data.offender.id) in history.keys():
-        history[str(data.offender.id)]["name"] = data.offender.name
-    else:
-        history[str(data.offender.id)] = {"name": data.offender.name, "violations": {}}
-
-    creators = []
-    for c in data.creators:
-        creators.append(c.id)
-
-    history[str(data.offender.id)]["violations"][data.id] = {
-        "rule": data.rule,
-        "creators": creators,
-        "proof": data.proof,
-        "verdict": data.verdict,
-        "timestamp": data.timestamp.strftime(config.timeFormat),
-    }
-
-    utils.write(config.historyPath, history)
-"""
 
 
 def addToHistory(data: ReportData) -> None:
@@ -346,8 +208,8 @@ async def getActive(bot) -> list[ReportData]:
         for v in history[member]["violations"].keys():
             report = history[member]["violations"][v]
             if report["active"] == True:
-                violations.append(getReports(bot, id=report["id"]))
-
+                violations.append((await getReports(bot, id=v))[0])
+    
     return violations
 
 

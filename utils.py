@@ -55,13 +55,13 @@ def loading(i, len):
     return str
 
 
-def write(path: str, data: list | dict) -> None:
+def write(path: str, data: dict) -> None:
     data = json.dumps(data, indent=2)
     with open(path, "w+") as f:
         f.write(data)
 
 
-def read(path: str) -> list | None:
+def read(path: str) -> list:
     try:
         with open(path, "r") as f:
             file = f.read()

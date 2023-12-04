@@ -1,8 +1,10 @@
 /__pycache__
-config.py
 /.vscode
 /.env
-/data
+/data/logging.log
+/data/history.json
 /moderation/__pycache__/
 /verification/__pycache__/
 pen_log.csv
+load_log.py
+config.py
