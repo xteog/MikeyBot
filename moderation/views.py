@@ -100,7 +100,7 @@ class ReportListDetailedView(discord.ui.View):
 
 class ReportEmbed(discord.Embed):
     def __init__(self, data: moderation.ReportData, title: str = "Report"):
-        super().__init__(color=0xFFFFFF)
+        super().__init__(title="Report", color=0xFFFFFF)
 
         self.description = f"**ID:** `{data.id}`\n"
 
@@ -170,7 +170,7 @@ class ReminderEmbed(discord.Embed):
         try:
             self.set_thumbnail(url=data.offender.avatar.url)
         except:
-            logging.error("Thumbnail non caricata")
+            logging.warning("Thumbnail non caricata")
 
         self.timestamp = data.timestamp
 
