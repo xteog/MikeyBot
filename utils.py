@@ -167,7 +167,7 @@ def hasPermissions(
     return False
 
 
-def getLobbyInfo(data: str) -> str:
+def getLobbyInfo(data: str) -> dict:
     """
     This is a reST style.
 
@@ -194,7 +194,7 @@ def getLobbyInfo(data: str) -> str:
 
         if data[i] == "|" and cont == 3:
             start = i + 1
-    dim = data[start:end]
+    max_players = data[start:end]
 
     start, end, cont = 0, 0, 0
     for i in range(len(data)):
@@ -218,17 +218,64 @@ def getLobbyInfo(data: str) -> str:
                 end = i
                 break
 
+        if data[i] == "|" and cont == 7:
+            start = i + 1
+    status = data[start:end]
+
+    start, end, cont = 0, 0, 0
+    for i in range(len(data)):
+        if data[i] == "|":
+            if start == 0:
+                cont += 1
+            else:
+                end = i
+                break
+
+        if data[i] == "|" and cont == 5:
+            start = i + 1
+    curr_laps = data[start:end]
+
+    start, end, cont = 0, 0, 0
+    for i in range(len(data)):
+        if data[i] == "|":
+            if start == 0:
+                cont += 1
+            else:
+                end = i
+                break
+
+        if data[i] == "|" and cont == 6:
+            start = i + 1
+    max_laps = data[start:end]
+
+    start, end, cont = 0, 0, 0
+    for i in range(len(data)):
+        if data[i] == "|":
+            if start == 0:
+                cont += 1
+            else:
+                end = i
+                break
+
         if data[i] == "|" and cont == 10:
             start = i + 1
     password = data[start:end]
 
-    if password != "":
-        return f"- {lobbyName} {players}/{dim} :lock:\n"
+    if lobbyName != "*0":
+        return {
+            "name": lobbyName,
+            "curr_players": players,
+            "max_players": max_players,
+            "status": status,
+            "curr_laps": curr_laps,
+            "max_laps": max_laps,
+            "private": password != "",
+        }
     else:
-        return f"- {lobbyName} {players}/{dim}\n"
+        return None
 
 
-def getLobbiesList():
+def getLobbiesList() -> dict:
     lobbies = []
     IP = "46.101.147.176"
     PORT = 6510
@@ -247,8 +294,10 @@ def getLobbiesList():
         try:
             data, addr = sock.recvfrom(1024)
             data = data.decode()
-
-            lobbies.append(getLobbyInfo(data))
+            
+            lobby = getLobbyInfo(data)
+            if lobby != None:
+                lobbies.append(lobby)
         except:
             run = False
 

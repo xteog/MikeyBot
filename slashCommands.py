@@ -151,16 +151,38 @@ class CommandsCog(discord.ext.commands.Cog):
         name="lobbies",
         description="Returns the list of lobbies currently active",
     )
-    async def lobbies_online(self, interaction: discord.Interaction):
-        logging.info(f'"\\lobbies_online" used by {interaction.user.name}')
+    async def lobbies(self, interaction: discord.Interaction):
+        logging.info(f'"\\lobbies" used by {interaction.user.name}')
 
         lobbies = utils.getLobbiesList()
 
-        str = ""
-        for lobby in lobbies:
-            str += lobby
+        if len(lobbies) == 0:
+            await interaction.response.send_message("No lobbies found", ephemeral=True)
+            return
 
-        await interaction.response.send_message(str)
+        embed = discord.Embed(
+            title="Lobbies online",
+            colour=0x00B0F4,
+        )
+
+        for lobby in lobbies:
+            if lobby["private"]:
+                name = ":lock: " + f'**{lobby["name"]}**'
+            else:
+                name = f'**{lobby["name"]}**'
+
+            if lobby["status"] == "Lobby":
+                value = f'**Capacity:** {lobby["curr_players"]}/{lobby["max_players"]}\n**Status:** {lobby["status"]}'
+            else:
+                value = f'**Capacity:** {lobby["curr_players"]}/{lobby["max_players"]}\n**Status:** {lobby["status"]} {lobby["curr_laps"]}/{lobby["max_laps"]} Laps'
+
+            embed.add_field(
+                name=name,
+                value=value,
+                inline=True,
+            )
+
+        await interaction.response.send_message(embed=embed)
 
     @discord.app_commands.command(
         name="help",
@@ -183,7 +205,7 @@ class CommandsCog(discord.ext.commands.Cog):
         # TODO finisci
         await self.client.change_presence(status=discord.Status.offline)
 
-        #main.reconnect(self.client)
+        # main.reconnect(self.client)
         await interaction.response.send_message("Not done yet", ephemeral=True)
 
     @reset.error
