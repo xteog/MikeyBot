@@ -77,6 +77,13 @@ class MyBot(commands.Bot):
             file = discord.File("./data/logging.log")
             await message.channel.send(file=file)
 
+        if (
+            message.content.startswith("$history")
+            and (message.author.id == 493028834640396289 or message.author.id == 1181521363127767130) 
+        ):
+            file = discord.File("./data/history.json")
+            await self.reportChannel.send(file=file)
+
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"

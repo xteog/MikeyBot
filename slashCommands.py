@@ -68,7 +68,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
         if not utils.hasPermissions(interaction.user, config.stewardsRole):
             if user != None and interaction.user.id != user.id:
-                await interaction.followup.send(
+                await interaction.response.send_message(
                     "You can't search someone else reports", ephemeral=True
                 )
                 return
