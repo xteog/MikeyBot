@@ -118,7 +118,8 @@ def runBot():
     intents = discord.Intents.default()
     intents.message_content = True
     bot = MyBot(intents=intents, command_prefix=".")
-    bot.run(config.Token, reconnect=True)
+    handler = logging.FileHandler(filename='data/logging.log', encoding='utf-8', mode='w')
+    bot.run(config.Token, reconnect=True, log_handler=handler, log_level=logging.INFO)
 
 
 async def reconnect(bot):
@@ -127,10 +128,5 @@ async def reconnect(bot):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        filename="data/logging.log",
-        format="%(asctime)s [%(levelname)s]:%(name)s:%(message)s",
-        level=logging.INFO,
-    )
 
     runBot()

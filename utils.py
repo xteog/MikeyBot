@@ -123,15 +123,15 @@ def isLink(str: str) -> dict[bool, str]:
 
 
 def linkHasTimestamp(str: str) -> bool:
-    start = str.find("t=")
+    start = str.find("&t=")
 
     if start == -1:
         return False
 
-    if len(str[start:]) <= 2:
+    if len(str[start:]) <= 3:
         return False
-
-    return str[start + 2 :].isdigit()
+    
+    return str[start + 3:].isdigit()
 
 
 def hasPermissions(

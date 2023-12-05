@@ -77,7 +77,7 @@ class ReportListDetailedView(discord.ui.View):
         self.timeout = config.defaultTimeout
         self.data = data
         self.index = index
-        self.embed = ReportEmbed(self.data[self.index])
+        self.embed = ReminderEmbed(self.data[self.index])
         if self.index <= 0:
             self.add_item(LeftButton(self.bot, self.data, self.index, True))
         else:
@@ -101,10 +101,6 @@ class ReportListDetailedView(discord.ui.View):
 class ReportEmbed(discord.Embed):
     def __init__(self, data: moderation.ReportData, title: str = "Report"):
         super().__init__(color=0xFFFFFF)
-        if data.penalty == "":
-            self.title = title
-        else:
-            self.title = data.penalty
 
         self.description = f"**ID:** `{data.id}`\n"
 
@@ -127,7 +123,7 @@ class ReportEmbed(discord.Embed):
 
         isLink, error = utils.isLink(data.proof)
         if isLink:
-            self.description += f"**Proof:** [link to proof]({data.proof})\n"
+            self.description += f"**Proof:** [Link to proof]({data.proof})\n"
         else:
             self.description += f"**Proof:** {data.proof}"
 
@@ -330,6 +326,7 @@ class NoOffenceButton(discord.ui.Button):
         self._view = view
 
     async def callback(self, interaction: Interaction) -> None:
+        logging.info(f'{interaction.user.nick} used the "No offence" Button')
         self._view.data.penalty = "No offence"
         self._view.data.active = False
 
@@ -352,6 +349,7 @@ class RemindButton(discord.ui.Button):
         self._view = view
 
     async def callback(self, interaction: Interaction) -> None:
+        logging.info(f'{interaction.user.nick} used the "Remind" Button')
         if not self._view.rule_selected.isNone():
             modal = ReminderModal()
         else:
