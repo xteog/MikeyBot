@@ -105,6 +105,9 @@ class ReportData:  # TODO rule è una struttura
             id = utils.randomString(4)
 
         return id
+    
+    def isActive(self) -> bool:
+        return self.active
 
 
 def getRule(rule: str) -> str:
@@ -165,6 +168,7 @@ async def getReports(
                         penalty=report["penalty"],
                         severity=report["severity"],
                         notes=report["notes"],
+                        active=report["active"],
                         timestamp=report["timestamp"],
                     )
                     await struct.setUsers(
@@ -188,6 +192,7 @@ async def getReports(
                 penalty=data[v]["penalty"],
                 severity=data[v]["severity"],
                 notes=data[v]["notes"],
+                active=data[v]["active"],
                 timestamp=data[v]["timestamp"],
             )
 
@@ -195,7 +200,8 @@ async def getReports(
                 bot, creatorId=data[v]["creator"]
             )  # TODO controlla se necessario
 
-            violations.append(struct)
+            if not struct.isActive():
+                violations.append(struct)
 
     return violations
 

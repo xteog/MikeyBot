@@ -156,7 +156,10 @@ class ReminderEmbed(discord.Embed):
         )
         self.description += f"**Round:** `{data.league} R{data.round}`\n"
 
-        self.description += f"**Rule:** {data.rule.name}\n> {data.rule.description}\n"
+        if not data.rule.isNone():
+            self.description += f"**Rule:** {data.rule.name}\n> {data.rule.description}\n"
+        else:
+            self.description += f"**Rule:** {data.notes}\n"
 
         isLink, error = utils.isLink(data.proof)
         if isLink:
@@ -164,7 +167,7 @@ class ReminderEmbed(discord.Embed):
         else:
             self.description += f"**Proof:** {data.proof}\n"
 
-        if data.notes != "":
+        if data.notes != "" and (not data.rule.isNone()):
             self.description += f"**Notes:**\n> {data.notes}\n"
 
         try:

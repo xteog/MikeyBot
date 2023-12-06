@@ -84,6 +84,9 @@ class MyBot(commands.Bot):
             file = discord.File("./data/history.json")
             await self.reportChannel.send(file=file)
 
+        if (message.channel.id == self.reportChannel.id):
+            await self.deleteMessage(self.reportChannel.id, message.id)
+
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
@@ -93,7 +96,7 @@ class MyBot(commands.Bot):
         view = moderation.views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
         await self.reportChannel.create_thread(
-            name=f"Report by {data.creator} ({data.id})",
+            name=f"Report {data.offender.nick} ({data.id})",
             message=message,
             auto_archive_duration=1440,
         )
@@ -102,9 +105,10 @@ class MyBot(commands.Bot):
         embed = moderation.views.ReminderEmbed(data)
         await data.offender.send(embed=embed)
 
-    async def deleteMessage(self, id: int) -> None:
-        msg = await self.depotChannel.fetch_message(id)
-        await msg.delete()
+    async def deleteMessage(self, channelId: int, messageId: int) -> None:
+        channel = await self.fetch_channel(channelId)
+        msg = await channel.fetch_message(messageId)
+        await msg.delete(msg)
 
     async def sendMessage(self, msg: str, channelId: int) -> None:
         channel = self.get_channel(channelId)
@@ -118,7 +122,6 @@ def runBot():
     intents = discord.Intents.default()
     intents.message_content = True
     bot = MyBot(intents=intents, command_prefix=".")
-    handler = logging.FileHandler(filename='data/logging.log', encoding='utf-8', mode='w')
     bot.run(config.Token, reconnect=True)
 
 
