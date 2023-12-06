@@ -109,7 +109,7 @@ class CommandsCog(discord.ext.commands.Cog):
     )
     @discord.app_commands.describe(user="The driver you want to report")
     @discord.app_commands.describe(league="The league where the accident happened")
-    @discord.app_commands.describe(round="The league where the accident happened")
+    @discord.app_commands.describe(round="The round where the accident happened")
     @discord.app_commands.autocomplete(league=league_autocomplete)
     async def report(
         self,
@@ -151,7 +151,8 @@ class CommandsCog(discord.ext.commands.Cog):
         name="lobbies",
         description="Returns the list of lobbies currently active",
     )
-    async def lobbies(self, interaction: discord.Interaction):
+    @discord.app_commands.describe(ephemeral='if "True" only you can see the list (default True)')
+    async def lobbies(self, interaction: discord.Interaction, ephemeral: bool = True):
         logging.info(f'"\\lobbies" used by {interaction.user.name}')
 
         lobbies = utils.getLobbiesList()
@@ -182,7 +183,7 @@ class CommandsCog(discord.ext.commands.Cog):
                 inline=True,
             )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @discord.app_commands.command(
         name="help",

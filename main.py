@@ -39,7 +39,7 @@ class MyBot(commands.Bot):
             view = moderation.views.ReportView(bot=self, data=r)
             self.add_view(view)
 
-        print("Mikey is up")
+        print("Mikey is up")        
 
         self.ready = True
 
@@ -108,7 +108,7 @@ class MyBot(commands.Bot):
     async def deleteMessage(self, channelId: int, messageId: int) -> None:
         channel = await self.fetch_channel(channelId)
         msg = await channel.fetch_message(messageId)
-        await msg.delete(msg)
+        await msg.delete()
 
     async def sendMessage(self, msg: str, channelId: int) -> None:
         channel = self.get_channel(channelId)
