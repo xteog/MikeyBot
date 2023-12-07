@@ -96,7 +96,7 @@ class MyBot(commands.Bot):
         view = moderation.views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
         await self.reportChannel.create_thread(
-            name=f"Report {data.offender.nick} ({data.id})",
+            name=f"Report {data.offender.name} ({data.id})",
             message=message,
             auto_archive_duration=1440,
         )
@@ -113,6 +113,13 @@ class MyBot(commands.Bot):
     async def sendMessage(self, msg: str, channelId: int) -> None:
         channel = self.get_channel(channelId)
         await channel.send(msg)
+
+    async def archiveThread(self, id: str) -> None:
+        threads = self.reportChannel.threads
+        for t in threads:
+            if t.name.find(id) != -1:
+                print("archived")
+                await t.edit(archived=True)
 
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         logging.error(f"Error: {event_method}")

@@ -30,12 +30,6 @@ class ReportView(discord.ui.View):
         else:
             self.add_item(RemindButton(self, True))
 
-    async def on_timeout(self) -> None:
-        self.clear_items()
-        self.data.notes = "No offence (timeout)"
-        self.data.active = False
-        moderation.addToHistory(self.data)
-
 
 class ReportListView(discord.ui.View):
     def __init__(self, bot, data: [moderation.ReportData], permission: bool):
@@ -101,7 +95,6 @@ class ReportEmbed(discord.Embed):
         self,
         data: moderation.ReportData,
         permission: bool,
-        title: str = "Report",
     ):
         super().__init__(title="Report", color=0xFFFFFF)
 
@@ -131,7 +124,7 @@ class ReportEmbed(discord.Embed):
         if isLink:
             self.description += f"**Proof:** [Link to proof]({data.proof})\n"
         else:
-            self.description += f"**Proof:** {data.proof}"
+            self.description += f"**Proof:** {data.proof}\n"
 
         if len(data.notes) > 0:
             self.description += f"**Notes:**\n> {data.notes}\n"
@@ -306,7 +299,7 @@ class NoOffenceButton(discord.ui.Button):
         self._view = view
 
     async def callback(self, interaction: Interaction) -> None:
-        logging.info(f'{interaction.user.nick} used the "No offence" Button')
+        logging.info(f'{interaction.user.name} used the "No offence" Button')
         self._view.data.penalty = "No offence"
         self._view.data.active = False
 
@@ -315,6 +308,7 @@ class NoOffenceButton(discord.ui.Button):
         newEmbed = ReportEmbed(self._view.data, permission=True)
 
         await interaction.response.edit_message(embed=newEmbed, view=discord.ui.View())
+        await self._view.bot.archiveThread(self._view.data.id)
 
 
 class RemindButton(discord.ui.Button):
@@ -329,7 +323,7 @@ class RemindButton(discord.ui.Button):
         self._view = view
 
     async def callback(self, interaction: Interaction) -> None:
-        logging.info(f'{interaction.user.nick} used the "Remind" Button')
+        logging.info(f'{interaction.user.name} used the "Remind" Button')
         if not self._view.rule_selected.isNone():
             modal = ReminderModal()
         else:
@@ -358,6 +352,8 @@ class RemindButton(discord.ui.Button):
         await interaction.followup.edit_message(
             interaction.message.id, embed=newEmbed, view=discord.ui.View()
         )
+
+        await self._view.bot.archiveThread(self._view.data.id)
 
         await interaction.followup.send(
             f"Remider `{self._view.data.id}` sent to {self._view.data.offender.name}",
