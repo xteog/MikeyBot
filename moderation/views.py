@@ -21,7 +21,7 @@ class ReportView(discord.ui.View):
         self.data = data
         self.rule_selected = rule_selected
 
-        self.embed = ReportEmbed(self.data)
+        self.embed = ReportEmbed(self.data, permission=True)
 
         self.add_item(ReportRuleSelect(self))
         self.add_item(NoOffenceButton(self))
@@ -38,16 +38,12 @@ class ReportView(discord.ui.View):
 
 
 class ReportListView(discord.ui.View):
-    def __init__(
-        self,
-        bot,
-        data: [moderation.ReportData],
-        disabled=False,
-    ):
+    def __init__(self, bot, data: [moderation.ReportData], permission: bool):
         super().__init__()
         self.bot = bot
         self.timeout = config.defaultTimeout
         self.data = data
+        self.permission = permission
 
         self.embed = ReportListEmbed(self.data)
 
@@ -58,7 +54,7 @@ class ReportListView(discord.ui.View):
     async def detailed_view(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
-        view = ReportListDetailedView(self.bot, self.data)
+        view = ReportListDetailedView(self.bot, self.data, permission=self.permission)
         await interaction.response.send_message(
             view=view, embed=view.embed, ephemeral=True
         )
@@ -69,19 +65,21 @@ class ReportListDetailedView(discord.ui.View):
         self,
         bot,
         data: [moderation.ReportData],
+        permission: bool,
         index: int = 0,
-        disabled=False,
     ):
         super().__init__()
         self.bot = bot
         self.timeout = config.defaultTimeout
         self.data = data
+        self.permission = permission
         self.index = index
-        self.embed = ReminderEmbed(self.data[self.index])
+
+        self.embed = ReportEmbed(self.data[self.index], permission=self.permission)
         if self.index <= 0:
-            self.add_item(LeftButton(self.bot, self.data, self.index, True))
+            self.add_item(LeftButton(self, True))
         else:
-            self.add_item(LeftButton(self.bot, self.data, self.index, False))
+            self.add_item(LeftButton(self, False))
         self.add_item(
             discord.ui.Button(
                 label=f"{self.index + 1}/{len(self.data)}",
@@ -90,17 +88,25 @@ class ReportListDetailedView(discord.ui.View):
             )
         )
         if self.index >= len(self.data) - 1:
-            self.add_item(RightButton(self.bot, self.data, self.index, True))
+            self.add_item(RightButton(self, True))
         else:
-            self.add_item(RightButton(self.bot, self.data, self.index, False))
+            self.add_item(RightButton(self, False))
 
 
 """ Embeds """
 
 
 class ReportEmbed(discord.Embed):
-    def __init__(self, data: moderation.ReportData, title: str = "Report"):
+    def __init__(
+        self,
+        data: moderation.ReportData,
+        permission: bool,
+        title: str = "Report",
+    ):
         super().__init__(title="Report", color=0xFFFFFF)
+
+        if len(data.penalty) > 1:
+            self.title = data.penalty
 
         self.description = f"**ID:** `{data.id}`\n"
 
@@ -118,7 +124,7 @@ class ReportEmbed(discord.Embed):
                 f"**Rule:** {data.rule.name}\n> {data.rule.description}\n"
             )
 
-        if len(data.desc) > 0:
+        if len(data.desc) > 0 and permission:
             self.description += f"**Description:**\n> {data.desc}\n"
 
         isLink, error = utils.isLink(data.proof)
@@ -137,51 +143,22 @@ class ReportEmbed(discord.Embed):
 
         self.timestamp = data.timestamp
 
-        footer = f"Created by {data.creator.name}"
+        if permission:
+            footer = f"Created by {data.creator.name}"
 
-        try:
-            self.set_footer(text=footer, icon_url=data.creator.avatar.url)
-        except:
-            self.set_footer(text=footer)
-            logging.error("Thumbnail non caricata")
-
-
-class ReminderEmbed(discord.Embed):
-    def __init__(self, data: moderation.ReportData, title: str = "Reminder"):
-        super().__init__(title=data.penalty, color=0xFF0000)
-        self.description = f"**ID:** `{data.id}`\n"
-
-        self.description += (
-            f"**User:** {data.offender.name} ({data.offender.mention})\n"
-        )
-        self.description += f"**Round:** `{data.league} R{data.round}`\n"
-
-        if not data.rule.isNone():
-            self.description += f"**Rule:** {data.rule.name}\n> {data.rule.description}\n"
-        else:
-            self.description += f"**Rule:** {data.notes}\n"
-
-        isLink, error = utils.isLink(data.proof)
-        if isLink:
-            self.description += f"**Proof:** [Link to proof]({data.proof})\n"
-        else:
-            self.description += f"**Proof:** {data.proof}\n"
-
-        if data.notes != "" and (not data.rule.isNone()):
-            self.description += f"**Notes:**\n> {data.notes}\n"
-
-        try:
-            self.set_thumbnail(url=data.offender.avatar.url)
-        except:
-            logging.warning("Thumbnail non caricata")
-
-        self.timestamp = data.timestamp
+            try:
+                self.set_footer(text=footer, icon_url=data.creator.avatar.url)
+            except:
+                self.set_footer(text=footer)
+                logging.error("Thumbnail non caricata")
 
 
 class ReportListEmbed(discord.Embed):
     def __init__(self, data: list[moderation.ReportData]):
         super().__init__(title=f"Report History", color=0xFFFFFF)
-        self.description = f"**Name**:{data[0].offender.mention}\n```"
+        self.description = (
+            f"**Name**: {data[0].offender.name} {data[0].offender.mention}\n```"
+        )
 
         for report in data:
             self.description += f"{report.id}|{report.timestamp.date()}|{report.penalty} {report.rule.name}\n"
@@ -335,7 +312,7 @@ class NoOffenceButton(discord.ui.Button):
 
         moderation.addToHistory(self._view.data)  # TODO add creators
 
-        newEmbed = ReportEmbed(self._view.data)
+        newEmbed = ReportEmbed(self._view.data, permission=True)
 
         await interaction.response.edit_message(embed=newEmbed, view=discord.ui.View())
 
@@ -363,6 +340,7 @@ class RemindButton(discord.ui.Button):
         self._view.data.active = False
         self._view.data.penalty = modal.penalty.value
         self._view.data.severity = modal.severity.value
+        self._view.data.notes = modal.notes.value
         if not self._view.rule_selected.isNone():
             self._view.data.rule = self._view.rule_selected
         else:
@@ -374,7 +352,7 @@ class RemindButton(discord.ui.Button):
 
         await self._view.bot.sendReminder(self._view.data)
 
-        newEmbed = ReportEmbed(self._view.data)
+        newEmbed = ReportEmbed(self._view.data, permission=True)
 
         await modal.interaction.delete_original_response()
         await interaction.followup.edit_message(
@@ -388,32 +366,38 @@ class RemindButton(discord.ui.Button):
 
 
 class LeftButton(discord.ui.Button):
-    def __init__(self, bot, data: [moderation.ReportData], index: int, disabled: bool):
+    def __init__(self, view: ReportListDetailedView, disabled: bool):
         super().__init__(
-            label="⇦",
+            label="←",
             style=discord.ButtonStyle.secondary,
             disabled=disabled,
         )
-        self.bot = bot
-        self.data = data
-        self.index = index
+        self._view = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        newView = ReportListDetailedView(self.bot, self.data, self.index - 1)
+        newView = ReportListDetailedView(
+            self._view.bot,
+            self._view.data,
+            permission=self._view.permission,
+            index=self._view.index - 1,
+        )
         await interaction.response.edit_message(embed=newView.embed, view=newView)
 
 
 class RightButton(discord.ui.Button):
-    def __init__(self, bot, data: [moderation.ReportData], index: int, disabled: bool):
+    def __init__(self, view: ReportListDetailedView, disabled: bool):
         super().__init__(
-            label="⇨",
+            label="→",
             style=discord.ButtonStyle.secondary,
             disabled=disabled,
         )
-        self.bot = bot
-        self.data = data
-        self.index = index
+        self._view = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        newView = ReportListDetailedView(self.bot, self.data, self.index + 1)
+        newView = ReportListDetailedView(
+            self._view.bot,
+            self._view.data,
+            permission=self._view.permission,
+            index=self._view.index + 1,
+        )
         await interaction.response.edit_message(embed=newView.embed, view=newView)

@@ -66,7 +66,9 @@ class CommandsCog(discord.ext.commands.Cog):
             f'"\\search_violation" used by {interaction.user.name} (id = {id}, user = {user})'
         )
 
-        if not utils.hasPermissions(interaction.user, config.stewardsRole):
+        permission = utils.hasPermissions(interaction.user, config.stewardsRole)
+
+        if not permission:
             if user != None and interaction.user.id != user.id:
                 await interaction.response.send_message(
                     "You can't search someone else reports", ephemeral=True
@@ -86,7 +88,7 @@ class CommandsCog(discord.ext.commands.Cog):
                     f"No reports found with ID `{id}`", ephemeral=True
                 )
             else:
-                embed = views.ReportEmbed(violations[0])
+                embed = views.ReportEmbed(violations[0], permission=permission)
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
         if user != None:
@@ -98,7 +100,7 @@ class CommandsCog(discord.ext.commands.Cog):
                     f"The user {user.mention} doesn't have reports", ephemeral=True
                 )
             else:
-                view = views.ReportListView(self.client, violations)
+                view = views.ReportListView(self.client, violations, permission=permission)
                 await interaction.followup.send(
                     view=view, embed=view.embed, ephemeral=True
                 )

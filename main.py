@@ -102,7 +102,7 @@ class MyBot(commands.Bot):
         )
 
     async def sendReminder(self, data: moderation.moderation.ReportData) -> None:
-        embed = moderation.views.ReminderEmbed(data)
+        embed = moderation.views.ReportEmbed(data, permission=False)
         await data.offender.send(embed=embed)
 
     async def deleteMessage(self, channelId: int, messageId: int) -> None:
