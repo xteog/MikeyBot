@@ -5,6 +5,7 @@ import config
 import moderation.moderation as moderation
 import moderation.views as views
 import utils
+from datetime import datetime
 
 
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
@@ -100,7 +101,9 @@ class CommandsCog(discord.ext.commands.Cog):
                     f"The user {user.mention} doesn't have reports", ephemeral=True
                 )
             else:
-                view = views.ReportListView(self.client, violations, permission=permission)
+                view = views.ReportListView(
+                    self.client, violations, permission=permission
+                )
                 await interaction.followup.send(
                     view=view, embed=view.embed, ephemeral=True
                 )
@@ -121,6 +124,19 @@ class CommandsCog(discord.ext.commands.Cog):
         round: int,
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
+
+        weekday = datetime.utcnow().weekday()
+        if weekday < 1 or weekday == 6:
+            await interaction.response.send_message(
+                f"Report window wiil open <t:{int(datetime(2023, 12, 12, 1, 0).timestamp())}:R>",
+                ephemeral=True,
+            )
+            return
+        if weekday > 2:
+            await interaction.response.send_message(
+                "Report submit window closed", ephemeral=True
+            )
+            return
 
         modal = views.ReportModal()
         await interaction.response.send_modal(modal)
@@ -153,7 +169,9 @@ class CommandsCog(discord.ext.commands.Cog):
         name="lobbies",
         description="Returns the list of lobbies currently active",
     )
-    @discord.app_commands.describe(ephemeral='if "True" only you can see the list (default True)')
+    @discord.app_commands.describe(
+        ephemeral='if "True" only you can see the list (default True)'
+    )
     async def lobbies(self, interaction: discord.Interaction, ephemeral: bool = True):
         logging.info(f'"\\lobbies" used by {interaction.user.name}')
 
