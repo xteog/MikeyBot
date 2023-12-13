@@ -3,6 +3,7 @@
 /.env
 /data/logging.log
 /data/history.json
+/data/lastAnnouncement.json
 /moderation/__pycache__/
 /verification/__pycache__/
 pen_log.csv

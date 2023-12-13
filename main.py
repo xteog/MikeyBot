@@ -1,13 +1,16 @@
+from datetime import datetime
+from datetime import timedelta
+import utils
 from typing import Any
 import discord
 from discord.ext import commands
 import slashCommands
 import moderation.views
 import moderation.moderation
+
 import config
 import logging
 import sys
-import utils
 
 
 class MyBot(commands.Bot):
@@ -24,6 +27,8 @@ class MyBot(commands.Bot):
         self.dmsChannel = None
         self.errorChannel = None
         self.reportChannel = None
+        self.voiceClient = None
+        self.lastAnnouncement = None
 
     async def on_ready(self):
         await self.add_cog(
@@ -39,7 +44,7 @@ class MyBot(commands.Bot):
             view = moderation.views.ReportView(bot=self, data=r)
             self.add_view(view)
 
-        print("Mikey is up")        
+        print("Mikey is up")
 
         self.ready = True
 
@@ -47,6 +52,50 @@ class MyBot(commands.Bot):
         if message.author == self.user:
             return
 
+        await self.devCommands(message)
+
+        if message.channel.id == self.reportChannel.id:
+            await self.deleteMessage(self.reportChannel.id, message.id)
+
+        if datetime.utcnow() - config.openTime >= timedelta(seconds=0):
+            if self.lastAnnouncement == None:
+                data = utils.read("data/lastAnnouncement.json")
+                if data != None:
+                    self.lastAnnouncement = datetime.strptime(
+                        data[0], config.timeFormat
+                    )
+                else:
+                    self.lastAnnouncement = datetime.strptime(
+                        "2001-11-09 8:09", config.timeFormat
+                    )
+                    utils.write(
+                        "data/lastAnnouncement.json",
+                        [datetime.strftime(self.lastAnnouncement, config.timeFormat)],
+                    )
+            if self.lastAnnouncement < config.openTime:
+                msg = f"Reports window is now open until <t:{int(config.closeTime.timestamp())}:d>"
+
+                await self.sendMessage(
+                    "<@890271924654047232> " + msg, 903800685697593344
+                )
+                await self.sendMessage(
+                    "<@921178172651892776> " + msg, 922640901686325298
+                )
+                await self.sendMessage(
+                    "<@1057016848761225327> " + msg, 1059743526088343662
+                )
+                self.lastAnnouncement = datetime.utcnow()
+                utils.write(
+                    "data/lastAnnouncement.json",
+                    [datetime.strftime(self.lastAnnouncement, config.timeFormat)],
+                )
+
+        if isinstance(message.channel, discord.DMChannel):
+            logging.info(
+                f"DM by {message.author.name} ({message.channel.id}): {message.content}"
+            )
+
+    async def devCommands(self, message: discord.Message):
         if (
             message.content.startswith("$send")
             and message.author.id == 493028834640396289
@@ -77,20 +126,12 @@ class MyBot(commands.Bot):
             file = discord.File("./data/logging.log")
             await message.channel.send(file=file)
 
-        if (
-            message.content.startswith("$history")
-            and (message.author.id == 493028834640396289 or message.author.id == 1181521363127767130) 
+        if message.content.startswith("$history") and (
+            message.author.id == 493028834640396289
+            or message.author.id == 1181521363127767130
         ):
             file = discord.File("./data/history.json")
             await self.reportChannel.send(file=file)
-
-        if (message.channel.id == self.reportChannel.id):
-            await self.deleteMessage(self.reportChannel.id, message.id)
-
-        if isinstance(message.channel, discord.DMChannel):
-            logging.info(
-                f"DM by {message.author.name} ({message.channel.id}): {message.content}"
-            )
 
     async def sendReport(self, data: moderation.moderation.ReportData):
         view = moderation.views.ReportView(self, data)

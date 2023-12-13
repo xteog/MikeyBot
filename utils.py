@@ -66,7 +66,7 @@ def read(path: str) -> list:
         with open(path, "r") as f:
             file = f.read()
         return json.loads(file)
-    except:  # TODO catch
+    except:
         return None
 
 

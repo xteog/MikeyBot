@@ -128,13 +128,13 @@ class CommandsCog(discord.ext.commands.Cog):
         weekday = datetime.utcnow().weekday()
         if weekday < 1 or weekday == 6:
             await interaction.response.send_message(
-                f"Report window wiil open <t:{int(datetime(2023, 12, 12, 1, 0).timestamp())}:R>",
+                f"Report window will open <t:{int(config.openTime.timestamp())}:R>",
                 ephemeral=True,
             )
             return
-        if weekday > 2:
+        if weekday > 3:
             await interaction.response.send_message(
-                "Report submit window closed", ephemeral=True
+                "Report window closed", ephemeral=True
             )
             return
 
