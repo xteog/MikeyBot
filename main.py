@@ -69,7 +69,7 @@ class MyBot(commands.Bot):
 
                         utils.write(
                             "data/lastAnnouncement.json",
-                            {league: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
+                            {key: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
                         )
                     else:
                         self.lastAnnouncement[league] = datetime.strptime(
@@ -85,7 +85,7 @@ class MyBot(commands.Bot):
                     self.lastAnnouncement[league] = datetime.now()
                     utils.write(
                         "data/lastAnnouncement.json",
-                        {league: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
+                        {key: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
                     )
 
         if isinstance(message.channel, discord.DMChannel):
