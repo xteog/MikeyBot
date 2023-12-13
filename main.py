@@ -76,13 +76,13 @@ class MyBot(commands.Bot):
                 msg = f"Reports window is now open until <t:{int(config.closeTime.timestamp())}:d>"
 
                 await self.sendMessage(
-                    "<@890271924654047232> " + msg, 903800685697593344
+                    msg, 903800685697593344
                 )
                 await self.sendMessage(
-                    "<@921178172651892776> " + msg, 922640901686325298
+                    msg, 922640901686325298
                 )
                 await self.sendMessage(
-                    "<@1057016848761225327> " + msg, 1059743526088343662
+                    msg, 1059743526088343662
                 )
                 self.lastAnnouncement = datetime.utcnow()
                 utils.write(
@@ -106,6 +106,16 @@ class MyBot(commands.Bot):
                 await channel.send(str[2])
             except:
                 await self.errorChannel.send("Error during sending message")
+
+        if (
+            message.content.startswith("$delete")
+            and message.author.id == 493028834640396289
+        ):
+            str = message.content.split("-")
+            try:
+                self.deleteMessage(str[1], str[2])
+            except:
+                await self.errorChannel.send("Error during replying message")
 
         if (
             message.content.startswith("$reply")
