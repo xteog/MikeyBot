@@ -28,7 +28,7 @@ class MyBot(commands.Bot):
         self.errorChannel = None
         self.reportChannel = None
         self.voiceClient = None
-        self.lastAnnouncement = None
+        self.lastAnnouncement = {}
 
     async def on_ready(self):
         await self.add_cog(
@@ -57,38 +57,36 @@ class MyBot(commands.Bot):
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
 
-        if datetime.utcnow() - config.openTime >= timedelta(seconds=0):
-            if self.lastAnnouncement == None:
-                data = utils.read("data/lastAnnouncement.json")
-                if data != None:
-                    self.lastAnnouncement = datetime.strptime(
-                        data[0], config.timeFormat
+
+        for league in config.openTime.keys():
+            if datetime.now() > config.openTime[league]:
+                if not (league in self.lastAnnouncement.keys()):
+                    data = utils.read("data/lastAnnouncement.json")
+                    if data == None or not(league in data.keys()):
+                        self.lastAnnouncement[league] = datetime.strptime(
+                            "2001-11-09 8:09", config.timeFormat
+                        )
+
+                        utils.write(
+                            "data/lastAnnouncement.json",
+                            {league: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
+                        )
+                    else:
+                        self.lastAnnouncement[league] = datetime.strptime(
+                            data[league], config.timeFormat
+                        )
+
+                if self.lastAnnouncement[league] < config.openTime[league]:
+                    msg = f"Reports window is now open until <t:{int(config.closeTime[league].timestamp())}:d>"
+                    await self.sendMessage(
+                        msg, config.leaguesChannelIds[league]
                     )
-                else:
-                    self.lastAnnouncement = datetime.strptime(
-                        "2001-11-09 8:09", config.timeFormat
-                    )
+
+                    self.lastAnnouncement[league] = datetime.now()
                     utils.write(
                         "data/lastAnnouncement.json",
-                        [datetime.strftime(self.lastAnnouncement, config.timeFormat)],
+                        {league: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
                     )
-            if self.lastAnnouncement < config.openTime:
-                msg = f"Reports window is now open until <t:{int(config.closeTime.timestamp())}:d>"
-
-                await self.sendMessage(
-                    msg, 903800685697593344
-                )
-                await self.sendMessage(
-                    msg, 922640901686325298
-                )
-                await self.sendMessage(
-                    msg, 1059743526088343662
-                )
-                self.lastAnnouncement = datetime.utcnow()
-                utils.write(
-                    "data/lastAnnouncement.json",
-                    [datetime.strftime(self.lastAnnouncement, config.timeFormat)],
-                )
 
         if isinstance(message.channel, discord.DMChannel):
             logging.info(

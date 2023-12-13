@@ -39,12 +39,16 @@ async def rules_autocomplete(interaction: discord.Interaction, current: str) -> 
     return list[0:25]
 
 
-async def league_autocomplete(interaction: discord.Interaction, current: str) -> list:
+def league_autocomplete() -> list:
     return [
         discord.app_commands.Choice(name="Ultimate League", value="UL"),
         discord.app_commands.Choice(name="Challenger League", value="CL"),
         discord.app_commands.Choice(name="Journeyman League", value="JL"),
+        discord.app_commands.Choice(name="Formula E", value="FE"),
     ]
+
+def isWindowOpen(league: str) -> bool:
+    return datetime.now() > config.openTime[league] and datetime.now() < config.closeTime[league]
 
 
 class CommandsCog(discord.ext.commands.Cog):
@@ -115,28 +119,21 @@ class CommandsCog(discord.ext.commands.Cog):
     @discord.app_commands.describe(user="The driver you want to report")
     @discord.app_commands.describe(league="The league where the accident happened")
     @discord.app_commands.describe(round="The round where the accident happened")
-    @discord.app_commands.autocomplete(league=league_autocomplete)
+    @discord.app_commands.choices(league=league_autocomplete())
     async def report(
         self,
         interaction: discord.Interaction,
         user: discord.Member,
-        league: str,
+        league: discord.app_commands.Choice[str],
         round: int,
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
-
-        weekday = datetime.utcnow().weekday()
-        if weekday < 1 or weekday == 6:
+        
+        if not isWindowOpen(league):
             await interaction.response.send_message(
-                f"Report window will open <t:{int(config.openTime.timestamp())}:R>",
+                f"Report window will open <t:{int(config.openTime[league].timestamp())}:R>",
                 ephemeral=True,
             )
-            return
-        if weekday > 3:
-            await interaction.response.send_message(
-                "Report window closed", ephemeral=True
-            )
-            return
 
         modal = views.ReportModal()
         await interaction.response.send_modal(modal)
