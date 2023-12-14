@@ -128,6 +128,8 @@ class CommandsCog(discord.ext.commands.Cog):
         round: int,
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
+        league = league.value
+
         
         if not isWindowOpen(league):
             await interaction.response.send_message(
@@ -230,11 +232,17 @@ class CommandsCog(discord.ext.commands.Cog):
     @report.error
     @search_violation.error
     async def error(self, interaction: discord.Interaction, error):
-        await interaction.followup.send("Error: " + str(error), ephemeral=True)
+        try:
+            await interaction.followup.send("Error: " + str(error), ephemeral=True)
+        except:
+            await interaction.response.send_message("Error: " + str(error), ephemeral=True)
         await self.client.errorChannel.send("Error: " + str(error))
 
     async def on_error(self, interaction: discord.Interaction, error):
-        await interaction.followup.send("Error: " + str(error), ephemeral=True)
+        try:
+            await interaction.followup.send("Error: " + str(error), ephemeral=True)
+        except:
+            await interaction.response.send_message("Error: " + str(error), ephemeral=True)
         await self.client.errorChannel.send("Error: " + str(error))
 
 

@@ -111,7 +111,7 @@ class MyBot(commands.Bot):
         ):
             str = message.content.split("-")
             try:
-                self.deleteMessage(str[1], str[2])
+                await self.deleteMessage(str[1], str[2])
             except:
                 await self.errorChannel.send("Error during replying message")
 
