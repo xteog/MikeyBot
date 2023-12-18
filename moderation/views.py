@@ -110,7 +110,10 @@ class ReportEmbed(discord.Embed):
         if len(data.severity) > 0:
             self.description += f"**Severity:** {data.severity}\n"
 
-        self.description += f"**Round:** `{data.league} R{data.round}`\n"
+        if data.league != None:
+            self.description += f"**Round:** `{data.league} R{data.round}`\n"
+        else:
+            self.description += f"**Round:** (Off-track)\n"
 
         if not data.rule.isNone():
             self.description += (

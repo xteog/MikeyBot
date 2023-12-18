@@ -57,19 +57,23 @@ class MyBot(commands.Bot):
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
 
-
         for league in config.openTime.keys():
             if datetime.now() > config.openTime[league]:
                 if not (league in self.lastAnnouncement.keys()):
                     data = utils.read("data/lastAnnouncement.json")
-                    if data == None or not(league in data.keys()):
+                    if data == None or not (league in data.keys()):
                         self.lastAnnouncement[league] = datetime.strptime(
                             "2001-11-09 8:09", config.timeFormat
                         )
 
                         utils.write(
                             "data/lastAnnouncement.json",
-                            {key: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
+                            {
+                                key: datetime.strftime(
+                                    self.lastAnnouncement[key], config.timeFormat
+                                )
+                                for key in self.lastAnnouncement.keys()
+                            },
                         )
                     else:
                         self.lastAnnouncement[league] = datetime.strptime(
@@ -77,15 +81,18 @@ class MyBot(commands.Bot):
                         )
 
                 if self.lastAnnouncement[league] < config.openTime[league]:
-                    msg = f"Reports window is now open until <t:{int(config.closeTime[league].timestamp())}:d>"
-                    await self.sendMessage(
-                        msg, config.leaguesChannelIds[league]
-                    )
+                    msg = f"Reports window is now open until <t:{int(config.closeTime[league].timestamp())}:f>"
+                    await self.sendMessage(msg, config.leaguesChannelIds[league])
 
                     self.lastAnnouncement[league] = datetime.now()
                     utils.write(
                         "data/lastAnnouncement.json",
-                        {key: datetime.strftime(self.lastAnnouncement[key], config.timeFormat) for key in self.lastAnnouncement.keys()},
+                        {
+                            key: datetime.strftime(
+                                self.lastAnnouncement[key], config.timeFormat
+                            )
+                            for key in self.lastAnnouncement.keys()
+                        },
                     )
 
         if isinstance(message.channel, discord.DMChannel):
@@ -167,7 +174,6 @@ class MyBot(commands.Bot):
         threads = self.reportChannel.threads
         for t in threads:
             if t.name.find(id) != -1:
-                print("archived")
                 await t.edit(archived=True)
 
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
