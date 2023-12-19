@@ -1,5 +1,7 @@
 from datetime import datetime
 from datetime import timedelta
+
+import openpyxl
 import utils
 from typing import Any
 import discord
@@ -43,7 +45,7 @@ class MyBot(commands.Bot):
         for r in reports:
             view = moderation.views.ReportView(bot=self, data=r)
             self.add_view(view)
-
+            
         print("Mikey is up")
 
         self.ready = True
@@ -175,6 +177,40 @@ class MyBot(commands.Bot):
         for t in threads:
             if t.name.find(id) != -1:
                 await t.edit(archived=True)
+
+    async def writeWorkbook(self):
+        history = utils.read(config.historyPath)
+        workbook = openpyxl.load_workbook(filename=config.penaltyLogPath)
+        for member in history.keys():
+            for id in history[member]["violations"].keys():
+                data = (await moderation.moderation.getReports(self, id=id))[0]
+                
+                sheet = workbook.active
+
+                i = 1
+                while True:
+                    if sheet.cell(row=i, column=1).value == None:
+                        sheet.cell(row=i, column=1).value = data.id
+                        sheet.cell(row=i, column=2).value = data.offender.name
+                        sheet.cell(row=i, column=3).value = data.penalty
+                        sheet.cell(row=i, column=4).value = data.severity
+                        sheet.cell(row=i, column=5).value = data.league
+                        sheet.cell(row=i, column=6).value = data.round
+                        if len(str(data.rule)) > 0:
+                            sheet.cell(row=i, column=7).value = str(data.rule)
+                            sheet.cell(row=i, column=8).value = data.proof
+                            sheet.cell(row=i, column=9).value = data.notes
+                        else:
+                            sheet.cell(row=i, column=9).value = str(data.rule)
+                            sheet.cell(row=i, column=8).value = data.proof
+                            sheet.cell(row=i, column=7).value = data.notes
+                        sheet.cell(row=i, column=10).value = data.creator.name
+                        sheet.cell(row=i, column=11).value = data.desc
+                        sheet.cell(row=i, column=12).value = data.timestamp
+                        break
+                    i += 1
+
+        workbook.save(filename=config.penaltyLogPath)
 
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         logging.error(f"Error: {event_method}")

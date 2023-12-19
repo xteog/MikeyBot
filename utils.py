@@ -3,6 +3,7 @@ import random
 import discord
 import socket
 import codecs
+import openpyxl
 
 
 def lev_dist(s: str, t: str) -> int:
@@ -53,6 +54,31 @@ def loading(i, len):
         j += 1
     str += f"| {round(i/len*100, 1)}%"
     return str
+
+
+def updateWorkbook(path: str, data) -> None:
+    workbook = openpyxl.load_workbook(filename=path)
+    sheet = workbook.active
+
+    i = 1
+    while True:
+        if sheet.cell(row=i, column=1).value == None:
+            sheet.cell(row=i, column=1).value = data.id
+            sheet.cell(row=i, column=2).value = data.offender.name
+            sheet.cell(row=i, column=3).value = data.penalty
+            sheet.cell(row=i, column=4).value = data.severity
+            sheet.cell(row=i, column=5).value = data.league
+            sheet.cell(row=i, column=6).value = data.round
+            sheet.cell(row=i, column=7).value = str(data.rule)
+            sheet.cell(row=i, column=8).value = data.proof
+            sheet.cell(row=i, column=9).value = data.notes
+            sheet.cell(row=i, column=10).value = data.creator.name
+            sheet.cell(row=i, column=11).value = data.desc
+            sheet.cell(row=i, column=12).value = data.timestamp
+            break
+        i += 1
+
+    workbook.save(filename=path)
 
 
 def write(path: str, data: dict) -> None:
@@ -130,8 +156,8 @@ def linkHasTimestamp(str: str) -> bool:
 
     if len(str[start:]) <= 3:
         return False
-    
-    return str[start + 3:].isdigit() or str[len(str) - 1] == 's'
+
+    return str[start + 3 :].isdigit() or str[len(str) - 1] == "s"
 
 
 def hasPermissions(
@@ -294,7 +320,7 @@ def getLobbiesList() -> dict:
         try:
             data, addr = sock.recvfrom(1024)
             data = data.decode()
-            
+
             lobby = getLobbyInfo(data)
             if lobby != None:
                 lobbies.append(lobby)

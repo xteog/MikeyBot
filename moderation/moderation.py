@@ -44,6 +44,9 @@ class Rule:
 
     def isNone(self) -> bool:
         return self.code == ""
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 class ReportData:  # TODO rule è una struttura
@@ -105,7 +108,7 @@ class ReportData:  # TODO rule è una struttura
             id = utils.randomString(4)
 
         return id
-    
+
     def isActive(self) -> bool:
         return self.active
 
@@ -120,8 +123,6 @@ def getRule(rule: str) -> str:
 
 
 def addToHistory(data: ReportData) -> None:
-    history = utils.read(config.historyPath)
-
     if history == None:
         history = {}
 
@@ -145,6 +146,8 @@ def addToHistory(data: ReportData) -> None:
     }
 
     utils.write(config.historyPath, history)
+
+    utils.updateWorkbook(config.penaltyLogPath, data)
 
 
 async def getReports(
@@ -215,7 +218,7 @@ async def getActive(bot) -> list[ReportData]:
             report = history[member]["violations"][v]
             if report["active"] == True:
                 violations.append((await getReports(bot, id=v))[0])
-    
+
     return violations
 
 
