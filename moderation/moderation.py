@@ -123,6 +123,7 @@ def getRule(rule: str) -> str:
 
 
 def addToHistory(data: ReportData) -> None:
+    history = utils.read(config.historyPath)
     if history == None:
         history = {}
 
