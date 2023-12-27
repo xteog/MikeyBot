@@ -50,16 +50,19 @@ def leagueList() -> list:
 
 async def availableNumbers(interaction: discord.Interaction, current: str) -> list:
     choices = []
+
+    if len(current) == 0:
+        current = "1"
     
-    if not current.isdigit() and int(current) >= 1 and int(current) <= 99:
+    if not (current.isdigit() and int(current) >= 1 and int(current) <= 99):
         return choices
     
     numbers = utils.read(config.numbersListPath)
-    
+
     searched = int(current)
 
-    start = max(0, searched - 12)
-    end = min(99, searched + 12)
+    start = max(1, searched - 7)
+    end = min(99, searched + 7)
 
     for n in range(start, end):
         if str(n) in numbers.keys():
@@ -236,8 +239,8 @@ class CommandsCog(discord.ext.commands.Cog):
         name="set_number",
         description="Choose the number you want to race with",
     )
-    @discord.app_commands.describe(user="The driver you want to report")
-    @discord.app_commands.describe(number="The league where the accident happened")
+    @discord.app_commands.describe(user="The driver to change race number")
+    @discord.app_commands.describe(number="The number to set to")
     @discord.app_commands.autocomplete(number=availableNumbers)
     async def report(
         self, interaction: discord.Interaction, number: int, user: discord.Member = None
