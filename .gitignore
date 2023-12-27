@@ -4,9 +4,10 @@
 /data/logging.log
 /data/history.json
 /data/lastAnnouncement.json
+/data/numbersList.json
 /moderation/__pycache__/
 /verification/__pycache__/
 pen_log.csv
 load_log.py
 config.py
-data/penalty_log.xlsx
+
