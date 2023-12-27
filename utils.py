@@ -87,7 +87,7 @@ def write(path: str, data: dict) -> None:
         f.write(data)
 
 
-def read(path: str) -> list:
+def read(path: str) -> dict:
     try:
         with open(path, "r") as f:
             file = f.read()

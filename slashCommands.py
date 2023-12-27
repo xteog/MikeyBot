@@ -39,7 +39,7 @@ async def rules_autocomplete(interaction: discord.Interaction, current: str) -> 
     return list[0:25]
 
 
-def league_autocomplete() -> list:
+def leagueList() -> list:
     return [
         discord.app_commands.Choice(name="Ultimate League", value="UL"),
         discord.app_commands.Choice(name="Challenger League", value="CL"),
@@ -47,8 +47,36 @@ def league_autocomplete() -> list:
         discord.app_commands.Choice(name="Formula E", value="FE"),
     ]
 
+
+async def availableNumbers(interaction: discord.Interaction, current: str) -> list:
+    choices = []
+    
+    if not current.isdigit() and int(current) >= 1 and int(current) <= 99:
+        return choices
+    
+    numbers = utils.read(config.numbersListPath)
+    
+    searched = int(current)
+
+    start = max(0, searched - 12)
+    end = min(99, searched + 12)
+
+    for n in range(start, end):
+        if str(n) in numbers.keys():
+            choices.append(
+                discord.app_commands.Choice(name=f"{n}: {numbers[n]}", value=n)
+            )
+        else:
+            choices.append(discord.app_commands.Choice(name=f"{n}: Available", value=n))
+            
+    return choices
+
+
 def isWindowOpen(league: str) -> bool:
-    return datetime.now() > config.openTime[league] and datetime.now() < config.closeTime[league]
+    return (
+        datetime.now() > config.openTime[league]
+        and datetime.now() < config.closeTime[league]
+    )
 
 
 class CommandsCog(discord.ext.commands.Cog):
@@ -119,7 +147,7 @@ class CommandsCog(discord.ext.commands.Cog):
     @discord.app_commands.describe(user="The driver you want to report")
     @discord.app_commands.describe(league="The league where the accident happened")
     @discord.app_commands.describe(round="The round where the accident happened")
-    @discord.app_commands.choices(league=league_autocomplete())
+    @discord.app_commands.choices(league=leagueList())
     async def report(
         self,
         interaction: discord.Interaction,
@@ -130,12 +158,12 @@ class CommandsCog(discord.ext.commands.Cog):
         logging.info(f'"\\report" used by {interaction.user.name}')
         league = league.value
 
-        
         if not isWindowOpen(league):
             await interaction.response.send_message(
                 f"Report window will open <t:{int(config.openTime[league].timestamp())}:R>",
                 ephemeral=True,
             )
+            return
 
         modal = views.ReportModal()
         await interaction.response.send_modal(modal)
@@ -169,7 +197,7 @@ class CommandsCog(discord.ext.commands.Cog):
         description="Returns the list of lobbies currently active",
     )
     @discord.app_commands.describe(
-        ephemeral='if "True" only you can see the list (default True)'
+        ephemeral='If "True" only you can see the list (default True)'
     )
     async def lobbies(self, interaction: discord.Interaction, ephemeral: bool = True):
         logging.info(f'"\\lobbies" used by {interaction.user.name}')
@@ -205,6 +233,52 @@ class CommandsCog(discord.ext.commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @discord.app_commands.command(
+        name="set_number",
+        description="Choose the number you want to race with",
+    )
+    @discord.app_commands.describe(user="The driver you want to report")
+    @discord.app_commands.describe(number="The league where the accident happened")
+    @discord.app_commands.autocomplete(number=availableNumbers)
+    async def report(
+        self, interaction: discord.Interaction, number: int, user: discord.Member = None
+    ):
+        logging.info(f'"\\set_number" used by {interaction.user.name}')
+
+        permission = utils.hasPermissions(interaction.user, config.stewardsRole)
+        numbers = utils.read(config.numbersListPath)
+
+        if (not permission) and user != None and user.id != interaction.user.id:
+            await interaction.response.send_message(
+                "You can't set someone else number", ephemeral=True
+            )
+            return
+
+        if user != None:
+            numbers[number] = user.name
+
+            await interaction.response.send_message(
+                f"The number of {user.mention} is now changed into {number}",
+                ephemeral=False,
+            )
+        elif permission:
+            numbers.pop(number, None)
+
+            await interaction.response.send_message(
+                f"The number {number} is now available",
+                ephemeral=False,
+            )
+        else:
+            numbers[number] = interaction.user.name
+
+            await interaction.response.send_message(
+                f"The number of {interaction.user.mention} is now changed into {number}",
+                ephemeral=False,
+            )
+
+
+        utils.write(config.numbersListPath, numbers)
+
+    @discord.app_commands.command(
         name="help",
         description="Shows the documentation of the bot (todo)",
     )
@@ -235,14 +309,18 @@ class CommandsCog(discord.ext.commands.Cog):
         try:
             await interaction.followup.send("Error: " + str(error), ephemeral=True)
         except:
-            await interaction.response.send_message("Error: " + str(error), ephemeral=True)
+            await interaction.response.send_message(
+                "Error: " + str(error), ephemeral=True
+            )
         await self.client.errorChannel.send("Error: " + str(error))
 
     async def on_error(self, interaction: discord.Interaction, error):
         try:
             await interaction.followup.send("Error: " + str(error), ephemeral=True)
         except:
-            await interaction.response.send_message("Error: " + str(error), ephemeral=True)
+            await interaction.response.send_message(
+                "Error: " + str(error), ephemeral=True
+            )
         await self.client.errorChannel.send("Error: " + str(error))
 
 

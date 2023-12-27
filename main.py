@@ -1,6 +1,4 @@
 from datetime import datetime
-from datetime import timedelta
-
 import openpyxl
 import utils
 from typing import Any
@@ -9,7 +7,6 @@ from discord.ext import commands
 import slashCommands
 import moderation.views
 import moderation.moderation
-
 import config
 import logging
 import sys
@@ -83,7 +80,7 @@ class MyBot(commands.Bot):
                         )
 
                 if self.lastAnnouncement[league] < config.openTime[league]:
-                    msg = f"Reports window is now open until <t:{int(config.closeTime[league].timestamp())}:f>"
+                    msg = f"Reports window is now open until <t:{int(config.closeTime[league].timestamp())}:f>."
                     await self.sendMessage(msg, config.leaguesChannelIds[league])
 
                     self.lastAnnouncement[league] = datetime.now()
