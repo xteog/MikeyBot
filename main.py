@@ -99,6 +99,11 @@ class MyBot(commands.Bot):
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
             )
 
+    async def on_member_join(self, user:discord.Member):
+        str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**! We hope you will have the greatest time here!. Check https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
+        channel = await self.fetch_channel(449755432202928128)
+        await channel.send(str)
+
     async def devCommands(self, message: discord.Message):
         if (
             message.content.startswith("$send")
