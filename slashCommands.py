@@ -282,16 +282,14 @@ class CommandsCog(discord.ext.commands.Cog):
 
         utils.write(config.numbersListPath, numbers)
 
-        matrix = [[0] * 2 for i in range(100)]
+        matrix = [[0, 0] for i in range(100)]
         for i in range(100):
-            for key in numbers.keys():
-                if key == str(i):
-                    matrix[i][0] = key
-                    matrix[i][1] = numbers[key]
-                else:
-                    matrix[i][0] = str(i)
-                    matrix[i][1] = "Available"
-        print(matrix)
+            matrix[i][0] = str(i)
+            if str(i) in numbers.keys():
+                matrix[i][1] = numbers[str(i)]
+            else:
+                matrix[i][1] = "Available"
+
         utils.createWorkbook("data/numbers.xlsx", matrix)
         await interaction.response.send_message(content=desc, file=discord.File("data/numbers.xlsx"))
 
