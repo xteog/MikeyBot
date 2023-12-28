@@ -163,6 +163,38 @@ class ReportListEmbed(discord.Embed):
         self.set_thumbnail(url=data[0].offender.avatar.url)
 
 
+class NumbersEmbed(discord.Embed):
+    def __init__(self, desc: str, numbers: dict):
+        super().__init__(title="Driver Numbers", description=desc)
+
+        self.description += "\n```"
+        max = len("Available")
+
+        for key in numbers.keys():
+            if len(key) >= max:
+                max = len(key)
+
+        for i in range(1, 99):
+            for key in numbers.keys():
+                if key == str(i):
+                    self.description += key + " " * int(max + 2 - len(key)/2)
+                else:
+                    self.description += str(i) + " " * int(max + 2 - len(str(i))/2)
+
+        self.description += "\n"
+
+        for key in numbers.keys():
+            for i in range(1, 99):
+                for key in numbers.keys():
+                    if key == str(i):
+                        self.description += numbers[key] + " " * int(max + 2 - len(numbers[key])/2)
+                    else:
+                        self.description += "Available" + " " * int(max + 2 - len("Available")/2)
+
+        self.description += "```"
+
+        self.description = self.description[0:4000]
+
 """ Modals """
 
 

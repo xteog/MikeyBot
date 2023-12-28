@@ -80,6 +80,16 @@ def updateWorkbook(path: str, data) -> None:
 
     workbook.save(filename=path)
 
+def createWorkbook(path: str, data:list[list]):
+    workbook = openpyxl.load_workbook(filename=path)
+    sheet = workbook.active
+
+    for i in range(len(data)):
+        for j in range(len(data[0])):
+            sheet.cell(row=i + 1, column=j + 1).value = data[i][j]
+
+    workbook.save(filename=path)
+
 
 def write(path: str, data: dict) -> None:
     data = json.dumps(data, indent=2)

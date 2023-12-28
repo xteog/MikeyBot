@@ -67,7 +67,7 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
     for n in range(start, end):
         if str(n) in numbers.keys():
             choices.append(
-                discord.app_commands.Choice(name=f"{n}: {numbers[n]}", value=n)
+                discord.app_commands.Choice(name=f"{n}: {numbers[str(n)]}", value=n)
             )
         else:
             choices.append(discord.app_commands.Choice(name=f"{n}: Available", value=n))
@@ -247,39 +247,53 @@ class CommandsCog(discord.ext.commands.Cog):
     ):
         logging.info(f'"\\set_number" used by {interaction.user.name}')
 
-        permission = utils.hasPermissions(interaction.user, config.stewardsRole)
+        permission = utils.hasPermissions(interaction.user, roles=[config.devRole, config.URARole])
         numbers = utils.read(config.numbersListPath)
 
-        if (not permission) and user != None and user.id != interaction.user.id:
+        if (not permission) and ((user != None and user.id != interaction.user.id) or (str(number) in numbers.keys())):
             await interaction.response.send_message(
                 "You can't set someone else number", ephemeral=True
             )
             return
 
+        delete = []
         if user != None:
-            numbers[number] = user.name
+            numbers[str(number)] = user.name
 
-            await interaction.response.send_message(
-                f"The number of {user.mention} is now changed into {number}",
-                ephemeral=False,
-            )
+            desc = f"The number of {user.mention} is now changed into {number}"
+
+            for key in numbers.keys():
+                if numbers[key] == numbers[str(number)] and key != str(number):
+                    delete.append(key)
         elif permission:
-            numbers.pop(number, None)
+            numbers.pop(str(number), None)
 
-            await interaction.response.send_message(
-                f"The number {number} is now available",
-                ephemeral=False,
-            )
+            desc = f"The number {number} is now available"
         else:
-            numbers[number] = interaction.user.name
+            numbers[str(number)] = interaction.user.name
 
-            await interaction.response.send_message(
-                f"The number of {interaction.user.mention} is now changed into {number}",
-                ephemeral=False,
-            )
-
+            desc = f"The number of {interaction.user.mention} is now changed into {number}"
+            for key in numbers.keys():
+                if numbers[key] == numbers[str(number)] and key != str(number):
+                    delete.append(key)
+        
+        for key in delete:
+            numbers.pop(key, None)
 
         utils.write(config.numbersListPath, numbers)
+
+        matrix = [[0] * 2 for i in range(100)]
+        for i in range(100):
+            for key in numbers.keys():
+                if key == str(i):
+                    matrix[i][0] = key
+                    matrix[i][1] = numbers[key]
+                else:
+                    matrix[i][0] = str(i)
+                    matrix[i][1] = "Available"
+        print(matrix)
+        utils.createWorkbook("data/numbers.xlsx", matrix)
+        await interaction.response.send_message(content=desc, file=discord.File("data/numbers.xlsx"))
 
     @discord.app_commands.command(
         name="help",
