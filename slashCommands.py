@@ -247,7 +247,14 @@ class CommandsCog(discord.ext.commands.Cog):
     ):
         logging.info(f'"\\set_number" used by {interaction.user.name}')
 
-        permission = utils.hasPermissions(interaction.user, roles=[config.devRole, config.URARole])
+        if interaction.channel.id != 1059998599733321818:
+            channel = await self.client.fetch_channel(1059998599733321818)
+            await interaction.response.send_message(
+                f"Use this command on {channel.mention}", ephemeral=True
+            )
+            return
+
+        permission = utils.hasPermissions(interaction.user, roles=[config.devRole, config.URARole, config.devRole])
         numbers = utils.read(config.numbersListPath)
 
         if (not permission) and ((user != None and user.id != interaction.user.id) or (str(number) in numbers.keys())):
