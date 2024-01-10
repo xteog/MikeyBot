@@ -117,11 +117,11 @@ class ReportEmbed(discord.Embed):
 
         if not data.rule.isNone():
             self.description += (
-                f"**Rule:** {data.rule.name}\n>>> {data.rule.description}\n"
+                f"**Rule:** {data.rule.name}\n{utils.formatBlockQuote(data.rule.description)}\n"
             )
 
         if len(data.desc) > 0 and permission:
-            self.description += f"**Description:**\n>>> {data.desc}\n"
+            self.description += f"**Description:**\n{utils.formatBlockQuote(data.desc)}\n"
 
         isLink, error = utils.isLink(data.proof)
         if isLink:
@@ -130,7 +130,7 @@ class ReportEmbed(discord.Embed):
             self.description += f"**Proof:** {data.proof}\n"
 
         if len(data.notes) > 0:
-            self.description += f"**Notes:**\n>>> {data.notes}\n"
+            self.description += f"**Notes:**\n{utils.formatBlockQuote(data.notes)}\n"
 
         try:
             self.set_thumbnail(url=data.offender.avatar.url)
