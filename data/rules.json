@@ -1,40 +1,42 @@
 {
-    "G": {
+    "H": {
         "1": {
-            "1": "Drivers should not intentionally affect another driver's race as to intentionally remove them from the track or racing line in a way that destroys their ability to continue racing.",
-            "2": "Everyone has the responsibility to race as fairly and as sportsmanlike as possible, with respect for the other drivers, in order to ensure the most enjoyable racing experience and the competitive integrity of the leagues.",
-            "3": "Violations of the code will be considered the driver's responsibility depending on the conditions surrounding the incident, such as lag or crowded sections.",
-            "4": "If a car is not directly beside a driver but within 2 car lengths of the rear wing it may be assumed to be on the racing line beside them. The driver should minimise risk at all costs but may use a smooth movement that would indicate to the driver behind that they are closing off that lane.",
-            "5": {
-                "1": [
-                    "Divebomb",
-                    "Cutting-off or re-entering track into a vehicle to draw a penalty, including dive bombing a corner irresponsibly causing an accident or lag rocket."
-                ],
-                "2": "Tackling or positioning the car to be tackled to draw a penalty or cause a lag rocket from behind.",
-                "3": "Brake-checking to stop other vehicles' forward progress or to draw a penalty.",
-                "4": [
-                    "Edging on Corner / Leaving space",
-                    "Failing to leave room on a turning lane, including vehicles who are not side by side on the driver's screen but could be due to lag/ping."
-                ],
-                "5": [
-                    "Edging/Weaving on Straight",
-                    "Swerving or weaving in front of a car."
-                ],
-                "6": [
-                    "Unsafe Track Exit / Re-Entry",
-                    "Returning to the track to cause a collision from the grass or the pitlane, instead of taking the time to enter when there are no cars beside the driver or approaching their path."
-                ],
-                "7": "Retiring the car in a spot where it may be hit or will be a visual distraction to other drivers."
-            },
-            "6": {
-                "1": "Deliberately leaving the track boundaries, like the outfield or grass sections, therefore taking the car out of the competition.",
-                "2": "Driving backwards for any reason other than to right your own vehicle to the racing line.",
-                "3": "Becoming repeat-offender to the point of disrespecting the spirit or integrity of the game so much that there is an evident blatant disregard for the rules or their enforcement."
-            },
-            "7": {
-                "1": "Any violation outlined in §G.1.5 may be punished as a minor violation.",
-                "2": "Any violation outlined in §G.1.6 may be punished as a major violation."
-            }
+            "1": [
+                "Chatting During Race/Countdown",
+                "Failure to use approved communication / codes, and talking in any capacity during the race or after the flag while others are still racing"
+            ],
+            "2": [
+                "Unsafe Pitting",
+                "Any violation of Pitting Code (G.2.2) or failure to return to track safely or staying in the entry/exit lane of the pits until safe to do otherwise. Failure to get into the exit side of the track safely ahead of the pit entry lane. Cutting across lanes with traffic, into faster traffic, and not allowing faster vehicles to pass, on any other unsafe motions involved in entering/exiting the track."
+            ],
+            "3": [
+                "Edging/Bumping/Swerving on Straights",
+                "Slowly closing off someone's lane, tackling or steering into/around them on straight so that it takes away their claimed racing line or removes them from the track. This includes abrupt and erratic lane changes and movements, brake checks, or defending causing contact, and impeding."
+            ],
+            "4": [
+                "Edging, Leaving Space on Corner",
+                "Failing to leave room on a turning lane, including vehicles who are not side by side but do have a clear lane to themselves, resulting in the edging off their racing line, causing dangerous contact or removal of a driver from the course. This includes abrupt and erratic lane changes and movements, brake checks, or defending causing contact, and impeding."
+            ],
+            "5": [
+                "Divebombing",
+                "Entering a corner with late breaking, or no braking, in which the driver makes contact with, or aggressively attacks another driver putting them at risk of ruining their line of racing through turn, instead of taking a known or safe racing line through a turn. A divebomb pass can be done safely, but is wholly at the driver's responsibility to keep it safe. A late-Break is considered an accidental form of divebomb, but is still the responsibility of the driver."
+            ],
+            "6": [
+                "Dangerous Driving",
+                "Any general actions not listed above that are considered to be severe or intentional in nature - and can result in immediate penalty regardless of DP. This Includes but is  not not limited to:\n- Backwards Driving other than to safely right your vehicle to the racing line without endangering other drivers (no extended distance in the backwards direction)\n- Intentionally bumping/crashing/cutting off a driver\n- Retiring vehicle in unsafe space\n- Leaving track boundaries to gain advantage or put at risk another driver, circumventing the integrity of the track design itself or to overtake, or, to put at risk another driver to cause an incident/infraction."
+            ],
+            "7": [
+                "Connection-Related Endangerment",
+                "Severe PING, Teleporting, and repeatedly creating physical incidents to other drivers due to the lack of known position on screen that is inconsistent or severe enough to be unable to predict or prevent within reasonable action of self or others. (This exempts regular high ping drivers who do not teleport, and who's position difference is consistent and predictable)"
+            ],
+            "8": [
+                "Unsportsmanlike Conduct",
+                "- Continued targeting of a driver in-race\n- Swearing in chat, aggression towards a driver or organiser\n- Deliberate disrespect or ignoring of a URA official\n- Deliberately leaving the track boundaries, like the outfield or grass sections, therefore taking the car out of the competition."
+            ],
+            "9": [
+                "Travesty of the Sport (On-Track)",
+                "Any form of previous infraction performed to a degree that it makes a mockery of the league, drivers, organisers or game to an egregious extent. Will result in instant and immediate action by the URA"
+            ]
         },
         "2": {
             "1": "The rules in §G.1 apply when it comes to pitting procedures.",
@@ -70,12 +72,6 @@
         "5": {
             "1": "A driver who is DQ'd for a manoeuvre at a point during the race may have additional penalisations if deemed appropriate.",
             "2": "The SLOs will be in charge of deciding on additional penalties beyond the DQ itself"
-        }
-    },
-    "H": {
-        "1": {
-            "1": "If another driver asks you to stop discussing a topic with them after the race and you continue to do so you will be subject to disciplinary action by the FIA.",
-            "2": "Continued harassment of a driver in regards to an event may escalate the severity of the sanctions even for a first time offender. This includes, but is not limited to, dragging the argument to other channels, defaming their character or name calling in public channels other than the race channel."
         }
     },
     "S": {

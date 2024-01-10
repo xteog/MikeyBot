@@ -42,7 +42,7 @@ class MyBot(commands.Bot):
         for r in reports:
             view = moderation.views.ReportView(bot=self, data=r)
             self.add_view(view)
-            
+
         print("Mikey is up")
 
         self.ready = True
@@ -99,7 +99,7 @@ class MyBot(commands.Bot):
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
             )
 
-    async def on_member_join(self, user:discord.Member):
+    async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**! We hope you will have the greatest time here!. Check https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
         channel = await self.fetch_channel(449755432202928128)
         await channel.send(str)
@@ -164,6 +164,7 @@ class MyBot(commands.Bot):
     async def sendReminder(self, data: moderation.moderation.ReportData) -> None:
         embed = moderation.views.ReportEmbed(data, permission=False)
         await data.offender.send(embed=embed)
+        await data.creator.send(embed=embed)
 
     async def deleteMessage(self, channelId: int, messageId: int) -> None:
         channel = await self.fetch_channel(channelId)
@@ -186,7 +187,7 @@ class MyBot(commands.Bot):
         for member in history.keys():
             for id in history[member]["violations"].keys():
                 data = (await moderation.moderation.getReports(self, id=id))[0]
-                
+
                 sheet = workbook.active
 
                 i = 1

@@ -159,7 +159,7 @@ def isLink(str: str) -> dict[bool, str]:
 
 
 def linkHasTimestamp(str: str) -> bool:
-    start = str.find("&t=")
+    start = str.find("t=")
 
     if start == -1:
         return False

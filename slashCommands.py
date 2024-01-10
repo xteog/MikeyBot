@@ -44,7 +44,9 @@ def leagueList() -> list:
         discord.app_commands.Choice(name="Ultimate League", value="UL"),
         discord.app_commands.Choice(name="Challenger League", value="CL"),
         discord.app_commands.Choice(name="Journeyman League", value="JL"),
+        discord.app_commands.Choice(name="Apprendice League", value="AL"),
         discord.app_commands.Choice(name="Formula E", value="FE"),
+        discord.app_commands.Choice(name="Off-Track", value="Off-Track"),
     ]
 
 
@@ -53,15 +55,15 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
 
     if len(current) == 0:
         current = "1"
-    
+
     if not (current.isdigit() and int(current) >= 1 and int(current) <= 99):
         return choices
-    
+
     numbers = utils.read(config.numbersListPath)
 
     searched = int(current)
 
-    start = max(1, searched - 7)
+    start = max(0, searched - 7)
     end = min(99, searched + 7)
 
     for n in range(start, end):
@@ -71,7 +73,7 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
             )
         else:
             choices.append(discord.app_commands.Choice(name=f"{n}: Available", value=n))
-            
+
     return choices
 
 
@@ -242,7 +244,7 @@ class CommandsCog(discord.ext.commands.Cog):
     @discord.app_commands.describe(user="The driver to change race number")
     @discord.app_commands.describe(number="The number to set to")
     @discord.app_commands.autocomplete(number=availableNumbers)
-    async def report(
+    async def set_number(
         self, interaction: discord.Interaction, number: int, user: discord.Member = None
     ):
         logging.info(f'"\\set_number" used by {interaction.user.name}')
@@ -254,10 +256,19 @@ class CommandsCog(discord.ext.commands.Cog):
             )
             return
 
-        permission = utils.hasPermissions(interaction.user, roles=[config.devRole, config.URARole, config.devRole])
+        if not (number >= 0 and number <= 99):
+            await interaction.response.send_message(f"Number not valid", ephemeral=True)
+            return
+
+        permission = utils.hasPermissions(
+            interaction.user, roles=[config.devRole, config.URARole, config.devRole]
+        )
         numbers = utils.read(config.numbersListPath)
 
-        if (not permission) and ((user != None and user.id != interaction.user.id) or (str(number) in numbers.keys())):
+        if (not permission) and (
+            (user != None and user.id != interaction.user.id)
+            or (str(number) in numbers.keys())
+        ):
             await interaction.response.send_message(
                 "You can't set someone else number", ephemeral=True
             )
@@ -279,11 +290,13 @@ class CommandsCog(discord.ext.commands.Cog):
         else:
             numbers[str(number)] = interaction.user.name
 
-            desc = f"The number of {interaction.user.mention} is now changed into {number}"
+            desc = (
+                f"The number of {interaction.user.mention} is now changed into {number}"
+            )
             for key in numbers.keys():
                 if numbers[key] == numbers[str(number)] and key != str(number):
                     delete.append(key)
-        
+
         for key in delete:
             numbers.pop(key, None)
 
@@ -298,7 +311,9 @@ class CommandsCog(discord.ext.commands.Cog):
                 matrix[i][1] = "Available"
 
         utils.createWorkbook("data/numbers.xlsx", matrix)
-        await interaction.response.send_message(content=desc, file=discord.File("data/numbers.xlsx"))
+        await interaction.response.send_message(
+            content=desc, file=discord.File("data/numbers.xlsx")
+        )
 
     @discord.app_commands.command(
         name="help",
