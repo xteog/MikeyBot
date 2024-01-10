@@ -343,7 +343,9 @@ def getLobbiesList() -> dict:
 
 def formatBlockQuote(str) -> str:
     str = "> " + str
+
     for i in range(len(str)):
         if str[i] == "\n":
             str = str[:i] + "> " + str[i:]
-    
+
+    return str    
