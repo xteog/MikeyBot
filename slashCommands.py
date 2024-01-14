@@ -163,7 +163,7 @@ class CommandsCog(discord.ext.commands.Cog):
         logging.info(f'"\\report" used by {interaction.user.name}')
         league = league.value
 
-        if not isWindowOpen(league) or utils.hasPermissions(config.stewardsRole):
+        if not isWindowOpen(league) or utils.hasPermissions(interaction.user, config.stewardsRole):
             await interaction.response.send_message(
                 f"Report window will open <t:{int(config.openTime[league].timestamp())}:R>",
                 ephemeral=True,
