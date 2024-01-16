@@ -79,7 +79,7 @@ class MyBot(commands.Bot):
                             data[league], config.timeFormat
                         )
 
-                if self.lastAnnouncement[league] < config.openTime[league]:
+                if self.lastAnnouncement[league] < config.openTime[league] and league in config.leaguesChannelIds.keys():
                     msg = f"Reports window is now open until <t:{int(config.closeTime[league].timestamp())}:f>."
                     await self.sendMessage(msg, config.leaguesChannelIds[league])
 
@@ -161,9 +161,10 @@ class MyBot(commands.Bot):
             auto_archive_duration=1440,
         )
 
-    async def sendReminder(self, data: moderation.moderation.ReportData) -> None:
+    async def sendReminder(self, data: moderation.moderation.ReportData, offence=True) -> None:
         embed = moderation.views.ReportEmbed(data, permission=False)
-        await data.offender.send(embed=embed)
+        if offence:
+            await data.offender.send(embed=embed)
         await data.creator.send(embed=embed)
 
     async def deleteMessage(self, channelId: int, messageId: int) -> None:

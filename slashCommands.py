@@ -44,7 +44,7 @@ def leagueList() -> list:
         discord.app_commands.Choice(name="Ultimate League", value="UL"),
         discord.app_commands.Choice(name="Challenger League", value="CL"),
         discord.app_commands.Choice(name="Journeyman League", value="JL"),
-        discord.app_commands.Choice(name="Apprendice League", value="AL"),
+        discord.app_commands.Choice(name="Apprentice League", value="AL"),
         discord.app_commands.Choice(name="Formula E", value="FE"),
         discord.app_commands.Choice(name="Off-Track", value="Off-Track"),
     ]

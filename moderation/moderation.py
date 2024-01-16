@@ -41,6 +41,9 @@ class Rule:
                 self.description = rules[code][1]
             else:
                 self.description = rules[code]
+        else:
+            self.name = self.code
+            self.description = "Rule not found or belonging to old rulebook"
 
     def isNone(self) -> bool:
         return self.code == ""

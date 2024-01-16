@@ -80,7 +80,8 @@ def updateWorkbook(path: str, data) -> None:
 
     workbook.save(filename=path)
 
-def createWorkbook(path: str, data:list[list]):
+
+def createWorkbook(path: str, data: list[list]):
     workbook = openpyxl.load_workbook(filename=path)
     sheet = workbook.active
 
@@ -341,11 +342,12 @@ def getLobbiesList() -> dict:
 
     return lobbies
 
+
 def formatBlockQuote(str) -> str:
     str = "> " + str
 
     for i in range(len(str)):
         if str[i] == "\n":
-            str = str[:i] + "> " + str[i:]
+            str = str[: i + 1] + "> " + str[i - 1 :]
 
-    return str    
+    return str

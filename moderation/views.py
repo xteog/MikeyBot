@@ -339,14 +339,23 @@ class NoOffenceButton(discord.ui.Button):
 
     async def callback(self, interaction: Interaction) -> None:
         logging.info(f'{interaction.user.name} used the "No offence" Button')
+        
+        modal = ReminderModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
         self._view.data.penalty = "No offence"
         self._view.data.active = False
+        self._view.data.notes = modal.notes.value
 
         moderation.addToHistory(self._view.data)  # TODO add creators
 
+        await self._view.bot.sendReminder(self._view.data, False)
+
         newEmbed = ReportEmbed(self._view.data, permission=True)
 
-        await interaction.response.edit_message(embed=newEmbed, view=discord.ui.View())
+        await modal.interaction.delete_original_response()
+        await interaction.followup.edit_message(interaction.message.id, embed=newEmbed, view=discord.ui.View())
         await self._view.bot.archiveThread(self._view.data.id)
 
 
