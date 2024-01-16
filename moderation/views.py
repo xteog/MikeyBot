@@ -311,13 +311,6 @@ class ReportRuleSelect(discord.ui.Select):
                     )
                 )
 
-        if selected.code == "other":
-            options.append(
-                discord.SelectOption(label="Other", value="other", default=True)
-            )
-        else:
-            options.append(discord.SelectOption(label="Other", value="other"))
-
         return options
 
     async def callback(self, interaction: discord.Interaction) -> None:
