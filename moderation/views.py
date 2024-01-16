@@ -135,7 +135,7 @@ class ReportEmbed(discord.Embed):
         try:
             self.set_thumbnail(url=data.offender.avatar.url)
         except:
-            logging.error("Thumbnail non caricata")
+            logging.warning("Thumbnail non caricata")
 
         self.timestamp = data.timestamp
 
@@ -146,7 +146,6 @@ class ReportEmbed(discord.Embed):
                 self.set_footer(text=footer, icon_url=data.creator.avatar.url)
             except:
                 self.set_footer(text=footer)
-                logging.error("Thumbnail non caricata")
 
 
 class ReportListEmbed(discord.Embed):
@@ -160,7 +159,10 @@ class ReportListEmbed(discord.Embed):
             self.description += f"{report.id}|{report.timestamp.date()}|{report.penalty} {report.rule.name}\n"
 
         self.description += "```\n"
-        self.set_thumbnail(url=data[0].offender.avatar.url)
+        try:
+            self.set_thumbnail(url=data[0].offender.avatar.url)
+        except:
+                self.set_footer(text=footer)
 
 
 class NumbersEmbed(discord.Embed):
