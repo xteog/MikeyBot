@@ -349,5 +349,6 @@ def formatBlockQuote(str) -> str:
     for i in range(len(str)):
         if str[i] == "\n":
             str = str[: i + 1] + "> " + str[i - 1 :]
+            i = i + 1
 
     return str

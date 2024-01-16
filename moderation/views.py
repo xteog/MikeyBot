@@ -162,7 +162,7 @@ class ReportListEmbed(discord.Embed):
         try:
             self.set_thumbnail(url=data[0].offender.avatar.url)
         except:
-                self.set_footer(text=footer)
+            logging.warning("Thumbnail non caricata")
 
 
 class NumbersEmbed(discord.Embed):
