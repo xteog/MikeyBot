@@ -222,7 +222,7 @@ class ReportModal(discord.ui.Modal, title="Report"):
 
 
 class ReminderModal(discord.ui.Modal, title="Reminder Details"):
-    def __init__(self, choose_rule=False):
+    def __init__(self, choose_rule=False, offence=True):
         super().__init__()
         self.rule = discord.ui.TextInput(
             label="Custom Rule",
@@ -249,10 +249,11 @@ class ReminderModal(discord.ui.Modal, title="Reminder Details"):
             style=discord.TextStyle.paragraph,
         )
 
-        if choose_rule:
-            self.add_item(self.rule)
-        self.add_item(self.penalty)
-        self.add_item(self.severity)
+        if offence:
+            if choose_rule:
+                self.add_item(self.rule)
+            self.add_item(self.penalty)
+            self.add_item(self.severity)
         self.add_item(self.notes)
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -340,7 +341,7 @@ class NoOffenceButton(discord.ui.Button):
     async def callback(self, interaction: Interaction) -> None:
         logging.info(f'{interaction.user.name} used the "No offence" Button')
         
-        modal = ReminderModal()
+        modal = ReminderModal(offence=False)
         await interaction.response.send_modal(modal)
         await modal.wait()
 

@@ -96,13 +96,13 @@ class ReportData:  # TODO rule è una struttura
             try:
                 self.offender = await bot.fetch_user(offenderId)
             except:
-                logging.error("user not found")
+                logging.warning("user not found")
 
         if creatorId != None:
             try:
                 self.creator = await bot.fetch_user(creatorId)
             except:
-                logging.error("user not found")
+                logging.warning("user not found")
 
     def getNewId(self):
         id = utils.randomString(4)
