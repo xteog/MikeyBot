@@ -224,14 +224,8 @@ class ReportModal(discord.ui.Modal, title="Report"):
 
 
 class ReminderModal(discord.ui.Modal, title="Reminder Details"):
-    def __init__(self, choose_rule=False, offence=True):
+    def __init__(self, offence=True):
         super().__init__()
-        self.rule = discord.ui.TextInput(
-            label="Custom Rule",
-            required=True,
-            placeholder="ex. Leaving Open Lanes",
-            style=discord.TextStyle.short,
-        )
         self.penalty = discord.ui.TextInput(
             label="Penalty (temp)",
             required=True,
@@ -252,8 +246,6 @@ class ReminderModal(discord.ui.Modal, title="Reminder Details"):
         )
 
         if offence:
-            if choose_rule:
-                self.add_item(self.rule)
             self.add_item(self.penalty)
             self.add_item(self.severity)
         self.add_item(self.notes)
@@ -368,10 +360,7 @@ class RemindButton(discord.ui.Button):
 
     async def callback(self, interaction: Interaction) -> None:
         logging.info(f'{interaction.user.name} used the "Remind" Button')
-        if not self._view.rule_selected.isNone():
-            modal = ReminderModal()
-        else:
-            modal = ReminderModal(choose_rule=True)
+        modal = ReminderModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
 
@@ -379,12 +368,7 @@ class RemindButton(discord.ui.Button):
         self._view.data.penalty = modal.penalty.value
         self._view.data.severity = modal.severity.value
         self._view.data.notes = modal.notes.value
-        if not self._view.rule_selected.isNone():
-            self._view.data.rule = self._view.rule_selected
-        else:
-            rule = moderation.Rule()
-            rule.name = modal.rule.value
-            self._view.data.rule = rule
+        self._view.data.rule = self._view.rule_selected
 
         moderation.addToHistory(self._view.data)
 
