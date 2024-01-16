@@ -223,6 +223,7 @@ class MyBot(commands.Bot):
 def runBot():
     intents = discord.Intents.default()
     intents.message_content = True
+    intents.members = True
     bot = MyBot(intents=intents, command_prefix=".")
     bot.run(config.Token, reconnect=True)
 
