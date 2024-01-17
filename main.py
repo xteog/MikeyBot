@@ -58,11 +58,10 @@ class MyBot(commands.Bot):
             await asyncio.sleep(1)
         
         while not self.is_closed():
-            
+
             for thread in self.reportChannel.threads:
                 if not thread.archived:
                     id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
-                    print(id)
                     report = await moderation.moderation.getReports(self, id=id)
 
                     if len(report) > 0 and not report[0].active:
@@ -125,9 +124,9 @@ class MyBot(commands.Bot):
             )
 
     async def on_member_join(self, user: discord.Member):
-        str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**! We hope you will have the greatest time here!. Check https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
+        str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
         channel = await self.fetch_channel(449755432202928128)
-        await channel.send(str) # TODO make it work
+        await channel.send(str)
 
     async def devCommands(self, message: discord.Message):
         if (
