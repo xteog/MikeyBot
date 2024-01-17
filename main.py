@@ -29,6 +29,7 @@ class MyBot(commands.Bot):
         self.reportChannel = None
         self.voiceClient = None
         self.lastAnnouncement = {}
+        self.ready = False
 
     async def on_ready(self):
         await self.add_cog(
