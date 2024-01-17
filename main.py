@@ -58,14 +58,14 @@ class MyBot(commands.Bot):
             await asyncio.sleep(1)
         
         while not self.is_closed():
-            activeReports = moderation.moderation.getActive()
-
+            
             for thread in self.reportChannel.threads:
                 if not thread.archived:
                     id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
-                    report = await moderation.moderation.getReports(id=id)[0]
+                    print(id)
+                    report = await moderation.moderation.getReports(self, id=id)
 
-                    if not report.active:
+                    if len(report) > 0 and not report[0].active:
                         await thread.edit(archived=True)
 
             await asyncio.sleep(3600)
