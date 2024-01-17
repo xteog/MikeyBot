@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 import openpyxl
 import utils
@@ -46,6 +47,29 @@ class MyBot(commands.Bot):
         print("Mikey is up")
 
         self.ready = True
+
+    async def setup_hook(self) -> None:
+        self.bg_task = self.loop.create_task(self.background_task())
+
+    async def background_task(self):
+        await self.wait_until_ready()
+        while not self.ready:
+            await asyncio.sleep(1)
+        
+        while not self.is_closed():
+            activeReports = moderation.moderation.getActive()
+
+            for thread in self.reportChannel.threads:
+                if not thread.archived:
+                    id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
+                    report = await moderation.moderation.getReports(id=id)[0]
+
+                    if not report.active:
+                        thread.edit(archived=True)
+
+            await asyncio.sleep(3600)
+
+        
 
     async def on_message(self, message: discord.Message):
         if message.author == self.user:
