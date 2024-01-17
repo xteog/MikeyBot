@@ -65,7 +65,7 @@ class MyBot(commands.Bot):
                     report = await moderation.moderation.getReports(id=id)[0]
 
                     if not report.active:
-                        thread.edit(archived=True)
+                        await thread.edit(archived=True)
 
             await asyncio.sleep(3600)
 
