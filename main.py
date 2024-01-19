@@ -12,6 +12,8 @@ import config
 import logging
 import sys
 
+import load_log
+
 
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -46,6 +48,7 @@ class MyBot(commands.Bot):
             self.add_view(view)
 
         print("Mikey is up")
+        await load_log.loadLog(self)
 
         self.ready = True
 

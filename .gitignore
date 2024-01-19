@@ -11,4 +11,5 @@ pen_log.csv
 load_log.py
 config.py
 data/numbers.xlsx
-
+data/google_credentials.json
+data/penalty_log.xlsx

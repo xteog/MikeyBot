@@ -152,6 +152,8 @@ def addToHistory(data: ReportData) -> None:
     utils.write(config.historyPath, history)
 
     utils.updateWorkbook(config.penaltyLogPath, data)
+    if not data.active:
+        utils.updateSpreadSheet(data)
 
 
 async def getReports(

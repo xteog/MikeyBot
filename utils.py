@@ -1,9 +1,12 @@
 import json
+import logging
 import random
 import discord
 import socket
 import codecs
 import openpyxl
+import googleApi
+import config
 
 
 def lev_dist(s: str, t: str) -> int:
@@ -55,6 +58,31 @@ def loading(i, len):
     str += f"| {round(i/len*100, 1)}%"
     return str
 
+
+def updateSpreadSheet(data) -> None:
+    row = [
+        data.id,
+        data.offender.name,
+        data.penalty,
+        data.severity,
+        data.league,
+        data.round,
+        str(data.rule),
+        data.proof,
+        data.notes,
+        data.creator.name,
+        data.desc,
+        data.timestamp.strftime(config.timeFormat),
+    ]
+
+    outcome = False
+    i = 0
+    while not outcome and i < 3:
+        outcome = googleApi.appendRow(row)
+        i += 1
+
+    if not outcome:
+        logging.error("SpreadSheet not updated")
 
 def updateWorkbook(path: str, data) -> None:
     workbook = openpyxl.load_workbook(filename=path)
