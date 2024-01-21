@@ -3,7 +3,7 @@ import utils
 import logging
 import config
 
-appendRowURL = "https://sheets.googleapis.com/v4/spreadsheets/{spreadSheetId}/values/{sheetName}!A1:append?valueInputOption=RAW"
+appendRowURL = "https://sheets.googleapis.com/v4/spreadsheets/{spreadSheetId}/values/{sheetName}!A1:M1:append?valueInputOption=RAW"
 refreshTokenURL = "https://oauth2.googleapis.com/token?access_type=offline&refresh_token={refreshToken}&client_id={clientId}&client_secret={clientSecret}&grant_type=refresh_token"
 
 
@@ -21,7 +21,6 @@ def appendRow(row: list) -> bool:
         json=data,
     )
 
-    print(response.content)
     if response.status_code == 200:
         return True
 

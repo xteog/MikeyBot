@@ -12,6 +12,8 @@ import config
 import logging
 import sys
 
+import load_log
+
 
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -46,6 +48,7 @@ class MyBot(commands.Bot):
             self.add_view(view)
 
         print("Mikey is up")
+        await load_log.loadLog(self)
 
         self.ready = True
 
@@ -122,11 +125,16 @@ class MyBot(commands.Bot):
             logging.info(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
             )
+            self.errorChannel.send(f"DM by {message.author.name} ({message.channel.id}): {message.content}")
 
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
         channel = await self.fetch_channel(449755432202928128)
         await channel.send(str)
+        with open("data/WelcomeMessage.md") as f:
+            text = f.read()
+
+        await user.send(text)
 
     async def devCommands(self, message: discord.Message):
         if (
