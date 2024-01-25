@@ -126,8 +126,17 @@ class CommandsCog(discord.ext.commands.Cog):
                     f"No reports found with ID `{id}`", ephemeral=True
                 )
             else:
-                embed = views.ReportEmbed(violations[0], permission=permission)
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                if (
+                    violations[0].offender.id == interaction.user.id
+                    or violations[0].creator.id == interaction.user.id
+                    or permission
+                ):
+                    embed = views.ReportEmbed(violations[0], permission=permission)
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                else:
+                    await interaction.response.send_message(
+                        "You can't search someone else reports", ephemeral=True
+                    )
 
         if user != None:
             await interaction.response.defer(ephemeral=True)
@@ -158,12 +167,16 @@ class CommandsCog(discord.ext.commands.Cog):
         interaction: discord.Interaction,
         user: discord.Member,
         league: discord.app_commands.Choice[str],
-        round: int,
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
-        league = league.value
 
-        if not isWindowOpen(league) and not utils.hasPermissions(interaction.user, config.stewardsRole):
+        league = league.value
+        league += self.client.schedule[league]["season"]
+        round = self.client.getCurrentRound(league)
+
+        if not isWindowOpen(league) and not utils.hasPermissions(
+            interaction.user, config.stewardsRole
+        ):
             await interaction.response.send_message(
                 f"Report window will open <t:{int(config.openTime[league].timestamp())}:R>",
                 ephemeral=True,

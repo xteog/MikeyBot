@@ -30,7 +30,8 @@ class MyBot(commands.Bot):
         self.errorChannel = None
         self.reportChannel = None
         self.voiceClient = None
-        self.lastAnnouncement = {}
+        self.reportWindowNotice = utils.load_reportWindowNotice()
+        self.schedule = utils.load_schedule()
         self.ready = False
 
     async def on_ready(self):
@@ -48,7 +49,7 @@ class MyBot(commands.Bot):
             self.add_view(view)
 
         print("Mikey is up")
-        await load_log.loadLog(self)
+        # await load_log.loadLog(self)
 
         self.ready = True
 
@@ -59,9 +60,8 @@ class MyBot(commands.Bot):
         await self.wait_until_ready()
         while not self.ready:
             await asyncio.sleep(1)
-        
-        while not self.is_closed():
 
+        while not self.is_closed():
             for thread in self.reportChannel.threads:
                 if not thread.archived:
                     id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
@@ -72,8 +72,6 @@ class MyBot(commands.Bot):
 
             await asyncio.sleep(3600)
 
-        
-
     async def on_message(self, message: discord.Message):
         if message.author == self.user:
             return
@@ -83,49 +81,29 @@ class MyBot(commands.Bot):
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
 
-        for league in config.openTime.keys():
-            if datetime.now() > config.openTime[league]:
-                if not (league in self.lastAnnouncement.keys()):
-                    data = utils.read("data/lastAnnouncement.json")
-                    if data == None or not (league in data.keys()):
-                        self.lastAnnouncement[league] = datetime.strptime(
-                            "2001-11-09 8:09", config.timeFormat
-                        )
+        for league in self.reportWindowDelta.keys():
+            if (
+                datetime.utcnow() > self.schedule[league][self.getCurrentRound(league)]
+                and self.reportWindowNotice[league]
+                < self.schedule[league][self.getCurrentRound(league)]
+                and self.reportWindowNotice[league]
+                < self.schedule[league][self.getCurrentRound(league)]
+                + config.reportWindowDelta[league]
+                and league in config.leaguesChannelIds.keys()
+            ):
+                msg = f"Reports window is now open until <t:{int((self.schedule[league][self.getCurrentRound(league)] + config.reportWindowDelta[league]).timestamp())}:f>."
+                await self.sendMessage(msg, config.leaguesChannelIds[league])
 
-                        utils.write(
-                            "data/lastAnnouncement.json",
-                            {
-                                key: datetime.strftime(
-                                    self.lastAnnouncement[key], config.timeFormat
-                                )
-                                for key in self.lastAnnouncement.keys()
-                            },
-                        )
-                    else:
-                        self.lastAnnouncement[league] = datetime.strptime(
-                            data[league], config.timeFormat
-                        )
-
-                if self.lastAnnouncement[league] < config.openTime[league] and league in config.leaguesChannelIds.keys():
-                    msg = f"Reports window is now open until <t:{int(config.closeTime[league].timestamp())}:f>."
-                    await self.sendMessage(msg, config.leaguesChannelIds[league])
-
-                    self.lastAnnouncement[league] = datetime.now()
-                    utils.write(
-                        "data/lastAnnouncement.json",
-                        {
-                            key: datetime.strftime(
-                                self.lastAnnouncement[key], config.timeFormat
-                            )
-                            for key in self.lastAnnouncement.keys()
-                        },
-                    )
+                self.reportWindowNotice[league] = datetime.utcnow()
+                utils.update_reportWindowNotice(self.reportWindowNotice)
 
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
             )
-            self.errorChannel.send(f"DM by {message.author.name} ({message.channel.id}): {message.content}")
+            await self.errorChannel.send(
+                f"DM by {message.author.name} ({message.channel.id}): {message.content}"
+            )
 
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
@@ -187,17 +165,22 @@ class MyBot(commands.Bot):
     async def sendReport(self, data: moderation.moderation.ReportData):
         view = moderation.views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
+        await message.add_reaction(":thumbsup:")
+        await message.add_reaction(":thumdown:")
         await self.reportChannel.create_thread(
-            name=f"Report {data.offender.name} ({data.id})",
+            name=f"Report {data.offender.display_name} ({data.id})",
             message=message,
             auto_archive_duration=1440,
         )
 
-    async def sendReminder(self, data: moderation.moderation.ReportData, offence=True) -> None:
-        embed = moderation.views.ReportEmbed(data, permission=False)
+    async def sendReminder(
+        self, data: moderation.moderation.ReportData, offence=True
+    ) -> None:
+        view = moderation.views.ReminderView(self, data)
+
         if offence:
-            await data.offender.send(embed=embed)
-        await data.creator.send(embed=embed)
+            await data.offender.send(embed=view.embed, view=view)
+        await data.creator.send(embed=view.embed)
 
     async def deleteMessage(self, channelId: int, messageId: int) -> None:
         channel = await self.fetch_channel(channelId)
@@ -214,39 +197,17 @@ class MyBot(commands.Bot):
             if t.name.find(id) != -1:
                 await t.edit(archived=True)
 
-    async def writeWorkbook(self):
-        history = utils.read(config.historyPath)
-        workbook = openpyxl.load_workbook(filename=config.penaltyLogPath)
-        for member in history.keys():
-            for id in history[member]["violations"].keys():
-                data = (await moderation.moderation.getReports(self, id=id))[0]
+    def getCurrentRound(self, league: str) -> str:
+        if league in self.schedule.keys():
+            rounds = self.schedule[league]
 
-                sheet = workbook.active
+            for i in range(0, len(rounds)):
+                if rounds[i] > datetime.utcnow():
+                    break
 
-                i = 1
-                while True:
-                    if sheet.cell(row=i, column=1).value == None:
-                        sheet.cell(row=i, column=1).value = data.id
-                        sheet.cell(row=i, column=2).value = data.offender.name
-                        sheet.cell(row=i, column=3).value = data.penalty
-                        sheet.cell(row=i, column=4).value = data.severity
-                        sheet.cell(row=i, column=5).value = data.league
-                        sheet.cell(row=i, column=6).value = data.round
-                        if len(str(data.rule)) > 0:
-                            sheet.cell(row=i, column=7).value = str(data.rule)
-                            sheet.cell(row=i, column=8).value = data.proof
-                            sheet.cell(row=i, column=9).value = data.notes
-                        else:
-                            sheet.cell(row=i, column=9).value = str(data.rule)
-                            sheet.cell(row=i, column=8).value = data.proof
-                            sheet.cell(row=i, column=7).value = data.notes
-                        sheet.cell(row=i, column=10).value = data.creator.name
-                        sheet.cell(row=i, column=11).value = data.desc
-                        sheet.cell(row=i, column=12).value = data.timestamp
-                        break
-                    i += 1
+            return str(i)
 
-        workbook.save(filename=config.penaltyLogPath)
+        return "0"
 
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         logging.error(f"Error: {event_method}")

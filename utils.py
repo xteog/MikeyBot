@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import random
@@ -77,7 +78,9 @@ def updateSpreadSheet(data) -> None:
     if data.rule.isNone():
         row[6] = data.notes
         row[8] = ""
-        
+
+    if data.penalty == "No offence":
+        return
 
     outcome = False
     i = 0
@@ -87,6 +90,7 @@ def updateSpreadSheet(data) -> None:
 
     if not outcome:
         logging.error("SpreadSheet not updated")
+
 
 def updateWorkbook(path: str, data) -> None:
     workbook = openpyxl.load_workbook(filename=path)
@@ -383,3 +387,48 @@ def formatBlockQuote(str) -> str:
             str = str[: i + 1] + "> " + str[i + 1 :]
 
     return str
+
+
+def load_reportWindowNotice() -> dict:
+    data = read(config.reportWindowNoticePath)
+
+    if data == None:
+        data = {}
+
+    for league in data.keys():
+        data[league] = datetime.datetime.strptime(data[league], config.timeFormat)
+
+    for league in config.reportWindowDelta:
+        if not league in data.keys():
+            data[league] = datetime.datetime.strptime(
+                "2001-11-09 8:09", config.timeFormat
+            )
+
+    return data
+
+
+def update_reportWindowNotice(data: dict):
+    for league in data.keys():
+        data[league] = datetime.datetime.strftime(data[league], config.timeFormat)
+
+    write(config.reportWindowNoticePath, data)
+
+
+def load_schedule() -> dict:
+    data = read(config.schedulePath)
+
+    if data == None:
+        logging.error("Schedule not found")
+        return None
+
+    for league in data.keys():
+        for i in range(len(data[league]["rounds"])):
+            data[league]["rounds"][i] = datetime.datetime.strptime(
+                data[league]["rounds"][i], config.timeFormat
+            )
+
+    for league in config.reportWindowDelta:
+        if not league in data.keys():
+            data[league]["rounds"] = []
+
+    return data
