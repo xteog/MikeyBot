@@ -127,12 +127,13 @@ class MyBot(commands.Bot):
             reaction.channel_id == self.ccChannel.id
             and reaction.emoji.name == "✅"
             and reaction.event_type == "REACTION_ADD"
-            and utils.hasPermissions(user=message.author, role=config.ccOfficialRole)
+            and utils.hasPermissions(user=reaction.member, role=config.ccOfficialRole)
         ):
             guild = await self.fetch_guild(reaction.guild_id)
             role = guild.get_role(config.connectedRole)
             
-            await message.author.add_roles(role, reason="Screenshot sent")
+            await message.author.add_roles(role, reason=f"Verified by {reaction.member.display_name}")
+            logging.info(f"@Connected role added to {message.author.display_name} by {reaction.member.display_name}")
 
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
@@ -240,7 +241,7 @@ class MyBot(commands.Bot):
             return i + 1
 
         return 0
-
+    
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         logging.error(f"Error: {event_method}")
 
