@@ -92,7 +92,7 @@ class ReminderView(discord.ui.View):
         super().__init__()
         self.bot = bot
         self.data = data
-        self.embed = violations.views.ReportEmbed(data, permission=False)
+        self.embed = ReportEmbed(data, permission=False)
         #self.add_item(AppealButton(self))
 
 
