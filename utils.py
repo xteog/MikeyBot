@@ -5,7 +5,6 @@ import random
 import discord
 import socket
 import codecs
-import openpyxl
 import googleApi
 import config
 
@@ -90,42 +89,6 @@ def updateSpreadSheet(data) -> None:
 
     if not outcome:
         logging.error("SpreadSheet not updated")
-
-
-def updateWorkbook(path: str, data) -> None:
-    workbook = openpyxl.load_workbook(filename=path)
-    sheet = workbook.active
-
-    i = 1
-    while True:
-        if sheet.cell(row=i, column=1).value == None:
-            sheet.cell(row=i, column=1).value = data.id
-            sheet.cell(row=i, column=2).value = data.offender.name
-            sheet.cell(row=i, column=3).value = data.penalty
-            sheet.cell(row=i, column=4).value = data.severity
-            sheet.cell(row=i, column=5).value = data.league
-            sheet.cell(row=i, column=6).value = data.round
-            sheet.cell(row=i, column=7).value = str(data.rule)
-            sheet.cell(row=i, column=8).value = data.proof
-            sheet.cell(row=i, column=9).value = data.notes
-            sheet.cell(row=i, column=10).value = data.creator.name
-            sheet.cell(row=i, column=11).value = data.desc
-            sheet.cell(row=i, column=12).value = data.timestamp
-            break
-        i += 1
-
-    workbook.save(filename=path)
-
-
-def createWorkbook(path: str, data: list[list]):
-    workbook = openpyxl.load_workbook(filename=path)
-    sheet = workbook.active
-
-    for i in range(len(data)):
-        for j in range(len(data[0])):
-            sheet.cell(row=i + 1, column=j + 1).value = data[i][j]
-
-    workbook.save(filename=path)
 
 
 def write(path: str, data: dict) -> None:
