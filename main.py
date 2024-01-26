@@ -121,18 +121,18 @@ class MyBot(commands.Bot):
             )
 
     async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
+        message = await self.ccChannel.fetch_message(reaction.message_id)
+
         if (
             reaction.channel_id == self.ccChannel.id
             and reaction.emoji.name == "✅"
             and reaction.event_type == "REACTION_ADD"
+            and utils.hasPermissions(user=message.author, role=config.ccOfficialRole)
         ):
-            try:
-                guild = await self.fetch_guild(reaction.guild_id)
-                role = guild.get_role(config.connectedRole)
-                message = await self.ccChannel.fetch_message(reaction.message_id)
-                await message.author.add_roles(role, reason="Screenshot sent")
-            except Exception as e:
-                print(e)
+            guild = await self.fetch_guild(reaction.guild_id)
+            role = guild.get_role(config.connectedRole)
+            
+            await message.author.add_roles(role, reason="Screenshot sent")
 
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
