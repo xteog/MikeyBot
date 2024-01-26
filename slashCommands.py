@@ -357,7 +357,6 @@ class CommandsCog(discord.ext.commands.Cog):
 
         await interaction.response.send_message("Not done yet", ephemeral=True)
 
-    @reset.error
     @report.error
     @search_violation.error
     async def error(self, interaction: discord.Interaction, error):
