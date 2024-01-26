@@ -341,7 +341,6 @@ class CommandsCog(discord.ext.commands.Cog):
             else:
                 matrix[i][1] = "Available"
 
-        utils.createWorkbook("data/numbers.xlsx", matrix)
         await interaction.response.send_message(
             content=desc, file=discord.File("data/numbers.xlsx")
         )
@@ -356,18 +355,6 @@ class CommandsCog(discord.ext.commands.Cog):
         with open("README.md") as f:
             text = f.read()
 
-        await interaction.response.send_message("Not done yet", ephemeral=True)
-
-    @discord.app_commands.command(
-        name="reset",
-        description="Resets the bot. Use it if there is a bug or it stopped working. (todo)",
-    )
-    async def reset(self, interaction: discord.Interaction):
-        logging.info(f'"\\reset" used by {interaction.user.name}')
-        # TODO finisci
-        await self.client.change_presence(status=discord.Status.offline)
-
-        # main.reconnect(self.client)
         await interaction.response.send_message("Not done yet", ephemeral=True)
 
     @reset.error
