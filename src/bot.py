@@ -2,12 +2,11 @@ import asyncio
 from datetime import datetime
 from datetime import timedelta
 import utils
-from typing import Any
 import discord
 from discord.ext import commands
 import slashCommands
-import moderation.views
-import moderation.moderation
+from moderation import views
+from moderation import violations
 import config
 import logging
 import sys
@@ -15,7 +14,7 @@ import sys
 # import load_log
 
 
-class MyBot(commands.Bot):
+class MikeyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -46,10 +45,10 @@ class MyBot(commands.Bot):
         self.reportChannel = self.get_channel(config.reportChannelId)
         self.ccChannel = self.get_channel(config.ccChannelId)
 
-        reports = await moderation.moderation.getActive(self)
+        reports = await violations.getActive(self)
 
         for r in reports:
-            view = moderation.views.ReportView(bot=self, data=r)
+            view = views.ReportView(bot=self, data=r)
             self.add_view(view)
 
         print("Mikey is up")
@@ -71,7 +70,7 @@ class MyBot(commands.Bot):
             for thread in self.reportChannel.threads:
                 if not thread.archived:
                     id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
-                    report = await moderation.moderation.getReports(self, id=id)
+                    report = await violations.getReports(self, id=id)
 
                     if len(report) > 0 and not report[0].active:
                         await thread.edit(archived=True)
@@ -192,8 +191,8 @@ class MyBot(commands.Bot):
             file = discord.File("./data/history.json")
             await self.reportChannel.send(file=file)
 
-    async def sendReport(self, data: moderation.moderation.ReportData):
-        view = moderation.views.ReportView(self, data)
+    async def sendReport(self, data: violations.ReportData):
+        view = views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
         await message.add_reaction(":thumbsup:")
         await message.add_reaction(":thumdown:")
@@ -204,9 +203,9 @@ class MyBot(commands.Bot):
         )
 
     async def sendReminder(
-        self, data: moderation.moderation.ReportData, offence=True
+        self, data: violations.ReportData, offence=True
     ) -> None:
-        view = moderation.views.ReminderView(self, data)
+        view = views.ReminderView(self, data)
 
         if offence:
             await data.offender.send(embed=view.embed, view=view)
@@ -242,28 +241,18 @@ class MyBot(commands.Bot):
 
         return 0
     
-    async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
+    async def on_error(self, event_method: str) -> None:
         logging.error(f"Error: {event_method}")
 
 
-def runBot():
+def run():
     intents = discord.Intents.default()
     intents.message_content = True
     intents.members = True
-    bot = MyBot(intents=intents, command_prefix=".")
+    bot = MikeyBot(intents=intents, command_prefix=".")
     bot.run(config.Token, reconnect=True)
 
 
 async def reconnect(bot):
     await bot.close()
-    runBot()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        filename="data/logging.log",
-        format="%(asctime)s [%(levelname)s]:%(name)s:%(message)s",
-        level=logging.INFO,
-    )
-
-    runBot()
+    run()

@@ -1,8 +1,8 @@
 import discord
 from discord.interactions import Interaction
-import moderation.moderation as moderation
+import moderation.violations as violations
 import utils
-import config
+import config as config
 import logging
 
 
@@ -13,8 +13,8 @@ class ReportView(discord.ui.View):
     def __init__(
         self,
         bot,
-        data: moderation.ReportData,
-        rule_selected: moderation.Rule = moderation.Rule(),
+        data: violations.ReportData,
+        rule_selected: violations.Rule = violations.Rule(),
     ):
         super().__init__(timeout=None)
         self.bot = bot
@@ -32,7 +32,7 @@ class ReportView(discord.ui.View):
 
 
 class ReportListView(discord.ui.View):
-    def __init__(self, bot, data: [moderation.ReportData], permission: bool):
+    def __init__(self, bot, data: [violations.ReportData], permission: bool):
         super().__init__()
         self.bot = bot
         self.timeout = config.defaultTimeout
@@ -58,7 +58,7 @@ class ReportListDetailedView(discord.ui.View):
     def __init__(
         self,
         bot,
-        data: [moderation.ReportData],
+        data: [violations.ReportData],
         permission: bool,
         index: int = 0,
     ):
@@ -87,13 +87,22 @@ class ReportListDetailedView(discord.ui.View):
             self.add_item(RightButton(self, False))
 
 
+class ReminderView(discord.ui.View):
+    def __init__(self, bot, data):
+        super().__init__()
+        self.bot = bot
+        self.data = data
+        self.embed = violations.views.ReportEmbed(data, permission=False)
+        #self.add_item(AppealButton(self))
+
+
 """ Embeds """
 
 
 class ReportEmbed(discord.Embed):
     def __init__(
         self,
-        data: moderation.ReportData,
+        data: violations.ReportData,
         permission: bool,
     ):
         super().__init__(title="Report", color=0xFFFFFF)
@@ -116,12 +125,12 @@ class ReportEmbed(discord.Embed):
             self.description += f"**Round:** (Off-track)\n"
 
         if not data.rule.isNone():
-            self.description += (
-                f"**Rule:** {data.rule.name}\n{utils.formatBlockQuote(data.rule.description)}\n"
-            )
+            self.description += f"**Rule:** {data.rule.name}\n{utils.formatBlockQuote(data.rule.description)}\n"
 
         if len(data.desc) > 0 and permission:
-            self.description += f"**Description:**\n{utils.formatBlockQuote(data.desc)}\n"
+            self.description += (
+                f"**Description:**\n{utils.formatBlockQuote(data.desc)}\n"
+            )
 
         isLink, error = utils.isLink(data.proof)
         if isLink:
@@ -149,7 +158,7 @@ class ReportEmbed(discord.Embed):
 
 
 class ReportListEmbed(discord.Embed):
-    def __init__(self, data: list[moderation.ReportData]):
+    def __init__(self, data: list[violations.ReportData]):
         super().__init__(title=f"Report History", color=0xFFFFFF)
         self.description = (
             f"**Name**: {data[0].offender.name} {data[0].offender.mention}\n```"
@@ -164,38 +173,6 @@ class ReportListEmbed(discord.Embed):
         except:
             logging.warning("Thumbnail non caricata")
 
-
-class NumbersEmbed(discord.Embed):
-    def __init__(self, desc: str, numbers: dict):
-        super().__init__(title="Driver Numbers", description=desc)
-
-        self.description += "\n```"
-        max = len("Available")
-
-        for key in numbers.keys():
-            if len(key) >= max:
-                max = len(key)
-
-        for i in range(1, 99):
-            for key in numbers.keys():
-                if key == str(i):
-                    self.description += key + " " * int(max + 2 - len(key)/2)
-                else:
-                    self.description += str(i) + " " * int(max + 2 - len(str(i))/2)
-
-        self.description += "\n"
-
-        for key in numbers.keys():
-            for i in range(1, 99):
-                for key in numbers.keys():
-                    if key == str(i):
-                        self.description += numbers[key] + " " * int(max + 2 - len(numbers[key])/2)
-                    else:
-                        self.description += "Available" + " " * int(max + 2 - len("Available")/2)
-
-        self.description += "```"
-
-        self.description = self.description[0:4000]
 
 """ Modals """
 
@@ -272,20 +249,20 @@ class ReportRuleSelect(discord.ui.Select):
 
     def getRuleSelectOptions(
         self,
-        selected: moderation.Rule = moderation.Rule(),
+        selected: violations.Rule = violations.Rule(),
     ) -> list[discord.SelectOption]:
         options = []
 
         rules = [
-            moderation.Rule("H.1.1"),
-            moderation.Rule("H.1.2"),
-            moderation.Rule("H.1.3"),
-            moderation.Rule("H.1.4"),
-            moderation.Rule("H.1.5"),
-            moderation.Rule("H.1.6"),
-            moderation.Rule("H.1.7"),
-            moderation.Rule("H.1.8"),
-            moderation.Rule("H.1.9"),
+            violations.Rule("H.1.1"),
+            violations.Rule("H.1.2"),
+            violations.Rule("H.1.3"),
+            violations.Rule("H.1.4"),
+            violations.Rule("H.1.5"),
+            violations.Rule("H.1.6"),
+            violations.Rule("H.1.7"),
+            violations.Rule("H.1.8"),
+            violations.Rule("H.1.9"),
         ]
 
         for rule in rules:
@@ -309,7 +286,7 @@ class ReportRuleSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         newView = ReportView(
-            self._view.bot, self._view.data, moderation.Rule(self.values[0])
+            self._view.bot, self._view.data, violations.Rule(self.values[0])
         )
 
         await interaction.response.edit_message(view=newView, embed=newView.embed)
@@ -327,7 +304,7 @@ class NoOffenceButton(discord.ui.Button):
 
     async def callback(self, interaction: Interaction) -> None:
         logging.info(f'{interaction.user.name} used the "No offence" Button')
-        
+
         modal = ReminderModal(offence=False)
         await interaction.response.send_modal(modal)
         await modal.wait()
@@ -336,14 +313,16 @@ class NoOffenceButton(discord.ui.Button):
         self._view.data.active = False
         self._view.data.notes = modal.notes.value
 
-        moderation.addToHistory(self._view.data)  # TODO add creators
+        violations.addToHistory(self._view.data)  # TODO add creators
 
         await self._view.bot.sendReminder(self._view.data, False)
 
         newEmbed = ReportEmbed(self._view.data, permission=True)
 
         await modal.interaction.delete_original_response()
-        await interaction.followup.edit_message(interaction.message.id, embed=newEmbed, view=discord.ui.View())
+        await interaction.followup.edit_message(
+            interaction.message.id, embed=newEmbed, view=discord.ui.View()
+        )
         await self._view.bot.archiveThread(self._view.data.id)
 
 
@@ -370,7 +349,7 @@ class RemindButton(discord.ui.Button):
         self._view.data.notes = modal.notes.value
         self._view.data.rule = self._view.rule_selected
 
-        moderation.addToHistory(self._view.data)
+        violations.addToHistory(self._view.data)
 
         await self._view.bot.sendReminder(self._view.data)
 
@@ -424,4 +403,17 @@ class RightButton(discord.ui.Button):
             permission=self._view.permission,
             index=self._view.index + 1,
         )
+        await interaction.response.edit_message(embed=newView.embed, view=newView)
+
+
+class AppealButton(discord.ui.Button):
+    def __init__(self, view: ReminderView, disabled: bool = False):
+        super().__init__(
+            label="Appeal",
+            style=discord.ButtonStyle.secondary,
+            disabled=disabled,
+        )
+        self._view = view
+
+    async def callback(self, interaction: Interaction) -> None:
         await interaction.response.edit_message(embed=newView.embed, view=newView)

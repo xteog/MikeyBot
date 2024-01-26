@@ -1,8 +1,7 @@
 import discord
 import logging
-import main
 import config
-import moderation.moderation as moderation
+import moderation.violations as violations
 import moderation.views as views
 import utils
 from datetime import datetime
@@ -96,7 +95,7 @@ def isWindowOpen(league: str, round: int) -> bool:
 
 
 class CommandsCog(discord.ext.commands.Cog):
-    def __init__(self, client: main.MyBot):
+    def __init__(self, client):
         self.client = client
 
     @discord.app_commands.command(
@@ -131,7 +130,7 @@ class CommandsCog(discord.ext.commands.Cog):
             return
 
         if id != None:
-            violations = await moderation.getReports(bot=self.client, id=id)
+            violations = await violations.getReports(bot=self.client, id=id)
             if len(violations) == 0:
                 await interaction.response.send_message(
                     f"No reports found with ID `{id}`", ephemeral=True
@@ -151,7 +150,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
         if user != None:
             await interaction.response.defer(ephemeral=True)
-            violations = await moderation.getReports(bot=self.client, user=user)
+            violations = await violations.getReports(bot=self.client, user=user)
             await interaction.delete_original_response()
             if len(violations) == 0:
                 await interaction.followup.send(
@@ -206,7 +205,7 @@ class CommandsCog(discord.ext.commands.Cog):
             await interaction.followup.send(error, ephemeral=True)
             return
 
-        data = moderation.ReportData(
+        data = violations.ReportData(
             offender=user,
             league=league
             + (
@@ -221,7 +220,7 @@ class CommandsCog(discord.ext.commands.Cog):
             active=True,
         )
 
-        moderation.addToHistory(data)
+        violations.addToHistory(data)
 
         await self.client.sendReport(data)
 
