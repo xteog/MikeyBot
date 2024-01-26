@@ -6,6 +6,7 @@ import moderation.moderation as moderation
 import moderation.views as views
 import utils
 from datetime import datetime
+from datetime import timedelta
 
 
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
@@ -77,11 +78,21 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
     return choices
 
 
-def isWindowOpen(league: str) -> bool:
-    return (
-        datetime.now() > config.openTime[league]
-        and datetime.now() < config.closeTime[league]
-    )
+def isWindowOpen(league: str, round: int) -> bool:
+    schedule = utils.load_schedule()
+
+    if league in schedule.keys():
+        return datetime.now() > schedule[league]["rounds"][
+            round
+        ] and datetime.now() < schedule[league]["rounds"][
+            round
+        ] + config.reportWindowDelta[
+            league
+        ] + timedelta(
+            days=1
+        )
+
+    return False
 
 
 class CommandsCog(discord.ext.commands.Cog):
@@ -160,7 +171,6 @@ class CommandsCog(discord.ext.commands.Cog):
     )
     @discord.app_commands.describe(user="The driver you want to report")
     @discord.app_commands.describe(league="The league where the accident happened")
-    @discord.app_commands.describe(round="The round where the accident happened")
     @discord.app_commands.choices(league=leagueList())
     async def report(
         self,
@@ -171,14 +181,17 @@ class CommandsCog(discord.ext.commands.Cog):
         logging.info(f'"\\report" used by {interaction.user.name}')
 
         league = league.value
-        league += self.client.schedule[league]["season"]
         round = self.client.getCurrentRound(league)
 
-        if not isWindowOpen(league) and not utils.hasPermissions(
+        if not isWindowOpen(league, round) and not utils.hasPermissions(
             interaction.user, config.stewardsRole
         ):
+            open_date = self.client.schedule[league]["rounds"][
+                self.client.getCurrentRound(league)
+            ] + timedelta(days=1)
+
             await interaction.response.send_message(
-                f"Report window will open <t:{int(config.openTime[league].timestamp())}:R>",
+                f"Report window will open <t:{int(open_date.timestamp())}:R>",
                 ephemeral=True,
             )
             return
@@ -195,7 +208,12 @@ class CommandsCog(discord.ext.commands.Cog):
 
         data = moderation.ReportData(
             offender=user,
-            league=league,
+            league=league
+            + (
+                ""
+                if not league in self.client.schedule.keys()
+                else self.client.schedule[league]["season"]
+            ),
             round=round,
             creator=interaction.user,
             proof=modal.link.value,

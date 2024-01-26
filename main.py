@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-import openpyxl
+from datetime import timedelta
 import utils
 from typing import Any
 import discord
@@ -12,24 +12,27 @@ import config
 import logging
 import sys
 
-import load_log
+# import load_log
 
 
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if sys.argv[1] == "run":
+        if len(sys.argv) <= 1:
+            config.TEST()
+        elif sys.argv[1] == "run":
             config.RUN()
         elif sys.argv[1] == "test":
             config.TEST()
         else:
             raise ValueError
+
         self.server = config.serverId
         self.dmsChannel = None
         self.errorChannel = None
         self.reportChannel = None
-        self.voiceClient = None
+        self.ccChannel = None
         self.reportWindowNotice = utils.load_reportWindowNotice()
         self.schedule = utils.load_schedule()
         self.ready = False
@@ -41,6 +44,7 @@ class MyBot(commands.Bot):
         await self.tree.sync(guild=discord.Object(id=self.server))
         self.errorChannel = self.get_channel(config.errorChannelId)
         self.reportChannel = self.get_channel(config.reportChannelId)
+        self.ccChannel = self.get_channel(config.ccChannelId)
 
         reports = await moderation.moderation.getActive(self)
 
@@ -57,6 +61,8 @@ class MyBot(commands.Bot):
         self.bg_task = self.loop.create_task(self.background_task())
 
     async def background_task(self):
+        sleep = 3600
+
         await self.wait_until_ready()
         while not self.ready:
             await asyncio.sleep(1)
@@ -70,7 +76,32 @@ class MyBot(commands.Bot):
                     if len(report) > 0 and not report[0].active:
                         await thread.edit(archived=True)
 
-            await asyncio.sleep(3600)
+
+            for league in config.reportWindowDelta.keys():
+
+                open_date = self.schedule[league]["rounds"][
+                    self.getCurrentRound(league)
+                ] + timedelta(days=1)
+
+                if (
+                    self.reportWindowNotice[league] < open_date
+                    and datetime.utcnow()
+                    < open_date + config.reportWindowDelta[league]
+                    and league in config.leaguesChannelIds.keys()
+                ):
+                    if datetime.utcnow() > open_date:
+                        msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>."
+                        await self.sendMessage(
+                            msg, config.leaguesChannelIds[league]
+                        )
+
+                        self.reportWindowNotice[league] = datetime.utcnow()
+                        utils.update_reportWindowNotice(self.reportWindowNotice)
+                    elif datetime.utcnow() + timedelta(minutes=59) > open_date:
+                        sleep = (open_date - datetime.utcnow()).minutes * 60
+
+            await asyncio.sleep(sleep)
+            sleep = 3600
 
     async def on_message(self, message: discord.Message):
         if message.author == self.user:
@@ -81,22 +112,6 @@ class MyBot(commands.Bot):
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
 
-        for league in self.reportWindowDelta.keys():
-            if (
-                datetime.utcnow() > self.schedule[league][self.getCurrentRound(league)]
-                and self.reportWindowNotice[league]
-                < self.schedule[league][self.getCurrentRound(league)]
-                and self.reportWindowNotice[league]
-                < self.schedule[league][self.getCurrentRound(league)]
-                + config.reportWindowDelta[league]
-                and league in config.leaguesChannelIds.keys()
-            ):
-                msg = f"Reports window is now open until <t:{int((self.schedule[league][self.getCurrentRound(league)] + config.reportWindowDelta[league]).timestamp())}:f>."
-                await self.sendMessage(msg, config.leaguesChannelIds[league])
-
-                self.reportWindowNotice[league] = datetime.utcnow()
-                utils.update_reportWindowNotice(self.reportWindowNotice)
-
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
@@ -104,6 +119,20 @@ class MyBot(commands.Bot):
             await self.errorChannel.send(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
             )
+
+    async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
+        if (
+            reaction.channel_id == self.ccChannel.id
+            and reaction.emoji.name == "✅"
+            and reaction.event_type == "REACTION_ADD"
+        ):
+            try:
+                guild = await self.fetch_guild(reaction.guild_id)
+                role = guild.get_role(config.connectedRole)
+                message = await self.ccChannel.fetch_message(reaction.message_id)
+                await message.author.add_roles(role, reason="Screenshot sent")
+            except Exception as e:
+                print(e)
 
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
@@ -197,17 +226,20 @@ class MyBot(commands.Bot):
             if t.name.find(id) != -1:
                 await t.edit(archived=True)
 
-    def getCurrentRound(self, league: str) -> str:
+    def getCurrentRound(self, league: str) -> int:
         if league in self.schedule.keys():
-            rounds = self.schedule[league]
+            rounds = self.schedule[league]["rounds"]
 
             for i in range(0, len(rounds)):
                 if rounds[i] > datetime.utcnow():
                     break
+            
+            if datetime.utcnow() < self.schedule[league]["rounds"][i] + timedelta(days=1) + config.reportWindowDelta[league]:
+                return i
+            
+            return i + 1
 
-            return str(i)
-
-        return "0"
+        return 0
 
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         logging.error(f"Error: {event_method}")
