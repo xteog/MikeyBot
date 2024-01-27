@@ -10,6 +10,7 @@ from moderation import violations
 import config
 import logging
 import sys
+import lobby
 
 # import load_log
 
@@ -32,8 +33,12 @@ class MikeyBot(commands.Bot):
         self.errorChannel = None
         self.reportChannel = None
         self.ccChannel = None
+        self.lobbiesChannel = None
+
+        self.lobbies = {}
         self.reportWindowNotice = utils.load_reportWindowNotice()
         self.schedule = utils.load_schedule()
+
         self.ready = False
 
     async def on_ready(self):
@@ -44,6 +49,7 @@ class MikeyBot(commands.Bot):
         self.errorChannel = self.get_channel(config.errorChannelId)
         self.reportChannel = self.get_channel(config.reportChannelId)
         self.ccChannel = self.get_channel(config.ccChannelId)
+        self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
         reports = await violations.getActive(self)
 
@@ -62,45 +68,62 @@ class MikeyBot(commands.Bot):
     async def background_task(self):
         sleep = 3600
 
+        awake_at = datetime.utcnow()
+
+
         await self.wait_until_ready()
         while not self.ready:
             await asyncio.sleep(1)
 
         while not self.is_closed():
-            for thread in self.reportChannel.threads:
-                if not thread.archived:
-                    id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
-                    report = await violations.getReports(self, id=id)
 
-                    if len(report) > 0 and not report[0].active:
-                        await thread.edit(archived=True)
+            lobbies = lobby.getLobbiesList()
+            if len(lobbies) != len(self.lobbies):
+                self.lobbies = lobbies
+                embed = lobby.LobbiesEmbed(lobbies=self.lobbies)
+
+                async for message in self.lobbiesChannel.history(limit = 100):
+                    if message.author == self.user:
+                        await message.delete()
+
+                await self.lobbiesChannel.send(embed=embed)
+
+            if awake_at < datetime.utcnow():
+                awake_at = datetime.utcnow() + timedelta(hours=1)
+
+                for thread in self.reportChannel.threads:
+                    if not thread.archived:
+                        id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
+                        report = await violations.getReports(self, id=id)
+
+                        if len(report) > 0 and not report[0].active:
+                            await thread.edit(archived=True)
 
 
-            for league in config.reportWindowDelta.keys():
+                for league in config.reportWindowDelta.keys():
 
-                open_date = self.schedule[league]["rounds"][
-                    self.getCurrentRound(league)
-                ] + timedelta(days=1)
+                    open_date = self.schedule[league]["rounds"][
+                        self.getCurrentRound(league)
+                    ] + timedelta(days=1)
 
-                if (
-                    self.reportWindowNotice[league] < open_date
-                    and datetime.utcnow()
-                    < open_date + config.reportWindowDelta[league]
-                    and league in config.leaguesChannelIds.keys()
-                ):
-                    if datetime.utcnow() > open_date:
-                        msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>."
-                        await self.sendMessage(
-                            msg, config.leaguesChannelIds[league]
-                        )
+                    if (
+                        self.reportWindowNotice[league] < open_date
+                        and datetime.utcnow()
+                        < open_date + config.reportWindowDelta[league]
+                        and league in config.leaguesChannelIds.keys()
+                    ):
+                        if datetime.utcnow() > open_date:
+                            msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>."
+                            await self.sendMessage(
+                                msg, config.leaguesChannelIds[league]
+                            )
 
-                        self.reportWindowNotice[league] = datetime.utcnow()
-                        utils.update_reportWindowNotice(self.reportWindowNotice)
-                    elif datetime.utcnow() + timedelta(minutes=59) > open_date:
-                        sleep = (open_date - datetime.utcnow()).minutes * 60
-
-            await asyncio.sleep(sleep)
-            sleep = 3600
+                            self.reportWindowNotice[league] = datetime.utcnow()
+                            utils.update_reportWindowNotice(self.reportWindowNotice)
+                        elif datetime.utcnow() + timedelta(minutes=59) > open_date:
+                            awake_at = (open_date - datetime.utcnow()).total_seconds()
+                
+            await asyncio.sleep(5 * 60)
 
     async def on_message(self, message: discord.Message):
         if message.author == self.user:

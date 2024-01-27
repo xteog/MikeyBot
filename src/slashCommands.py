@@ -237,7 +237,7 @@ class CommandsCog(discord.ext.commands.Cog):
     async def lobbies(self, interaction: discord.Interaction, ephemeral: bool = True):
         logging.info(f'"\\lobbies" used by {interaction.user.name}')
 
-        lobbies = utils.getLobbiesList()
+        lobbies = lobby.getLobbiesList()
 
         if len(lobbies) == 0:
             await interaction.response.send_message("No lobbies found", ephemeral=True)
