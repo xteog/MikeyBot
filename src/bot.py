@@ -194,13 +194,15 @@ class MikeyBot(commands.Bot):
     async def sendReport(self, data: violations.ReportData):
         view = views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
-        await message.add_reaction(":thumbsup:")
-        await message.add_reaction(":thumdown:")
+        
         await self.reportChannel.create_thread(
             name=f"Report {data.offender.display_name} ({data.id})",
             message=message,
             auto_archive_duration=1440,
         )
+        
+        await message.add_reaction("👍")
+        await message.add_reaction("👎")
 
     async def sendReminder(
         self, data: violations.ReportData, offence=True
@@ -241,7 +243,7 @@ class MikeyBot(commands.Bot):
 
         return 0
     
-    async def on_error(self, event_method: str) -> None:
+    async def on_error(self, event_method: str, *args, **kwargs) -> None:
         logging.error(f"Error: {event_method}")
 
 
