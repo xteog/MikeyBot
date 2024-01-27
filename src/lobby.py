@@ -28,8 +28,8 @@ class LobbiesEmbed(discord.Embed):
                 value=value,
                 inline=True,
             )
-        self.footer = "Last update"
-        self.timestamp = datetime.utcnow().timestamp()
+        self.set_footer(text="Last update")
+        self.timestamp = datetime.utcnow()
 
 
 def getMessageParameter(data: str, n: int) -> str:

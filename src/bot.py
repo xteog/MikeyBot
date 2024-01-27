@@ -154,8 +154,7 @@ class MikeyBot(commands.Bot):
         message = await self.ccChannel.fetch_message(reaction.message_id)
 
         if (
-            reaction.channel_id == self.ccChannel.id
-            and reaction.emoji.name == "✅"
+            reaction.emoji.name == "✅"
             and reaction.event_type == "REACTION_ADD"
             and utils.hasPermissions(user=reaction.member, role=config.ccOfficialRole)
         ):
