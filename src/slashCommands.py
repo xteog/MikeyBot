@@ -1,7 +1,7 @@
 import discord
 import logging
 import config
-import moderation.violations as violations
+import moderation.violations as violation
 import moderation.views as views
 import utils
 from datetime import datetime
@@ -130,7 +130,7 @@ class CommandsCog(discord.ext.commands.Cog):
             return
 
         if id != None:
-            violations = await violations.getReports(bot=self.client, id=id)
+            violations = await violation.getReports(bot=self.client, id=id)
             if len(violations) == 0:
                 await interaction.response.send_message(
                     f"No reports found with ID `{id}`", ephemeral=True
@@ -150,7 +150,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
         if user != None:
             await interaction.response.defer(ephemeral=True)
-            violations = await violations.getReports(bot=self.client, user=user)
+            violations = await violation.getReports(bot=self.client, user=user)
             await interaction.delete_original_response()
             if len(violations) == 0:
                 await interaction.followup.send(
@@ -205,7 +205,7 @@ class CommandsCog(discord.ext.commands.Cog):
             await interaction.followup.send(error, ephemeral=True)
             return
 
-        data = violations.ReportData(
+        data = violation.ReportData(
             offender=user,
             league=league
             + (
@@ -220,7 +220,7 @@ class CommandsCog(discord.ext.commands.Cog):
             active=True,
         )
 
-        violations.addToHistory(data)
+        violation.addToHistory(data)
 
         await self.client.sendReport(data)
 
