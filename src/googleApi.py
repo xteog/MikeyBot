@@ -28,7 +28,7 @@ def appendRow(row: list) -> bool:
 
 
 def refreshToken() -> str | None:
-    credentials = utils.read("data/google_credentials.json")
+    credentials = utils.read(config.googleCredentialsPath)
 
     response = requests.post(
         url=refreshTokenURL.format(
