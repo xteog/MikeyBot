@@ -66,42 +66,41 @@ class MikeyBot(commands.Bot):
         self.bg_task = self.loop.create_task(self.background_task())
 
     async def background_task(self):
-        sleep = 3600
-
         awake_at = datetime.utcnow()
-
 
         await self.wait_until_ready()
         while not self.ready:
             await asyncio.sleep(1)
 
         while not self.is_closed():
-
             lobbies = lobby.getLobbiesList()
+            self.lobbies = lobbies
+            embed = lobby.LobbiesEmbed(lobbies=self.lobbies)
+
+            async for message in self.lobbiesChannel.history(limit=100):
+                if message.author == self.user:
+                    oldMessage = message
+
             if len(lobbies) != len(self.lobbies):
-                self.lobbies = lobbies
-                embed = lobby.LobbiesEmbed(lobbies=self.lobbies)
-
-                async for message in self.lobbiesChannel.history(limit = 100):
-                    if message.author == self.user:
-                        await message.delete()
-
+                await oldMessage.delete()
                 await self.lobbiesChannel.send(embed=embed)
+            else:
+                await oldMessage.edit(embed=embed)
 
             if awake_at < datetime.utcnow():
                 awake_at = datetime.utcnow() + timedelta(hours=1)
 
                 for thread in self.reportChannel.threads:
                     if not thread.archived:
-                        id = thread.name[thread.name.find("(") + 1 : thread.name.find(")")]
+                        id = thread.name[
+                            thread.name.find("(") + 1 : thread.name.find(")")
+                        ]
                         report = await violations.getReports(self, id=id)
 
                         if len(report) > 0 and not report[0].active:
                             await thread.edit(archived=True)
 
-
                 for league in config.reportWindowDelta.keys():
-
                     open_date = self.schedule[league]["rounds"][
                         self.getCurrentRound(league)
                     ] + timedelta(days=1)
@@ -122,8 +121,13 @@ class MikeyBot(commands.Bot):
                             utils.update_reportWindowNotice(self.reportWindowNotice)
                         elif datetime.utcnow() + timedelta(minutes=59) > open_date:
                             awake_at = (open_date - datetime.utcnow()).total_seconds()
-                
-            await asyncio.sleep(5 * 60)
+
+            if self.lobbies != None and len(self.lobbies) > 0:
+                sleep = 60
+            else:
+                sleep = 5 * 60
+
+            await asyncio.sleep(sleep)
 
     async def on_message(self, message: discord.Message):
         if message.author == self.user:
@@ -153,9 +157,13 @@ class MikeyBot(commands.Bot):
         ):
             guild = await self.fetch_guild(reaction.guild_id)
             role = guild.get_role(config.connectedRole)
-            
-            await message.author.add_roles(role, reason=f"Verified by {reaction.member.display_name}")
-            logging.info(f"@Connected role added to {message.author.display_name} by {reaction.member.display_name}")
+
+            await message.author.add_roles(
+                role, reason=f"Verified by {reaction.member.display_name}"
+            )
+            logging.info(
+                f"@Connected role added to {message.author.display_name} by {reaction.member.display_name}"
+            )
 
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
@@ -217,19 +225,17 @@ class MikeyBot(commands.Bot):
     async def sendReport(self, data: violations.ReportData):
         view = views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
-        
+
         await self.reportChannel.create_thread(
             name=f"Report {data.offender.display_name} ({data.id})",
             message=message,
             auto_archive_duration=1440,
         )
-        
+
         await message.add_reaction("👍")
         await message.add_reaction("👎")
 
-    async def sendReminder(
-        self, data: violations.ReportData, offence=True
-    ) -> None:
+    async def sendReminder(self, data: violations.ReportData, offence=True) -> None:
         view = views.ReminderView(self, data)
 
         if offence:
@@ -258,14 +264,19 @@ class MikeyBot(commands.Bot):
             for i in range(0, len(rounds)):
                 if rounds[i] > datetime.utcnow():
                     break
-            
-            if datetime.utcnow() < self.schedule[league]["rounds"][i] + timedelta(days=1) + config.reportWindowDelta[league]:
+
+            if (
+                datetime.utcnow()
+                < self.schedule[league]["rounds"][i]
+                + timedelta(days=1)
+                + config.reportWindowDelta[league]
+            ):
                 return i
-            
+
             return i + 1
 
         return 0
-    
+
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
         logging.error(f"Error: {event_method}")
 

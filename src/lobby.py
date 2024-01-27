@@ -1,10 +1,8 @@
 import codecs
 from datetime import datetime
 import socket
-from typing import Any, Optional, Union
 import discord
-from discord.colour import Colour
-from discord.types.embed import EmbedType
+
 
 class LobbiesEmbed(discord.Embed):
     def __init__(self, lobbies: dict):
@@ -13,7 +11,7 @@ class LobbiesEmbed(discord.Embed):
         if len(lobbies) == 0:
             self.description = "No lobbies found"
             return
-        
+
         for lobby in lobbies:
             if lobby["private"]:
                 name = ":lock: " + f'**{lobby["name"]}**'
@@ -30,7 +28,7 @@ class LobbiesEmbed(discord.Embed):
                 value=value,
                 inline=True,
             )
-            
+
 
 def getMessageParameter(data: str, n: int) -> str:
     """
@@ -60,8 +58,9 @@ def getMessageParameter(data: str, n: int) -> str:
 
         if data[i] == "|" and cont == n:
             start = i + 1
-    
+
     return data[start:end]
+
 
 def getLobbyInfo(data: str) -> dict:
     """
@@ -78,7 +77,7 @@ def getLobbyInfo(data: str) -> dict:
             end = i
             break
     lobbyName = data[start:end]
-    
+
     max_players = getMessageParameter(data, 3)
     players = getMessageParameter(data, 9)
     status = getMessageParameter(data, 7)

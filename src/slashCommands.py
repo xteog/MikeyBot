@@ -228,46 +228,6 @@ class CommandsCog(discord.ext.commands.Cog):
         await interaction.followup.send(f"Report `{data.id}` created", ephemeral=True)
 
     @discord.app_commands.command(
-        name="lobbies",
-        description="Returns the list of lobbies currently active",
-    )
-    @discord.app_commands.describe(
-        ephemeral='If "True" only you can see the list (default True)'
-    )
-    async def lobbies(self, interaction: discord.Interaction, ephemeral: bool = True):
-        logging.info(f'"\\lobbies" used by {interaction.user.name}')
-
-        lobbies = lobby.getLobbiesList()
-
-        if len(lobbies) == 0:
-            await interaction.response.send_message("No lobbies found", ephemeral=True)
-            return
-
-        embed = discord.Embed(
-            title="Lobbies online",
-            colour=0x00B0F4,
-        )
-
-        for lobby in lobbies:
-            if lobby["private"]:
-                name = ":lock: " + f'**{lobby["name"]}**'
-            else:
-                name = f'**{lobby["name"]}**'
-
-            if lobby["status"] == "Lobby":
-                value = f'**Capacity:** {lobby["curr_players"]}/{lobby["max_players"]}\n**Status:** {lobby["status"]}'
-            else:
-                value = f'**Capacity:** {lobby["curr_players"]}/{lobby["max_players"]}\n**Status:** {lobby["status"]} {lobby["curr_laps"]}/{lobby["max_laps"]} Laps'
-
-            embed.add_field(
-                name=name,
-                value=value,
-                inline=True,
-            )
-
-        await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
-
-    @discord.app_commands.command(
         name="set_number",
         description="Choose the number you want to race with",
     )
@@ -341,7 +301,7 @@ class CommandsCog(discord.ext.commands.Cog):
                 matrix[i][1] = "Available"
 
         await interaction.response.send_message(
-            content=desc, file=discord.File("data/numbers.xlsx")
+            content=desc, file=discord.File(config.numbersSheetPath)
         )
 
     @discord.app_commands.command(
