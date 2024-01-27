@@ -213,7 +213,7 @@ class CommandsCog(discord.ext.commands.Cog):
                 if not league in self.client.schedule.keys()
                 else self.client.schedule[league]["season"]
             ),
-            round=round,
+            round=round if round > 0 else None,
             creator=interaction.user,
             proof=modal.link.value,
             desc=modal.notes.value,
