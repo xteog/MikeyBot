@@ -1,7 +1,7 @@
 import codecs
-from datetime import datetime
 import socket
 import discord
+from datetime import datetime
 
 
 class LobbiesEmbed(discord.Embed):
@@ -28,6 +28,8 @@ class LobbiesEmbed(discord.Embed):
                 value=value,
                 inline=True,
             )
+        self.footer = "Last update"
+        self.timestamp = datetime.utcnow().timestamp()
 
 
 def getMessageParameter(data: str, n: int) -> str:

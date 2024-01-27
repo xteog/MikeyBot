@@ -74,8 +74,7 @@ class MikeyBot(commands.Bot):
 
         while not self.is_closed():
             lobbies = lobby.getLobbiesList()
-            self.lobbies = lobbies
-            embed = lobby.LobbiesEmbed(lobbies=self.lobbies)
+            embed = lobby.LobbiesEmbed(lobbies=lobbies)
 
             async for message in self.lobbiesChannel.history(limit=100):
                 if message.author == self.user:
@@ -86,6 +85,8 @@ class MikeyBot(commands.Bot):
                 await self.lobbiesChannel.send(embed=embed)
             else:
                 await oldMessage.edit(embed=embed)
+
+            self.lobbies = lobbies
 
             if awake_at < datetime.utcnow():
                 awake_at = datetime.utcnow() + timedelta(hours=1)
@@ -147,6 +148,9 @@ class MikeyBot(commands.Bot):
             )
 
     async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
+        if reaction.channel_id != self.ccChannel.id:
+            return
+        
         message = await self.ccChannel.fetch_message(reaction.message_id)
 
         if (
