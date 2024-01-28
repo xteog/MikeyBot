@@ -8,6 +8,9 @@ class LobbiesEmbed(discord.Embed):
     def __init__(self, lobbies: dict):
         super().__init__(colour=0x00B0F4, title="Lobbies online")
 
+        self.set_footer(text="Last update")
+        self.timestamp = datetime.utcnow()
+
         if len(lobbies) == 0:
             self.description = "No lobbies found"
             return
@@ -28,8 +31,6 @@ class LobbiesEmbed(discord.Embed):
                 value=value,
                 inline=True,
             )
-        self.set_footer(text="Last update")
-        self.timestamp = datetime.utcnow()
 
 
 def getMessageParameter(data: str, n: int) -> str:
