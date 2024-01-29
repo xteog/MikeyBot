@@ -5,6 +5,7 @@ import random
 import discord
 import googleApi
 import config
+import openpyxl
 
 
 def lev_dist(s: str, t: str) -> int:
@@ -87,6 +88,17 @@ def updateSpreadSheet(data) -> None:
 
     if not outcome:
         logging.error("SpreadSheet not updated")
+
+
+def createWorkbook(path: str, data: list[list]):
+    workbook = openpyxl.load_workbook(filename=path)
+    sheet = workbook.active
+
+    for i in range(len(data)):
+        for j in range(len(data[0])):
+            sheet.cell(row=i + 1, column=j + 1).value = data[i][j]
+
+    workbook.save(filename=path)
 
 
 def write(path: str, data: dict) -> None:

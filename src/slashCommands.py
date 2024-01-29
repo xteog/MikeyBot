@@ -300,6 +300,7 @@ class CommandsCog(discord.ext.commands.Cog):
             else:
                 matrix[i][1] = "Available"
 
+        utils.createWorkbook(config.numbersSheetPath, matrix)
         await interaction.response.send_message(
             content=desc, file=discord.File(config.numbersSheetPath)
         )
@@ -311,10 +312,14 @@ class CommandsCog(discord.ext.commands.Cog):
     async def help(self, interaction: discord.Interaction):
         logging.info(f'"\\help" used by {interaction.user.name}')
 
+        """
         with open("README.md") as f:
             text = f.read()
+        """
 
-        await interaction.response.send_message("Not done yet", ephemeral=True)
+        await interaction.response.send_message(
+            "Not done yet. Dm me if you need help", ephemeral=True
+        )
 
     @report.error
     @search_violation.error
