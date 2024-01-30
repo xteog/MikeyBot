@@ -241,7 +241,7 @@ class ReportRuleSelect(discord.ui.Select):
         super().__init__(
             placeholder="Select a Rule",
             max_values=1,
-            options=self.getRuleSelectOptions(view.rule_selected),
+            options=self.getRuleSelectOptions(view.rule_selected, view.data.league),
             row=0,
             custom_id=f"{view.data.id}_0",
         )
@@ -250,10 +250,11 @@ class ReportRuleSelect(discord.ui.Select):
     def getRuleSelectOptions(
         self,
         selected: violations.Rule = violations.Rule(),
+        league: str = ""
     ) -> list[discord.SelectOption]:
         options = []
 
-        if self._view.data.league != "Off-Track":
+        if league != "Off-Track":
             rules = [
                 violations.Rule("H.1.1"),
                 violations.Rule("H.1.2"),

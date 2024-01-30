@@ -50,12 +50,14 @@ class MikeyBot(commands.Bot):
         self.reportChannel = self.get_channel(config.reportChannelId)
         self.ccChannel = self.get_channel(config.ccChannelId)
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
+        try:
+            reports = await violations.getActive(self)
 
-        reports = await violations.getActive(self)
-
-        for r in reports:
-            view = views.ReportView(bot=self, data=r)
-            self.add_view(view)
+            for r in reports:
+                view = views.ReportView(bot=self, data=r)
+                self.add_view(view)
+        except Exception as e:
+            print(e)
 
         print("Mikey is up")
         # await load_log.loadLog(self)
