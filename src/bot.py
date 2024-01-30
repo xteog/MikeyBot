@@ -103,7 +103,7 @@ class MikeyBot(commands.Bot):
 
                 for league in config.reportWindowDelta.keys():
                     open_date = self.schedule[league]["rounds"][
-                        self.getCurrentRound(league)
+                        self.getCurrentRound(league) - 1
                     ] + timedelta(days=1)
 
                     if (
@@ -148,9 +148,15 @@ class MikeyBot(commands.Bot):
             )
 
     async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
+        if reaction.message_id == 1201493634218995774:
+            guild = await self.fetch_guild(reaction.guild_id)
+            role = guild.get_role(1201294515621867621)
+
+            await reaction.member.add_roles(role)
+
         if reaction.channel_id != self.ccChannel.id:
             return
-        
+
         message = await self.ccChannel.fetch_message(reaction.message_id)
 
         if (

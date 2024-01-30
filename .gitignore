@@ -11,3 +11,4 @@ src/load_log.py
 src/config.py
 data/numbers.xlsx
 data/google_credentials.json
+data/report_window_notice.json

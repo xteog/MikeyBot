@@ -82,9 +82,9 @@ def isWindowOpen(league: str, round: int) -> bool:
 
     if league in schedule.keys():
         return datetime.now() > schedule[league]["rounds"][
-            round
+            round - 1
         ] and datetime.now() < schedule[league]["rounds"][
-            round
+            round - 1
         ] + config.reportWindowDelta[
             league
         ] + timedelta(
@@ -278,7 +278,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
             desc = f"The number {number} is now available"
         else:
-            numbers[str(number)] = interaction.user.name
+            numbers[str(number)] = interaction.user.display_name
 
             desc = (
                 f"The number of {interaction.user.mention} is now changed into {number}"

@@ -253,17 +253,24 @@ class ReportRuleSelect(discord.ui.Select):
     ) -> list[discord.SelectOption]:
         options = []
 
-        rules = [
-            violations.Rule("H.1.1"),
-            violations.Rule("H.1.2"),
-            violations.Rule("H.1.3"),
-            violations.Rule("H.1.4"),
-            violations.Rule("H.1.5"),
-            violations.Rule("H.1.6"),
-            violations.Rule("H.1.7"),
-            violations.Rule("H.1.8"),
-            violations.Rule("H.1.9"),
-        ]
+        if self._view.data.league != "Off-Track":
+            rules = [
+                violations.Rule("H.1.1"),
+                violations.Rule("H.1.2"),
+                violations.Rule("H.1.3"),
+                violations.Rule("H.1.4"),
+                violations.Rule("H.1.5"),
+                violations.Rule("H.1.6"),
+                violations.Rule("H.1.7"),
+                violations.Rule("H.1.8"),
+                violations.Rule("H.1.9"),
+            ]
+        else:
+            rules = [
+                violations.Rule("G.3.2.1"),
+                violations.Rule("G.3.2.2")
+            ]
+
 
         for rule in rules:
             if rule.code == selected.code:
