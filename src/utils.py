@@ -61,7 +61,7 @@ def loading(i, len):
 def updateSpreadSheet(data) -> None:
     row = [
         data.id,
-        data.offender.display_name,
+        data.offender.global_name,
         data.penalty,
         data.severity,
         data.league,
@@ -69,7 +69,7 @@ def updateSpreadSheet(data) -> None:
         str(data.rule),
         data.proof,
         data.notes,
-        data.creator.display_name,
+        data.creator.global_name,
         data.desc,
         data.timestamp.strftime(config.timeFormat),
     ]
