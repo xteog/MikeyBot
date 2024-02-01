@@ -97,12 +97,14 @@ class ReminderView(discord.ui.View):
         #self.add_item(AppealButton(self))
 
 class SwitchView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot):
         super().__init__(timeout=None)
+        self.bot = bot
 
     @discord.ui.button(label="Nintendo Switch Role", custom_id="switch", style=discord.ButtonStyle.danger)
-    async def switchRole(self, interaction: Interaction):
-        guild = await self.fetch_guild(config.serverId)
+    async def switchRole(self, interaction: Interaction, button):
+        logging.info(f"{interaction.user.display_name} used the Switch button")
+        guild = await self.bot.fetch_guild(config.serverId)
         role = guild.get_role(1202374974380179499)
 
         await interaction.user.add_roles(role)

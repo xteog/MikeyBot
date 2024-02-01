@@ -58,7 +58,7 @@ class MikeyBot(commands.Bot):
                 view = views.ReportView(bot=self, data=r)
                 self.add_view(view)
 
-            self.add_view(views.SwitchView())
+            self.add_view(views.SwitchView(self))
         except Exception as e:
             print(e)
 
