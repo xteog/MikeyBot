@@ -1,3 +1,4 @@
+from typing import Optional
 import discord
 from discord.interactions import Interaction
 import moderation.violations as violations
@@ -94,6 +95,18 @@ class ReminderView(discord.ui.View):
         self.data = data
         self.embed = ReportEmbed(data, permission=False)
         #self.add_item(AppealButton(self))
+
+class SwitchView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Nintendo Switch Role", custom_id="switch", style=discord.ButtonStyle.danger)
+    async def switchRole(self, interaction: Interaction):
+        guild = await self.fetch_guild(config.serverId)
+        role = guild.get_role(1202374974380179499)
+
+        await interaction.user.add_roles(role)
+        await interaction.response.send_message("Role added", ephemeral=True)
 
 
 """ Embeds """

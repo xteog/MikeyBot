@@ -12,7 +12,7 @@ import logging
 import sys
 import lobby
 
-# import load_log
+#import load_log
 
 
 class MikeyBot(commands.Bot):
@@ -50,18 +50,21 @@ class MikeyBot(commands.Bot):
         self.reportChannel = self.get_channel(config.reportChannelId)
         self.ccChannel = self.get_channel(config.ccChannelId)
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
+
         try:
             reports = await violations.getActive(self)
 
             for r in reports:
                 view = views.ReportView(bot=self, data=r)
                 self.add_view(view)
+
+            self.add_view(views.SwitchView())
         except Exception as e:
             print(e)
 
         print("Mikey is up")
-        # await load_log.loadLog(self)
-
+        #await load_log.loadLog(self)
+        
         self.ready = True
 
     async def setup_hook(self) -> None:
