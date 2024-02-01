@@ -11,7 +11,7 @@ class LobbiesView(discord.ui.View):
         super().__init__(timeout=None)
 
         self.client = client
-        self.embed = LobbiesEmbed(lobbies=self.lobbies)
+        self.embed = LobbiesEmbed(lobbies=lobbies)
 
     @discord.ui.button(label="↻", style=discord.ButtonStyle.gray, custom_id="refresh")
     async def refresh(
