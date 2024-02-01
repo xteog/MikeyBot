@@ -174,9 +174,6 @@ def linkHasTimestamp(str: str) -> bool:
     if start == -1:
         return False
 
-    if len(str[start:]) <= 3:
-        return False
-
     return str[start + 3 :].isdigit() or str[len(str) - 1] == "s"
 
 

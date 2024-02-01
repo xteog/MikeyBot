@@ -81,9 +81,9 @@ def isWindowOpen(league: str, round: int) -> bool:
     schedule = utils.load_schedule()
 
     if league in schedule.keys():
-        return datetime.now() > schedule[league]["rounds"][
-            round - 1
-        ] and datetime.now() < schedule[league]["rounds"][
+        return datetime.now() > schedule[league]["rounds"][round - 1] + timedelta(
+            days=1
+        ) and datetime.now() < schedule[league]["rounds"][
             round - 1
         ] + config.reportWindowDelta[
             league
@@ -182,11 +182,11 @@ class CommandsCog(discord.ext.commands.Cog):
         league = league.value
         round = self.client.getCurrentRound(league)
 
-        if not isWindowOpen(league, round) and not utils.hasPermissions(
-            interaction.user, config.stewardsRole
+        if (not isWindowOpen(league, round)) and (
+            not utils.hasPermissions(interaction.user, config.stewardsRole)
         ):
             open_date = self.client.schedule[league]["rounds"][
-                self.client.getCurrentRound(league)
+                self.client.getCurrentRound(league) - 1
             ] + timedelta(days=1)
 
             await interaction.response.send_message(
