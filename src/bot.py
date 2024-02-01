@@ -141,6 +141,10 @@ class MikeyBot(commands.Bot):
 
         await self.devCommands(message)
 
+        if message.mention_everyone and len(message.author.roles) < 5:
+            await message.author.ban(reason="Gotcha u moron", delete_message_seconds=60)
+            await message.channel.send("Gotcha u moron")
+
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
 
