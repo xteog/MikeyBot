@@ -1,7 +1,33 @@
 import codecs
+import logging
 import socket
 import discord
 from datetime import datetime
+import lobby
+
+
+class LobbiesView(discord.ui.View):
+    def __init__(self, client):
+        super().__init__(timeout=None)
+
+        self.client = client
+        self.embed = LobbiesEmbed(lobbies=self.client.lobbies)
+
+    @discord.ui.button(label="↻", style=discord.ButtonStyle.gray, custom_id="refresh")
+    async def refresh(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        logging.info(interaction.user.display_name + " used refresh")
+        lobbies = lobby.getLobbiesList()
+        view = LobbiesView(self.client)
+
+        if len(self.client.lobbies) != len(lobbies):
+            await interaction.message.delete()
+            await self.client.lobbiesChannel.send(view=view, embed=view.embed)
+        else:
+            await interaction.message.edit(view=view, embed=view.embed)
+
+        await interaction.response.send_message("Lobby list updated", ephemeral=True)
 
 
 class LobbiesEmbed(discord.Embed):

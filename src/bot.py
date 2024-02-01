@@ -59,6 +59,7 @@ class MikeyBot(commands.Bot):
                 self.add_view(view)
 
             self.add_view(views.SwitchView(self))
+            self.add_view(lobby.LobbiesView(self))
         except Exception as e:
             print(e)
 
@@ -79,7 +80,7 @@ class MikeyBot(commands.Bot):
 
         while not self.is_closed():
             lobbies = lobby.getLobbiesList()
-            embed = lobby.LobbiesEmbed(lobbies=lobbies)
+            view = lobby.LobbiesView(self)
 
             async for message in self.lobbiesChannel.history(limit=100):
                 if message.author == self.user:
@@ -87,9 +88,9 @@ class MikeyBot(commands.Bot):
 
             if len(lobbies) != len(self.lobbies):
                 await oldMessage.delete()
-                await self.lobbiesChannel.send(embed=embed)
+                await self.lobbiesChannel.send(view=view, embed=view.embed)
             else:
-                await oldMessage.edit(embed=embed)
+                await oldMessage.edit(view=view, embed=view.embed)
 
             self.lobbies = lobbies
 

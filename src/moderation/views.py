@@ -102,7 +102,7 @@ class SwitchView(discord.ui.View):
         self.bot = bot
 
     @discord.ui.button(label="Nintendo Switch Role", custom_id="switch", style=discord.ButtonStyle.danger)
-    async def switchRole(self, interaction: Interaction, button):
+    async def switchRole(self, interaction: Interaction, button: discord.ui.Button):
         logging.info(f"{interaction.user.display_name} used the Switch button")
         guild = await self.bot.fetch_guild(config.serverId)
         role = guild.get_role(1202374974380179499)
