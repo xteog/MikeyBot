@@ -174,7 +174,7 @@ def linkHasTimestamp(str: str) -> bool:
     if start == -1:
         return False
 
-    return str[start + 3 :].isdigit() or str[len(str) - 1] == "s"
+    return str[start + 2 :].isdigit() or str[len(str) - 1] == "s"
 
 
 def hasPermissions(
