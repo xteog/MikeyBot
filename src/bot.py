@@ -59,7 +59,8 @@ class MikeyBot(commands.Bot):
                 self.add_view(view)
 
             self.add_view(views.SwitchView(self))
-            self.add_view(lobby.LobbiesView(self))
+            lobbies = lobby.getLobbiesList()
+            self.add_view(lobby.LobbiesView(self, lobbies))
         except Exception as e:
             print(e)
 
@@ -80,7 +81,7 @@ class MikeyBot(commands.Bot):
 
         while not self.is_closed():
             lobbies = lobby.getLobbiesList()
-            view = lobby.LobbiesView(self)
+            view = lobby.LobbiesView(self, lobbies)
 
             async for message in self.lobbiesChannel.history(limit=100):
                 if message.author == self.user:

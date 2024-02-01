@@ -7,11 +7,11 @@ import lobby
 
 
 class LobbiesView(discord.ui.View):
-    def __init__(self, client):
+    def __init__(self, client, lobbies: dict):
         super().__init__(timeout=None)
 
         self.client = client
-        self.embed = LobbiesEmbed(lobbies=self.client.lobbies)
+        self.embed = LobbiesEmbed(lobbies=self.lobbies)
 
     @discord.ui.button(label="↻", style=discord.ButtonStyle.gray, custom_id="refresh")
     async def refresh(
@@ -19,7 +19,7 @@ class LobbiesView(discord.ui.View):
     ) -> None:
         logging.info(interaction.user.display_name + " used refresh")
         lobbies = lobby.getLobbiesList()
-        view = LobbiesView(self.client)
+        view = LobbiesView(self.client, lobbies)
 
         if len(self.client.lobbies) != len(lobbies):
             await interaction.message.delete()
