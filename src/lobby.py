@@ -27,6 +27,8 @@ class LobbiesView(discord.ui.View):
         else:
             await interaction.message.edit(view=view, embed=view.embed)
 
+        self.client.lobbies = lobbies
+
         await interaction.response.send_message("Lobby list updated", ephemeral=True)
 
 
