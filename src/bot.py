@@ -83,11 +83,14 @@ class MikeyBot(commands.Bot):
             lobbies = lobby.getLobbiesList()
             view = lobby.LobbiesView(self, lobbies)
 
+            oldMessage = None
             async for message in self.lobbiesChannel.history(limit=100):
                 if message.author == self.user:
                     oldMessage = message
 
-            if len(lobbies) != len(self.lobbies):
+            if oldMessage == None:
+                await self.lobbiesChannel.send(view=view, embed=view.embed)
+            elif len(lobbies) != len(self.lobbies):
                 await oldMessage.delete()
                 await self.lobbiesChannel.send(view=view, embed=view.embed)
             else:

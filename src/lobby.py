@@ -22,14 +22,16 @@ class LobbiesView(discord.ui.View):
         view = LobbiesView(self.client, lobbies)
 
         if len(self.client.lobbies) != len(lobbies):
+            await interaction.response.send_message("Lobby list updated", ephemeral=True)
             await interaction.message.delete()
             await self.client.lobbiesChannel.send(view=view, embed=view.embed)
         else:
             await interaction.message.edit(view=view, embed=view.embed)
+            await interaction.response.send_message("Lobby list updated", ephemeral=True)
 
         self.client.lobbies = lobbies
 
-        await interaction.response.send_message("Lobby list updated", ephemeral=True)
+        
 
 
 class LobbiesEmbed(discord.Embed):
