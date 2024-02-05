@@ -291,7 +291,6 @@ class MikeyBot(commands.Bot):
             if (
                 datetime.utcnow()
                 < self.schedule[league]["rounds"][i]
-                + timedelta(days=1)
                 + config.reportWindowDelta[league]
             ):
                 return i
