@@ -97,7 +97,7 @@ class MikeyBot(commands.Bot):
                 await oldMessage.edit(view=view, embed=view.embed)
 
             self.lobbies = lobbies
-
+            
             if awake_at < datetime.utcnow():
                 awake_at = datetime.utcnow() + timedelta(hours=1)
 
@@ -131,7 +131,7 @@ class MikeyBot(commands.Bot):
                             self.reportWindowNotice[league] = datetime.utcnow()
                             utils.update_reportWindowNotice(self.reportWindowNotice)
                         elif datetime.utcnow() + timedelta(minutes=59) > open_date:
-                            awake_at = (open_date - datetime.utcnow()).total_seconds()
+                            awake_at = (open_date - datetime.utcnow())
 
             if self.lobbies != None and len(self.lobbies) > 0:
                 sleep = 60
