@@ -283,21 +283,19 @@ class MikeyBot(commands.Bot):
     def getCurrentRound(self, league: str) -> int:
         if league in self.schedule.keys():
             rounds = self.schedule[league]["rounds"]
-
+            
+            found = False
             for i in range(0, len(rounds)):
                 if rounds[i] > datetime.utcnow():
+                    found = True
                     break
 
-            if (
-                datetime.utcnow()
-                < self.schedule[league]["rounds"][i]
-                + config.reportWindowDelta[league]
-            ):
+            if found:
                 return i
-
+            
             return i + 1
 
-        return 0
+        return 1
 
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
         logging.error(f"Error: {event_method}")
