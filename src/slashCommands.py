@@ -305,6 +305,27 @@ class CommandsCog(discord.ext.commands.Cog):
             content=desc, file=discord.File(config.numbersSheetPath)
         )
 
+        channel = await self.client.fetch_channel(1059998599733321818)
+        oldMessage = None
+        async for message in channel.history(limit=100):
+            if message.author == self.client.user and message.content.startswith("#"):
+                oldMessage = message
+                break
+
+        fileMessage = None
+        async for message in channel.history(limit=100):
+            if message.author == self.client.user and len(message.attachments) > 0:
+                fileMessage = message
+                break
+
+        if oldMessage != None:
+            await oldMessage.delete()
+            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the shown list if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
+        else:
+            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the shown list if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
+
+
+
     @discord.app_commands.command(
         name="help",
         description="Shows the documentation of the bot (todo)",

@@ -9,6 +9,6 @@ src/moderation/__pycache__/
 /__pycache__/
 src/load_log.py
 src/config.py
-data/numbers.xlsx
+data/Available_Numbers.xlsx
 data/google_credentials.json
 data/report_window_notice.json
