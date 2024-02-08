@@ -320,9 +320,9 @@ class CommandsCog(discord.ext.commands.Cog):
 
         if oldMessage != None:
             await oldMessage.delete()
-            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the shown list if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
+            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
         else:
-            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the shown list if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
+            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
 
 
 
