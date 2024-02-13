@@ -358,8 +358,14 @@ class CommandsCog(discord.ext.commands.Cog):
                 view=view, embed=view.embed, ephemeral=True
             )
         else:
-            message_id = int(message_id)
-
+            try:
+                message_id = int(message_id)
+            except Exception as e:
+                await interaction.response.send_message(
+                    "Message id not valid", ephemeral=True
+                )
+                return
+            
             data = role_assign.objects.loadData(message_id)
 
             if data == None:
