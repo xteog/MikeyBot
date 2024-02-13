@@ -101,11 +101,19 @@ def loadData(messageId: int) -> RoleAssignData:
     for i in range(len(dict)):
         if dict[i]["message_id"] == messageId:
             data = RoleAssignData(dict[i]["id"], dict[i]["channel_id"], dict[i]["text"])
-            data["message_id"] = messageId
-            
-            for button in data.buttons:
+            data.messageId = messageId
+
+            for button in dict[i]["buttons"]:
                 data.addButton(button["role"], button["label"])
 
             return data
 
     return None
+
+
+def loadActive(bot) -> None:
+    dict = utils.read(config.roleAssignPath)
+
+    for i in range(len(dict)):
+        data = loadData(dict[i]["message_id"])
+        bot.add_view(views.RoleAssignView(bot, data))

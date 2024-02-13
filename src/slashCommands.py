@@ -331,7 +331,9 @@ class CommandsCog(discord.ext.commands.Cog):
         name="role_assign",
         description="Create a View to self-assign roles",
     )
-    @discord.app_commands.describe(message_id="If you want to edit an existing View insert here its message id")
+    @discord.app_commands.describe(
+        message_id="If you want to edit an existing View insert here its message id"
+    )
     async def role_assign(
         self, interaction: discord.Interaction, message_id: str = None
     ):
@@ -361,7 +363,9 @@ class CommandsCog(discord.ext.commands.Cog):
             data = role_assign.objects.loadData(message_id)
 
             if data == None:
-                await interaction.response.send_message("Message id not valid", ephemeral=True)
+                await interaction.response.send_message(
+                    "Message id not valid", ephemeral=True
+                )
                 return
 
             view = role_assign.views.RoleAssignEditView(self.client, data)

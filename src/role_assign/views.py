@@ -20,7 +20,7 @@ class RoleButton(discord.ui.Button):
         super().__init__(
             label=label,
             style=discord.ButtonStyle.secondary,
-            custom_id=f"roleassign_{view.id}_{role}",
+            custom_id=f"{view.data.id}_{role}",
         )
         self.role = role
 

@@ -11,6 +11,7 @@ import config
 import logging
 import sys
 import lobby
+import role_assign.objects
 
 #import load_log
 
@@ -59,12 +60,28 @@ class MikeyBot(commands.Bot):
                 self.add_view(view)
 
             self.add_view(views.SwitchView(self))
+
             lobbies = lobby.getLobbiesList()
             self.add_view(lobby.LobbiesView(self, lobbies))
+
+            role_assign.objects.loadActive(self)
         except Exception as e:
             print(e)
 
+        """
+        roles = [921178172651892776, 890271924654047232, 1057016848761225327]
+        racer = 449755870583324682
+
+        guild = await self.fetch_guild(config.serverId)
+        role = guild.get_role(racer)
+
+        for member in role.members:
+            for role in member.roles:
+                if r
+        """
+
         print("Mikey is up")
+
         #await load_log.loadLog(self)
         
         self.ready = True
