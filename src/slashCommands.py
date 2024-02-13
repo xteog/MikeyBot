@@ -6,6 +6,8 @@ import moderation.views as views
 import utils
 from datetime import datetime
 from datetime import timedelta
+import role_assign.views
+import role_assign.objects
 
 
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
@@ -239,8 +241,8 @@ class CommandsCog(discord.ext.commands.Cog):
     ):
         logging.info(f'"\\set_number" used by {interaction.user.name}')
 
-        if interaction.channel.id != 1059998599733321818:
-            channel = await self.client.fetch_channel(1059998599733321818)
+        if interaction.channel.id != 990229907479076914:
+            channel = await self.client.fetch_channel(990229907479076914)
             await interaction.response.send_message(
                 f"Use this command on {channel.mention}", ephemeral=True
             )
@@ -318,13 +320,51 @@ class CommandsCog(discord.ext.commands.Cog):
                 fileMessage = message
                 break
 
+        str = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available."
         if oldMessage != None:
             await oldMessage.delete()
-            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
+            await channel.send(str)
         else:
-            await channel.send(f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available.")
+            await channel.send(str)
 
+    @discord.app_commands.command(
+        name="role_assign",
+        description="Create a View to self-assign roles",
+    )
+    @discord.app_commands.describe(message_id="If you want to edit an existing View insert here its message id")
+    async def role_assign(
+        self, interaction: discord.Interaction, message_id: int = None
+    ):
+        logging.info(f'"\\role_assign" used by {interaction.user.name}')
 
+        if not utils.hasPermissions(
+            interaction.user, roles=[config.devRole, config.URARole]
+        ):
+            await interaction.response.send_message(
+                "You dont't have the permissions", ephemeral=True
+            )
+            return
+
+        if message_id == None:
+            view = role_assign.views.RoleAssignEditView(
+                self.client,
+                role_assign.objects.RoleAssignData(
+                    utils.randomString(8), interaction.channel_id, "No text"
+                ),
+            )
+            await interaction.response.send_message(
+                view=view, embed=view.embed, ephemeral=True
+            )
+        else:
+            data = role_assign.objects.loadData(message_id)
+
+            if data == None:
+                await interaction.response.send_message("Message id not valid", ephemeral=True)
+
+            view = role_assign.views.RoleAssignEditView(self.client, data)
+            await interaction.response.send_message(
+                view=view, embed=view.embed, ephemeral=True
+            )
 
     @discord.app_commands.command(
         name="help",

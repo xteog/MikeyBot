@@ -12,3 +12,5 @@ src/config.py
 data/Available_Numbers.xlsx
 data/google_credentials.json
 data/report_window_notice.json
+data/role_assign.json
+role_assign/__pycache__/

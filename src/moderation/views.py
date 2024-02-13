@@ -33,7 +33,7 @@ class ReportView(discord.ui.View):
 
 
 class ReportListView(discord.ui.View):
-    def __init__(self, bot, data: [violations.ReportData], permission: bool):
+    def __init__(self, bot, data: list[violations.ReportData], permission: bool):
         super().__init__()
         self.bot = bot
         self.timeout = config.defaultTimeout
@@ -59,7 +59,7 @@ class ReportListDetailedView(discord.ui.View):
     def __init__(
         self,
         bot,
-        data: [violations.ReportData],
+        data: list[violations.ReportData],
         permission: bool,
         index: int = 0,
     ):
@@ -94,14 +94,19 @@ class ReminderView(discord.ui.View):
         self.bot = bot
         self.data = data
         self.embed = ReportEmbed(data, permission=False)
-        #self.add_item(AppealButton(self))
+        # self.add_item(AppealButton(self))
+
 
 class SwitchView(discord.ui.View):
     def __init__(self, bot):
         super().__init__(timeout=None)
         self.bot = bot
 
-    @discord.ui.button(label="Nintendo Switch Role", custom_id="switch", style=discord.ButtonStyle.danger)
+    @discord.ui.button(
+        label="Nintendo Switch Role",
+        custom_id="switch",
+        style=discord.ButtonStyle.danger,
+    )
     async def switchRole(self, interaction: Interaction, button: discord.ui.Button):
         logging.info(f"{interaction.user.display_name} used the Switch button")
         guild = await self.bot.fetch_guild(config.serverId)
@@ -263,9 +268,7 @@ class ReportRuleSelect(discord.ui.Select):
         self._view = view
 
     def getRuleSelectOptions(
-        self,
-        selected: violations.Rule = violations.Rule(),
-        league: str = ""
+        self, selected: violations.Rule = violations.Rule(), league: str = ""
     ) -> list[discord.SelectOption]:
         options = []
 
@@ -282,11 +285,7 @@ class ReportRuleSelect(discord.ui.Select):
                 violations.Rule("H.1.9"),
             ]
         else:
-            rules = [
-                violations.Rule("G.3.2.1"),
-                violations.Rule("G.3.2.2")
-            ]
-
+            rules = [violations.Rule("G.3.2.1"), violations.Rule("G.3.2.2")]
 
         for rule in rules:
             if rule.code == selected.code:
@@ -429,6 +428,7 @@ class RightButton(discord.ui.Button):
         await interaction.response.edit_message(embed=newView.embed, view=newView)
 
 
+"""
 class AppealButton(discord.ui.Button):
     def __init__(self, view: ReminderView, disabled: bool = False):
         super().__init__(
@@ -440,3 +440,4 @@ class AppealButton(discord.ui.Button):
 
     async def callback(self, interaction: Interaction) -> None:
         await interaction.response.edit_message(embed=newView.embed, view=newView)
+"""
