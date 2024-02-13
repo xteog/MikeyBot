@@ -307,7 +307,7 @@ class CommandsCog(discord.ext.commands.Cog):
             content=desc, file=discord.File(config.numbersSheetPath)
         )
 
-        channel = await self.client.fetch_channel(1059998599733321818)
+        channel = await self.client.fetch_channel(990229907479076914)
         oldMessage = None
         async for message in channel.history(limit=100):
             if message.author == self.client.user and message.content.startswith("#"):
