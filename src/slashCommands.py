@@ -320,12 +320,12 @@ class CommandsCog(discord.ext.commands.Cog):
                 fileMessage = message
                 break
 
-        str = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available."
+        msg = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {fileMessage.attachments[0].url} which numbers are available."
         if oldMessage != None:
             await oldMessage.delete()
-            await channel.send(str)
+            await channel.send(msg)
         else:
-            await channel.send(str)
+            await channel.send(msg)
 
     @discord.app_commands.command(
         name="role_assign",
