@@ -78,6 +78,22 @@ class MikeyBot(commands.Bot):
         for member in role.members:
             for role in member.roles:
                 if r
+
+        
+        channel = self.get_channel(903776728093184000)
+
+        text = ""
+        i = 0
+        async for message in channel.history(limit=100000, oldest_first=True):
+            text += f"[{message.created_at.strftime(config.timeFormat)}]{message.author.display_name}: {message.content}\n"
+            print(i)
+            i += 1
+        
+        print("done")
+        with open("chat.txt", "w+") as f:
+            f.write(text)
+
+        print("done")
         """
 
         print("Mikey is up")
@@ -171,21 +187,18 @@ class MikeyBot(commands.Bot):
             await self.deleteMessage(self.reportChannel.id, message.id)
 
         
-        if message.channel.id == 945260437673504809:
+        if message.channel.id == 930047083510132746:
             with open(config.connectionTipsPath) as f:
                 text = f.read()
-            await self.pingMessage(945260437673504809, text)
+            await self.pingMessage(930047083510132746, text)
         
-        try:
-            if message.channel.id == 990229907479076914:
-                channel = self.get_channel(990229907479076914)
-                async for msg in channel.history(limit=100):
-                    if msg.author == self.user and len(msg.attachments) > 0:
-                        text = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {msg.attachments[0].url} which numbers are available."
-                        break
-                await self.pingMessage(channel.id, text)
-        except Exception as e:
-            print(e)
+        if message.channel.id == 990229907479076914:
+            channel = self.get_channel(990229907479076914)
+            async for msg in channel.history(limit=100):
+                if msg.author == self.user and len(msg.attachments) > 0:
+                    text = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {msg.attachments[0].url} which numbers are available."
+                    break
+            await self.pingMessage(channel.id, text)
 
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
