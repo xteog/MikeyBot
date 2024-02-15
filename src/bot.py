@@ -13,7 +13,7 @@ import sys
 import lobby
 import role_assign.objects
 
-#import load_log
+# import load_log
 
 
 class MikeyBot(commands.Bot):
@@ -82,8 +82,8 @@ class MikeyBot(commands.Bot):
 
         print("Mikey is up")
 
-        #await load_log.loadLog(self)
-        
+        # await load_log.loadLog(self)
+
         self.ready = True
 
     async def setup_hook(self) -> None:
@@ -114,7 +114,7 @@ class MikeyBot(commands.Bot):
                 await oldMessage.edit(view=view, embed=view.embed)
 
             self.lobbies = lobbies
-            
+
             if awake_at < datetime.utcnow():
                 awake_at = datetime.utcnow() + timedelta(hours=1)
 
@@ -148,7 +148,7 @@ class MikeyBot(commands.Bot):
                             self.reportWindowNotice[league] = datetime.utcnow()
                             utils.update_reportWindowNotice(self.reportWindowNotice)
                         elif datetime.utcnow() + timedelta(minutes=59) > open_date:
-                            awake_at = (open_date - datetime.utcnow())
+                            awake_at = open_date - datetime.utcnow()
 
             if self.lobbies != None and len(self.lobbies) > 0:
                 sleep = 60
@@ -169,6 +169,18 @@ class MikeyBot(commands.Bot):
 
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
+
+        with open(config.connectionTipsPath) as f:
+            text = f.read()
+        await self.pingMessage(945260437673504809, text)
+
+        channel = await self.client.fetch_channel(990229907479076914)
+        fileMessage = None
+        async for message in channel.history(limit=100):
+            if message.author == self.client.user and len(message.attachments) > 0:
+                msg = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {message.attachments[0].url} which numbers are available."
+                break
+        await self.pingMessage(channel.id, msg)
 
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
@@ -262,6 +274,29 @@ class MikeyBot(commands.Bot):
             file = discord.File("./data/history.json")
             await self.reportChannel.send(file=file)
 
+    async def pingMessage(self, channelId: int, message: str) -> None:
+        oldMessage = None
+
+        channel = await self.get_channel(channelId)
+
+        i = 0
+        async for message in channel.history(limit=100):
+            if message.author == self.client.user and message.content.startswith(
+                message[:5]
+            ):
+                oldMessage = message
+                break
+            i += 1
+
+        if i < 2:
+            return
+
+        if oldMessage != None:
+            await oldMessage.delete()
+            await channel.send(message)
+        else:
+            await channel.send(message)
+
     async def sendReport(self, data: violations.ReportData):
         view = views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
@@ -300,7 +335,7 @@ class MikeyBot(commands.Bot):
     def getCurrentRound(self, league: str) -> int:
         if league in self.schedule.keys():
             rounds = self.schedule[league]["rounds"]
-            
+
             found = False
             for i in range(0, len(rounds)):
                 if rounds[i] > datetime.utcnow():
@@ -309,7 +344,7 @@ class MikeyBot(commands.Bot):
 
             if found:
                 return i
-            
+
             return i + 1
 
         return 1
