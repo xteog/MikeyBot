@@ -170,17 +170,22 @@ class MikeyBot(commands.Bot):
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
 
-        with open(config.connectionTipsPath) as f:
-            text = f.read()
-        await self.pingMessage(945260437673504809, text)
-
-        channel = await self.client.fetch_channel(990229907479076914)
-        fileMessage = None
-        async for message in channel.history(limit=100):
-            if message.author == self.client.user and len(message.attachments) > 0:
-                msg = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {message.attachments[0].url} which numbers are available."
-                break
-        await self.pingMessage(channel.id, msg)
+        
+        if message.channel.id == 945260437673504809:
+            with open(config.connectionTipsPath) as f:
+                text = f.read()
+            await self.pingMessage(945260437673504809, text)
+        
+        try:
+            if message.channel.id == 990229907479076914:
+                channel = self.get_channel(990229907479076914)
+                async for msg in channel.history(limit=100):
+                    if msg.author == self.user and len(msg.attachments) > 0:
+                        text = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {msg.attachments[0].url} which numbers are available."
+                        break
+                await self.pingMessage(channel.id, text)
+        except Exception as e:
+            print(e)
 
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
@@ -191,31 +196,34 @@ class MikeyBot(commands.Bot):
             )
 
     async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
-        if reaction.message_id == 1201493634218995774:
-            guild = await self.fetch_guild(reaction.guild_id)
-            role = guild.get_role(1201294515621867621)
+        try:
+            if reaction.message_id == 1201493634218995774:
+                guild = await self.fetch_guild(reaction.guild_id)
+                role = guild.get_role(1201294515621867621)
 
-            await reaction.member.add_roles(role)
+                await reaction.member.add_roles(role)
 
-        if reaction.channel_id != self.ccChannel.id:
-            return
+            if reaction.channel_id != self.ccChannel.id:
+                return
 
-        message = await self.ccChannel.fetch_message(reaction.message_id)
+            message = await self.ccChannel.fetch_message(reaction.message_id)
 
-        if (
-            reaction.emoji.name == "✅"
-            and reaction.event_type == "REACTION_ADD"
-            and utils.hasPermissions(user=reaction.member, role=config.ccOfficialRole)
-        ):
-            guild = await self.fetch_guild(reaction.guild_id)
-            role = guild.get_role(config.connectedRole)
+            if (
+                reaction.emoji.name == "✅"
+                and reaction.event_type == "REACTION_ADD"
+                and utils.hasPermissions(user=reaction.member, role=config.ccOfficialRole)
+            ):
+                guild = await self.fetch_guild(reaction.guild_id)
+                role = guild.get_role(config.connectedRole)
 
-            await message.author.add_roles(
-                role, reason=f"Verified by {reaction.member.display_name}"
-            )
-            logging.info(
-                f"@Connected role added to {message.author.display_name} by {reaction.member.display_name}"
-            )
+                await message.author.add_roles(
+                    role, reason=f"Verified by {reaction.member.display_name}"
+                )
+                logging.info(
+                    f"@Connected role added to {message.author.display_name} by {reaction.member.display_name}"
+                )
+        except Exception as e:
+            logging.error(f"Reaction error: {e}")
 
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
@@ -277,18 +285,17 @@ class MikeyBot(commands.Bot):
     async def pingMessage(self, channelId: int, message: str) -> None:
         oldMessage = None
 
-        channel = await self.get_channel(channelId)
-
+        channel = self.get_channel(channelId)
         i = 0
-        async for message in channel.history(limit=100):
-            if message.author == self.client.user and message.content.startswith(
+        async for msg in channel.history(limit=100):
+            if msg.author == self.user and msg.content.startswith(
                 message[:5]
             ):
-                oldMessage = message
+                oldMessage = msg
                 break
             i += 1
 
-        if i < 2:
+        if i < 1:
             return
 
         if oldMessage != None:
