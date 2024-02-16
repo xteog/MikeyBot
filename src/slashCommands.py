@@ -186,10 +186,13 @@ class CommandsCog(discord.ext.commands.Cog):
 
         if (not isWindowOpen(league, round)) and (
             not utils.hasPermissions(interaction.user, config.stewardsRole)
-        ):
-            open_date = self.client.schedule[league]["rounds"][
-                self.client.getCurrentRound(league) - 1
-            ] + timedelta(days=1)
+        ) and league != "Off-Track":
+            try:
+                open_date = self.client.schedule[league]["rounds"][
+                    round
+                ] + timedelta(days=1)
+            except:
+                open_date = datetime().now() + timedelta(days=100)
 
             await interaction.response.send_message(
                 f"Report window will open <t:{int(open_date.timestamp())}:R>",
