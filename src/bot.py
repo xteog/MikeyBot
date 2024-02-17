@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from datetime import timedelta
+import re
 import utils
 import discord
 from discord.ext import commands
@@ -136,9 +137,9 @@ class MikeyBot(commands.Bot):
 
                 for thread in self.reportChannel.threads:
                     if not thread.archived:
-                        id = thread.name[
-                            thread.name.find("(") + 1 : thread.name.find(")")
-                        ]
+                        match = re.search(r'\d{4}', thread.name)
+                        id = int(match.group())
+                        
                         report = await violations.getReports(self, id=id)
 
                         if len(report) > 0 and not report[0].active:
