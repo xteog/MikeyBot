@@ -220,7 +220,7 @@ def formatBlockQuote(str) -> str:
     return str
 
 
-def load_reportWindowNotice() -> dict:
+def load_reportWindowNotice() -> dict[str, datetime.datetime]:
     data = read(config.reportWindowNoticePath)
 
     if data == None:
@@ -228,7 +228,7 @@ def load_reportWindowNotice() -> dict:
 
     for league in data.keys():
         data[league] = datetime.datetime.strptime(data[league], config.timeFormat)
-
+    
     for league in config.reportWindowDelta:
         if not league in data.keys():
             data[league] = datetime.datetime.strptime(

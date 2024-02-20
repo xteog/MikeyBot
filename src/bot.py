@@ -205,7 +205,7 @@ class MikeyBot(commands.Bot):
             logging.info(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
             )
-            await self.errorChannel.send(
+            await self.dmsChannel.send(
                 f"DM by {message.author.name} ({message.channel.id}): {message.content}"
             )
 
