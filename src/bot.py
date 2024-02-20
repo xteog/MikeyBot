@@ -51,6 +51,7 @@ class MikeyBot(commands.Bot):
         self.errorChannel = self.get_channel(config.errorChannelId)
         self.reportChannel = self.get_channel(config.reportChannelId)
         self.ccChannel = self.get_channel(config.ccChannelId)
+        self.dmsChannel = self.get_channel(1151113045997797440)
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
         try:
