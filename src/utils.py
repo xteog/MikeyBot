@@ -244,6 +244,8 @@ def update_reportWindowNotice(data: dict):
 
     write(config.reportWindowNoticePath, data)
 
+    data = load_reportWindowNotice()
+
 
 def load_schedule() -> dict:
     data = read(config.schedulePath)

@@ -70,6 +70,7 @@ class MikeyBot(commands.Bot):
         except Exception as e:
             print(e)
 
+
         """
         roles = [921178172651892776, 890271924654047232, 1057016848761225327]
         racer = 449755870583324682
