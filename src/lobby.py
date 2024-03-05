@@ -133,16 +133,19 @@ def getLobbyInfo(data: str) -> dict:
 
 def getLobbiesList() -> dict:
     lobbies = []
-    IP = "46.101.147.176"
     PORT = 6510
-    payload = f"39300a00"
+    payload = "39300a00310a00300a00"
+    ack = "61636b0a320a300a00"
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("127.0.0.1", PORT))
 
     data = codecs.decode(payload, "hex_codec")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(data, (IP, PORT))
+
+    sock.sendto(data, ("64.226.118.45", PORT))
+    sock.sendto(data, ("138.197.70.132", PORT))
+    sock.sendto(data, ("159.223.89.233", PORT))
 
     run = True
     sock.settimeout(2)
@@ -151,9 +154,11 @@ def getLobbiesList() -> dict:
             data, addr = sock.recvfrom(1024)
             data = data.decode()
 
-            lobby = getLobbyInfo(data)
-            if lobby != None:
-                lobbies.append(lobby)
+            if data.find("*00server") != -1:
+                sock.sendto(codecs.decode(ack, "hex_codec"), addr)
+                lobby = getLobbyInfo(data)
+                if lobby != None:
+                    lobbies.append(lobby)
         except:
             run = False
 
