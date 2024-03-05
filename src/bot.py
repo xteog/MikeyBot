@@ -64,12 +64,17 @@ class MikeyBot(commands.Bot):
             self.add_view(views.SwitchView(self))
 
             lobbies = lobby.getLobbiesList()
-            self.add_view(lobby.LobbiesView(self, lobbies))
+            if lobbies == None:
+                user = await self.fetch_user(493028834640396289)
+                await user.send("Server down")
+                user = await self.fetch_user(833822085633277964)
+                await user.send("Server down")
+            else:
+                self.add_view(lobby.LobbiesView(self, lobbies))
 
             role_assign.objects.loadActive(self)
         except Exception as e:
             print(e)
-
 
         """
         roles = [921178172651892776, 890271924654047232, 1057016848761225327]
@@ -116,7 +121,16 @@ class MikeyBot(commands.Bot):
             await asyncio.sleep(1)
 
         while not self.is_closed():
+
             lobbies = lobby.getLobbiesList()
+
+            if lobbies == None:
+                user = await self.fetch_user(493028834640396289)
+                await user.send("Server down")
+                user = await self.fetch_user(833822085633277964)
+                await user.send("Server down")
+                continue
+
             view = lobby.LobbiesView(self, lobbies)
 
             oldMessage = None
@@ -139,9 +153,9 @@ class MikeyBot(commands.Bot):
 
                 for thread in self.reportChannel.threads:
                     if not thread.archived:
-                        match = re.search(r'\d{4}', thread.name)
+                        match = re.search(r"\d{4}", thread.name)
                         id = int(match.group())
-                        
+
                         report = await violations.getReports(self, id=id)
 
                         if len(report) > 0 and not report[0].active:
@@ -167,7 +181,9 @@ class MikeyBot(commands.Bot):
                             self.reportWindowNotice[league] = datetime.utcnow()
                             utils.update_reportWindowNotice(self.reportWindowNotice)
                         elif datetime.utcnow() + timedelta(minutes=59) > open_date:
-                            awake_at = datetime.utcnow() + (open_date - datetime.utcnow())
+                            awake_at = datetime.utcnow() + (
+                                open_date - datetime.utcnow()
+                            )
 
             if self.lobbies != None and len(self.lobbies) > 0:
                 sleep = 60
@@ -189,12 +205,11 @@ class MikeyBot(commands.Bot):
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
 
-        
         if message.channel.id == 930047083510132746:
             with open(config.connectionTipsPath) as f:
                 text = f.read()
             await self.pingMessage(930047083510132746, text)
-        
+
         if message.channel.id == 990229907479076914:
             channel = self.get_channel(990229907479076914)
             async for msg in channel.history(limit=100):
@@ -227,7 +242,9 @@ class MikeyBot(commands.Bot):
             if (
                 reaction.emoji.name == "✅"
                 and reaction.event_type == "REACTION_ADD"
-                and utils.hasPermissions(user=reaction.member, role=config.ccOfficialRole)
+                and utils.hasPermissions(
+                    user=reaction.member, role=config.ccOfficialRole
+                )
             ):
                 guild = await self.fetch_guild(reaction.guild_id)
                 role = guild.get_role(config.connectedRole)
@@ -304,9 +321,7 @@ class MikeyBot(commands.Bot):
         channel = self.get_channel(channelId)
         i = 0
         async for msg in channel.history(limit=100):
-            if msg.author == self.user and msg.content.startswith(
-                message[:5]
-            ):
+            if msg.author == self.user and msg.content.startswith(message[:5]):
                 oldMessage = msg
                 break
             i += 1
