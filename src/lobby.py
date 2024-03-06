@@ -134,8 +134,8 @@ def getLobbyInfo(data: str) -> dict:
 def getLobbiesList() -> list | None:
     lobbies = []
     PORT = 6510
-    payload = "39300a00310a00300a00"
-    ack = "61636b0a320a300a00"
+    payload = "39300a300a2d310a"
+
     EU = "64.226.118.45"
     NA = "138.197.70.132"
     AS = "159.223.89.233"
@@ -168,7 +168,6 @@ def getLobbiesList() -> list | None:
             elif addr[0] == AS:
                 AS_ON = True
                 
-            sock.sendto(codecs.decode(ack, "hex_codec"), addr)
             if data.find("*00server") != -1:
                 lobby = getLobbyInfo(data)
                 if lobby != None:
