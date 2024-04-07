@@ -61,7 +61,7 @@ def loading(i, len):
 def updateSpreadSheet(data) -> None:
     row = [
         data.id,
-        data.offender.display_name,
+        data.offender_name,
         data.penalty,
         data.severity,
         data.league,

@@ -61,6 +61,7 @@ class ReportData:  # TODO rule è una struttura
         desc: str,
         rule: Rule = Rule(),
         offender: discord.Member = None,
+        offender_name: str = "",
         creator: discord.Member = None,
         id: str = None,
         penalty: str = "",
@@ -74,6 +75,7 @@ class ReportData:  # TODO rule è una struttura
         else:
             self.id = id
         self.offender = offender
+        self.offender_name = offender_name
         self.creator = creator
         self.league = league
         self.round = round
@@ -85,7 +87,7 @@ class ReportData:  # TODO rule è una struttura
         self.notes = notes
         self.active = active
         if timestamp == None:
-            self.timestamp = datetime.datetime.utcnow()
+            self.timestamp = datetime.datetime.now(datetime.UTC)
         else:
             self.timestamp = datetime.datetime.strptime(timestamp, config.timeFormat)
 
@@ -130,9 +132,7 @@ def addToHistory(data: ReportData) -> None:
     if history == None:
         history = {}
 
-    if str(data.offender.id) in history.keys():
-        history[str(data.offender.id)]["name"] = data.offender.name
-    else:
+    if not str(data.offender.id) in history.keys():
         history[str(data.offender.id)] = {"name": data.offender.name, "violations": {}}
 
     history[str(data.offender.id)]["violations"][data.id] = {
@@ -170,6 +170,7 @@ async def getReports(
                         id=str(id),
                         league=report["league"],
                         round=report["round"],
+                        offender_name=history[member]["name"],
                         rule=Rule(report["rule"]),
                         desc=report["description"],
                         proof=report["proof"],
@@ -180,7 +181,7 @@ async def getReports(
                         timestamp=report["timestamp"],
                     )
                     await struct.setUsers(
-                        bot, offenderId=member, creatorId=report["creator"]
+                       bot, offenderId=member, creatorId=report["creator"]
                     )
 
                     violations.append(struct)
@@ -192,6 +193,7 @@ async def getReports(
             struct = ReportData(
                 id=v,
                 offender=user,
+                offender_name=history[str(user.id)]["name"],
                 league=data[v]["league"],
                 round=data[v]["round"],
                 rule=Rule(data[v]["rule"]),

@@ -2,7 +2,7 @@ import codecs
 import logging
 import socket
 import discord
-from datetime import datetime
+import datetime
 import lobby
 
 
@@ -38,7 +38,7 @@ class LobbiesEmbed(discord.Embed):
         super().__init__(colour=0x00B0F4, title="Lobbies online")
 
         self.set_footer(text="Last update")
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.datetime.now(datetime.UTC)
 
         if len(lobbies) == 0:
             self.description = "No lobbies found"
@@ -167,7 +167,7 @@ def getLobbiesList() -> list | None:
                 NA_ON = True
             elif addr[0] == AS:
                 AS_ON = True
-                
+    
             if data.find("*00server") != -1:
                 lobby = getLobbyInfo(data)
                 if lobby != None:

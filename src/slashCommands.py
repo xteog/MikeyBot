@@ -101,72 +101,6 @@ class CommandsCog(discord.ext.commands.Cog):
         self.client = client
 
     @discord.app_commands.command(
-        name="search_violation",
-        description="Search a report from the penalty log by id or by user",
-    )
-    @discord.app_commands.describe(id="The report's ID composed by 4 digits")
-    @discord.app_commands.describe(user="Returns a list of the user's reports")
-    async def search_violation(
-        self,
-        interaction: discord.Interaction,
-        id: int = None,
-        user: discord.Member = None,
-    ):
-        logging.info(
-            f'"\\search_violation" used by {interaction.user.name} (id = {id}, user = {user})'
-        )
-
-        permission = utils.hasPermissions(interaction.user, config.stewardsRole)
-
-        if not permission:
-            if user != None and interaction.user.id != user.id:
-                await interaction.response.send_message(
-                    "You can't search someone else reports", ephemeral=True
-                )
-                return
-
-        if (id == None and user == None) or (id != None and user != None):
-            await interaction.response.send_message(
-                "You must fill only one of the parameters", ephemeral=True
-            )
-            return
-
-        if id != None:
-            violations = await violation.getReports(bot=self.client, id=id)
-            if len(violations) == 0:
-                await interaction.response.send_message(
-                    f"No reports found with ID `{id}`", ephemeral=True
-                )
-            else:
-                if (
-                    violations[0].offender.id == interaction.user.id
-                    or violations[0].creator.id == interaction.user.id
-                    or permission
-                ):
-                    embed = views.ReportEmbed(violations[0], permission=permission)
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                else:
-                    await interaction.response.send_message(
-                        "You can't search someone else reports", ephemeral=True
-                    )
-
-        if user != None:
-            await interaction.response.defer(ephemeral=True)
-            violations = await violation.getReports(bot=self.client, user=user)
-            await interaction.delete_original_response()
-            if len(violations) == 0:
-                await interaction.followup.send(
-                    f"The user {user.mention} doesn't have reports", ephemeral=True
-                )
-            else:
-                view = views.ReportListView(
-                    self.client, violations, permission=permission
-                )
-                await interaction.followup.send(
-                    view=view, embed=view.embed, ephemeral=True
-                )
-
-    @discord.app_commands.command(
         name="report",
         description="Report a driver",
     )
@@ -379,7 +313,6 @@ class CommandsCog(discord.ext.commands.Cog):
         )
 
     @report.error
-    @search_violation.error
     async def error(self, interaction: discord.Interaction, error):
         try:
             await interaction.followup.send("Error: " + str(error), ephemeral=True)
