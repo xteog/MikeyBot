@@ -239,12 +239,11 @@ def load_reportWindowNotice() -> dict[str, datetime.datetime]:
 
 
 def update_reportWindowNotice(data: dict):
+    leagues = {}
     for league in data.keys():
-        data[league] = datetime.datetime.strftime(data[league], config.timeFormat)
+        leagues[league] = datetime.datetime.strftime(data[league], config.timeFormat)
 
-    write(config.reportWindowNoticePath, data)
-
-    data = load_reportWindowNotice()
+    write(config.reportWindowNoticePath, leagues)
 
 
 def load_schedule() -> dict:
