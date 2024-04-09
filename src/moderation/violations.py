@@ -87,7 +87,7 @@ class ReportData:  # TODO rule è una struttura
         self.notes = notes
         self.active = active
         if timestamp == None:
-            self.timestamp = datetime.datetime.now(datetime.UTC)
+            self.timestamp = datetime.datetime.utcnow()
         else:
             self.timestamp = datetime.datetime.strptime(timestamp, config.timeFormat)
 
