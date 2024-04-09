@@ -76,33 +76,18 @@ class MikeyBot(commands.Bot):
         except Exception as e:
             print(e)
 
-        """
-        roles = [921178172651892776, 890271924654047232, 1057016848761225327]
-        racer = 449755870583324682
+        racer = 967141781353431091
 
         guild = await self.fetch_guild(config.serverId)
         role = guild.get_role(racer)
 
-        for member in role.members:
-            for role in member.roles:
-                if r
+        for member in guild.members:
+            print("ciao")
 
-        
-        channel = self.get_channel(903776728093184000)
-
-        text = ""
-        i = 0
-        async for message in channel.history(limit=100000, oldest_first=True):
-            text += f"[{message.created_at.strftime(config.timeFormat)}]{message.author.display_name}: {message.content}\n"
-            print(i)
-            i += 1
-        
-        print("done")
         with open("chat.txt", "w+") as f:
-            f.write(text)
+            f.write("caiìagf")
 
         print("done")
-        """
 
         print("Mikey is up")
 
