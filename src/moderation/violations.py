@@ -149,6 +149,8 @@ def addToHistory(data: ReportData) -> None:
         "timestamp": data.timestamp.strftime(config.timeFormat),
     }
 
+    data.offender_name = history[str(data.offender.id)]["name"]
+
     utils.write(config.historyPath, history)
     
     if not data.active:
