@@ -76,19 +76,6 @@ class MikeyBot(commands.Bot):
         except Exception as e:
             print(e)
 
-        racer = 967141781353431091
-
-        guild = await self.fetch_guild(config.serverId)
-        role = guild.get_role(racer)
-
-        for member in guild.members:
-            print("ciao")
-
-        with open("chat.txt", "w+") as f:
-            f.write("caiìagf")
-
-        print("done")
-
         print("Mikey is up")
 
         # await load_log.loadLog(self)
@@ -183,7 +170,7 @@ class MikeyBot(commands.Bot):
 
         await self.devCommands(message)
 
-        if message.mention_everyone and len(message.author.roles) < 5:
+        if message.mention_everyone:
             await message.author.ban(reason="Gotcha u moron", delete_message_seconds=60)
             await message.channel.send("Gotcha u moron")
 
