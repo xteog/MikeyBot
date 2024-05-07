@@ -136,7 +136,7 @@ class MikeyBot(commands.Bot):
                 for league in config.reportWindowDelta.keys():
                     open_date = self.schedule[league]["rounds"][
                         self.getCurrentRound(league) - 1
-                    ] + timedelta(days=1)
+                    ]
 
                     if (
                         self.reportWindowNotice[league] < open_date

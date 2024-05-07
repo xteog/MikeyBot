@@ -83,14 +83,10 @@ def isWindowOpen(league: str, round: int) -> bool:
     schedule = utils.load_schedule()
 
     if league in schedule.keys():
-        return datetime.now() > schedule[league]["rounds"][round - 1] + timedelta(
-            days=1
-        ) and datetime.now() < schedule[league]["rounds"][
-            round - 1
-        ] + config.reportWindowDelta[
-            league
-        ] + timedelta(
-            days=1
+        return (
+            datetime.now() > schedule[league]["rounds"][round - 1]
+            and datetime.now()
+            < schedule[league]["rounds"][round - 1] + config.reportWindowDelta[league]
         )
 
     return False
@@ -118,13 +114,13 @@ class CommandsCog(discord.ext.commands.Cog):
         league = league.value
         round = self.client.getCurrentRound(league)
 
-        if (not isWindowOpen(league, round)) and (
-            not utils.hasPermissions(interaction.user, config.stewardsRole)
-        ) and league != "Off-Track":
+        if (
+            (not isWindowOpen(league, round))
+            and (not utils.hasPermissions(interaction.user, config.stewardsRole))
+            and league != "Off-Track"
+        ):
             try:
-                open_date = self.client.schedule[league]["rounds"][
-                    round
-                ] + timedelta(days=1)
+                open_date = self.client.schedule[league]["rounds"][round]
             except:
                 open_date = datetime().now() + timedelta(days=100)
 
@@ -282,7 +278,7 @@ class CommandsCog(discord.ext.commands.Cog):
                     "Message id not valid", ephemeral=True
                 )
                 return
-            
+
             data = role_assign.objects.loadData(message_id)
 
             if data == None:
