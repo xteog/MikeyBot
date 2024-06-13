@@ -54,8 +54,6 @@ class MikeyBot(commands.Bot):
         self.dmsChannel = self.get_channel(1151113045997797440)
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
-        await self.sendMessage("<@517806908762095618> done", 963011311518773278)
-
         try:
             reports = await violations.getActive(self)
 
