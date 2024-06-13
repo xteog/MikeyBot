@@ -54,6 +54,8 @@ class MikeyBot(commands.Bot):
         self.dmsChannel = self.get_channel(1151113045997797440)
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
+        await self.sendMessage("<@517806908762095618> done", 963011311518773278)
+
         try:
             reports = await violations.getActive(self)
 
@@ -189,6 +191,11 @@ class MikeyBot(commands.Bot):
                     text = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {msg.attachments[0].url} which numbers are available."
                     break
             await self.pingMessage(channel.id, text)
+
+        if message.channel.id == 962786348635406367:
+            if len(message.attachments) == 0:
+                await self.deleteMessage(962786348635406367, message.id)
+                await self.sendMessage(f"{message.author.mention} write here", 963011311518773278)
 
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
