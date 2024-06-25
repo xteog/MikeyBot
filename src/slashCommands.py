@@ -58,7 +58,7 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
     if len(current) == 0:
         current = "1"
 
-    if not (current.isdigit() and int(current) >= 1 and int(current) <= 99):
+    if not (current.isdigit() and int(current) >= 1 and int(current) <= 999):
         return choices
 
     numbers = utils.read(config.numbersListPath)
@@ -66,7 +66,7 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
     searched = int(current)
 
     start = max(0, searched - 7)
-    end = min(99, searched + 7)
+    end = min(999, searched + 7)
 
     for n in range(start, end):
         if str(n) in numbers.keys():
@@ -181,7 +181,7 @@ class CommandsCog(discord.ext.commands.Cog):
             )
             return
 
-        if not (number >= 0 and number <= 99):
+        if not (number >= 0 and number <= 999):
             await interaction.response.send_message(f"Number not valid", ephemeral=True)
             return
 
