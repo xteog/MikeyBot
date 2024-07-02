@@ -227,7 +227,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
         utils.write(config.numbersListPath, numbers)
 
-        matrix = [[0, 0] for i in range(100)]
+        matrix = [[0, 0] for i in range(1000)]
         for i in range(1000):
             matrix[i][0] = str(i)
             if str(i) in numbers.keys():
