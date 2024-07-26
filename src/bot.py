@@ -37,7 +37,7 @@ class MikeyBot(commands.Bot):
         self.ccChannel = None
         self.lobbiesChannel = None
 
-        self.lobbies = {}
+        self.lobbiesLists = []
         self.reportWindowNotice = utils.load_reportWindowNotice()
         self.schedule = utils.load_schedule()
 
@@ -54,31 +54,20 @@ class MikeyBot(commands.Bot):
         self.dmsChannel = self.get_channel(1151113045997797440)
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
-        try:
-            reports = await violations.getActive(self)
+        reports = await violations.getActive(self)
 
-            for r in reports:
-                view = views.ReportView(bot=self, data=r)
-                self.add_view(view)
+        for r in reports:
+            view = views.ReportView(bot=self, data=r)
+            self.add_view(view)
 
-            self.add_view(views.SwitchView(self))
+        self.add_view(views.SwitchView(self))
+        
+        self.lobbiesLists.append(lobby.LobbiesList(0, self, self.lobbiesChannel.id, "pc"))
+        self.lobbiesLists.append(lobby.LobbiesList(1, self, 1142190503081803898, "mobile"))
 
-            lobbies = lobby.getLobbiesList()
-            if lobbies == None:
-                user = await self.fetch_user(493028834640396289)
-                await user.send("Server down")
-                user = await self.fetch_user(833822085633277964)
-                await user.send("Server down")
-            else:
-                self.add_view(lobby.LobbiesView(self, lobbies))
-
-            role_assign.objects.loadActive(self)
-        except Exception as e:
-            print(e)
+        role_assign.objects.loadActive(self)
 
         print("Mikey is up")
-
-        # await load_log.loadLog(self)
 
         self.ready = True
 
@@ -94,31 +83,8 @@ class MikeyBot(commands.Bot):
 
         while not self.is_closed():
 
-            lobbies = lobby.getLobbiesList()
-
-            if lobbies == None:
-                user = await self.fetch_user(493028834640396289)
-                await user.send("Server down")
-                user = await self.fetch_user(833822085633277964)
-                await user.send("Server down")
-                continue
-
-            view = lobby.LobbiesView(self, lobbies)
-
-            oldMessage = None
-            async for message in self.lobbiesChannel.history(limit=100):
-                if message.author == self.user:
-                    oldMessage = message
-
-            if oldMessage == None:
-                await self.lobbiesChannel.send(view=view, embed=view.embed)
-            elif len(lobbies) != len(self.lobbies):
-                await oldMessage.delete()
-                await self.lobbiesChannel.send(view=view, embed=view.embed)
-            else:
-                await oldMessage.edit(view=view, embed=view.embed)
-
-            self.lobbies = lobbies
+            for lobbies in self.lobbiesLists:
+                await lobbies.update()
 
             if awake_at < datetime.utcnow():
                 awake_at = datetime.utcnow() + timedelta(hours=1)
@@ -157,12 +123,7 @@ class MikeyBot(commands.Bot):
                                 open_date - datetime.utcnow()
                             )
 
-            if self.lobbies != None and len(self.lobbies) > 0:
-                sleep = 60
-            else:
-                sleep = 5 * 60
-
-            await asyncio.sleep(sleep)
+            await asyncio.sleep(60)
 
     async def on_message(self, message: discord.Message):
         if message.author == self.user:
@@ -189,6 +150,10 @@ class MikeyBot(commands.Bot):
                     text = f"## Choose your number\nType </set_number:1191721403163095071>, choose a number and check from the list shown if it is available.\nYou can also check {msg.attachments[0].url} which numbers are available."
                     break
             await self.pingMessage(channel.id, text)
+
+        for lobbies in self.lobbiesLists:
+            if message.channel.id == lobbies.channelId:
+                await lobbies.ping()
 
         if message.channel.id == 962786348635406367:
             if len(message.attachments) == 0:
