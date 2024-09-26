@@ -6,8 +6,7 @@ import moderation.views as views
 import utils
 from datetime import datetime
 from datetime import timedelta
-import role_assign.views
-import role_assign.objects
+import os
 
 
 async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
@@ -241,72 +240,23 @@ class CommandsCog(discord.ext.commands.Cog):
         )
 
     @discord.app_commands.command(
-        name="role_assign",
-        description="Create a View to self-assign roles",
+        name="restart",
+        description="Restarts the bot",
     )
-    @discord.app_commands.describe(
-        message_id="If you want to edit an existing View insert here its message id"
-    )
-    async def role_assign(
-        self, interaction: discord.Interaction, message_id: str = None
+    async def restart(
+        self, interaction: discord.Interaction
     ):
-        logging.info(f'"\\role_assign" used by {interaction.user.name}')
-
-        if not utils.hasPermissions(
+        permission = utils.hasPermissions(
             interaction.user, roles=[config.devRole, config.URARole]
-        ):
-            await interaction.response.send_message(
-                "You dont't have the permissions", ephemeral=True
-            )
+        )
+
+        if not permission:
+            await interaction.response.send_message("You can't use this comand", ephemeral=True)
             return
 
-        if message_id == None:
-            view = role_assign.views.RoleAssignEditView(
-                self.client,
-                role_assign.objects.RoleAssignData(
-                    utils.randomString(8), interaction.channel_id, "No text"
-                ),
-            )
-            await interaction.response.send_message(
-                view=view, embed=view.embed, ephemeral=True
-            )
-        else:
-            try:
-                message_id = int(message_id)
-            except Exception as e:
-                await interaction.response.send_message(
-                    "Message id not valid", ephemeral=True
-                )
-                return
+        await interaction.response.send_message("Mikey is restarting", ephemeral=True)
 
-            data = role_assign.objects.loadData(message_id)
-
-            if data == None:
-                await interaction.response.send_message(
-                    "Message id not valid", ephemeral=True
-                )
-                return
-
-            view = role_assign.views.RoleAssignEditView(self.client, data)
-            await interaction.response.send_message(
-                view=view, embed=view.embed, ephemeral=True
-            )
-
-    @discord.app_commands.command(
-        name="help",
-        description="Shows the documentation of the bot (todo)",
-    )
-    async def help(self, interaction: discord.Interaction):
-        logging.info(f'"\\help" used by {interaction.user.name}')
-
-        """
-        with open("README.md") as f:
-            text = f.read()
-        """
-
-        await interaction.response.send_message(
-            "Not done yet. Dm me if you need help", ephemeral=True
-        )
+        os.system("sudo reboot")
 
     @report.error
     async def error(self, interaction: discord.Interaction, error):
