@@ -12,8 +12,6 @@ import config
 import logging
 import sys
 import lobby
-import role_assign.objects
-
 # import load_log
 
 
@@ -65,10 +63,19 @@ class MikeyBot(commands.Bot):
         self.lobbiesLists.append(lobby.LobbiesList(0, self, self.lobbiesChannel.id, "pc"))
         self.lobbiesLists.append(lobby.LobbiesList(1, self, 1142190503081803898, "mobile"))
 
-        role_assign.objects.loadActive(self)
-
         print("Mikey is up")
 
+        """
+        guild = await self.fetch_guild(self.server)
+        role = guild.get_role(967141781353431091)
+
+        async for member in guild.fetch_members():
+            print("ciao")
+            await member.remove_roles(role)
+
+        print("Done")
+        """
+        
         self.ready = True
 
     async def setup_hook(self) -> None:
