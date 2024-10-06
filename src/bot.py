@@ -2,16 +2,20 @@ import asyncio
 from datetime import datetime
 from datetime import timedelta
 import re
+from database.beans import Report, Rule
+from database.dao import ReportDAO, RuleDAO, UserDAO
+from database.databaseHandler import Database
+import googleApi
 import utils
 import discord
 from discord.ext import commands
 import slashCommands
-from moderation import views
-from moderation import violations
+import views
 import config
 import logging
 import sys
 import lobby
+
 # import load_log
 
 
@@ -37,7 +41,7 @@ class MikeyBot(commands.Bot):
 
         self.lobbiesLists = []
         self.reportWindowNotice = utils.load_reportWindowNotice()
-        self.schedule = utils.load_schedule()
+        self.schedule = utils.loadSchedule()
 
         self.ready = False
 
@@ -52,16 +56,24 @@ class MikeyBot(commands.Bot):
         self.dmsChannel = self.get_channel(1151113045997797440)
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
-        reports = await violations.getActive(self)
+        self.dbHandler = Database()
+        self.dbHandler.connect()
 
-        for r in reports:
-            view = views.ReportView(bot=self, data=r)
-            self.add_view(view)
-
-        self.add_view(views.SwitchView(self))
+        reports = await ReportDAO(self, self.dbHandler).getActiveReports()
         
-        self.lobbiesLists.append(lobby.LobbiesList(0, self, self.lobbiesChannel.id, "pc"))
-        self.lobbiesLists.append(lobby.LobbiesList(1, self, 1142190503081803898, "mobile"))
+        try:
+            for r in reports:
+                view = views.ReportView(bot=self, data=r)
+                self.add_view(view)
+            self.add_view(views.SwitchView(self))
+
+        except Exception as e:
+            print(e)
+
+        self.lobbiesLists = [
+            lobby.LobbiesList(0, self, self.lobbiesChannel.id, "pc"),
+            lobby.LobbiesList(1, self, 1142190503081803898, "mobile")
+        ]
 
         print("Mikey is up")
 
@@ -70,12 +82,11 @@ class MikeyBot(commands.Bot):
         role = guild.get_role(967141781353431091)
 
         async for member in guild.fetch_members():
-            print("ciao")
             await member.remove_roles(role)
 
         print("Done")
         """
-        
+
         self.ready = True
 
     async def setup_hook(self) -> None:
@@ -91,18 +102,22 @@ class MikeyBot(commands.Bot):
         while not self.is_closed():
             try:
 
-                for lobbies in self.lobbiesLists:
-                    await lobbies.update()
+                #for lobbies in self.lobbiesLists:
+                    #await lobbies.update()
 
                 if awake_at < datetime.utcnow():
                     awake_at = datetime.utcnow() + timedelta(hours=1)
+
+                    activeReports = await ReportDAO(self, self.dbHandler).getActiveReports()
 
                     for thread in self.reportChannel.threads:
                         if not thread.archived:
                             match = re.search(r"\d{4}", thread.name)
                             id = int(match.group())
 
-                            report = await violations.getReports(self, id=id)
+                            for report in activeReports:
+                                if id == report.id and not report.active:
+                                    await thread.edit(archived=True)
 
                             if len(report) > 0 and not report[0].active:
                                 await thread.edit(archived=True)
@@ -119,7 +134,7 @@ class MikeyBot(commands.Bot):
                             and league in config.leaguesChannelIds.keys()
                         ):
                             if datetime.utcnow() > open_date:
-                                msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>."
+                                msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>. Use <1194650188376199239> to report"
                                 await self.sendMessage(
                                     msg, config.leaguesChannelIds[league]
                                 )
@@ -168,7 +183,9 @@ class MikeyBot(commands.Bot):
         if message.channel.id == 962786348635406367:
             if len(message.attachments) == 0:
                 await self.deleteMessage(962786348635406367, message.id)
-                await self.sendMessage(f"{message.author.mention} write here", 963011311518773278)
+                await self.sendMessage(
+                    f"{message.author.mention} write here", 963011311518773278
+                )
 
         if isinstance(message.channel, discord.DMChannel):
             logging.info(
@@ -213,7 +230,8 @@ class MikeyBot(commands.Bot):
     async def on_member_join(self, user: discord.Member):
         str = f"Hey {user.mention}, welcome to **Ultimate Racing 2D eSports**!\nCheck https://discord.com/channels/449754203238301698/902522821761187880/956575872909987891 to get involved!"
         channel = await self.fetch_channel(449755432202928128)
-        await channel.send(str)
+
+        # await channel.send(str) TODO
         with open(config.welcomeMessagePath) as f:
             text = f.read()
 
@@ -260,13 +278,6 @@ class MikeyBot(commands.Bot):
             file = discord.File("./data/logging.log")
             await message.channel.send(file=file)
 
-        if message.content.startswith("$history") and (
-            message.author.id == 493028834640396289
-            or message.author.id == 1181521363127767130
-        ):
-            file = discord.File("./data/history.json")
-            await self.reportChannel.send(file=file)
-
     async def pingMessage(self, channelId: int, message: str) -> None:
         oldMessage = None
 
@@ -286,13 +297,45 @@ class MikeyBot(commands.Bot):
             await channel.send(message)
         else:
             await channel.send(message)
+            
+    def updateSpreadSheet(self, data: Report) -> None:
+        dao = UserDAO(self, self.dbHandler)
+        
+        season, round = utils.formatLeagueRounds(league=data.league, season=data.season, round=data.round) 
 
-    async def sendReport(self, data: violations.ReportData):
+        row = [
+            data.id,
+            dao.getNick(data.offender.id),
+            data.penalty,
+            str(data.aggravated),
+            season,
+            round,
+            str(data.rule),
+            data.proof,
+            data.notes,
+            dao.getNick(data.offender.id),
+            data.description,
+            data.timestamp.strftime(config.timeFormat),
+        ]
+
+        if data.penalty == "No offence":
+            return
+
+        outcome = False
+        i = 0
+        while not outcome and i < 3:
+            outcome = googleApi.appendRow(row, sheetName=data.league)
+            i += 1
+
+        if not outcome:
+            logging.error("SpreadSheet not updated")
+
+    async def sendReport(self, data: Report):
         view = views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
 
         await self.reportChannel.create_thread(
-            name=f"Report {data.offender.display_name} ({data.id})",
+            name=f"Report {data.offender.nick} ({data.id})",
             message=message,
             auto_archive_duration=1440,
         )
@@ -300,12 +343,85 @@ class MikeyBot(commands.Bot):
         await message.add_reaction("👍")
         await message.add_reaction("👎")
 
-    async def sendReminder(self, data: violations.ReportData, offence=True) -> None:
-        view = views.ReminderView(self, data)
+    async def sendReminder(self, data: Report, offence=True) -> None:
+        embed = views.ReportEmbed(data, permission=False)
 
         if offence:
-            await data.offender.send(embed=view.embed, view=view)
-        await data.creator.send(embed=view.embed)
+            await data.offender.send(embed=embed)
+
+        await data.sender.send(embed=embed)
+
+    async def openReport(
+        self,
+        sender: discord.Member,
+        offender: discord.Member,
+        league: str,
+        season: int,
+        round: int,
+        description: str,
+        proof: str,
+    ) -> Report:
+        dao = ReportDAO(self, self.dbHandler)
+
+        report = await dao.addReport(
+            sender=await self.getUser(sender.id),
+            offender=await self.getUser(offender.id),
+            league=league,
+            season=season,
+            round=round,
+            description=description,
+            proof=proof,
+        )
+
+        await self.sendReport(report)
+
+        return report
+
+    async def closeReport(self, report: Report, offence: bool) -> Report:
+        dao = ReportDAO(self, self.dbHandler)
+
+        report.active = False
+
+        if offence:
+            """
+            previousOffences = dao.getPreviousOffences(report.rule.id, report.league)
+
+            level = 0
+            prev_season = _offence.season
+            prev_round = _offence.round
+            for _offence in previousOffences:
+                if _offence.season > prev_season:
+                    prev_round = 
+
+                if _offence.round > prev_round + 1:
+                    level -= report.rule.de_escalation * ()
+                else:
+                    level += report.rule.escalation
+
+                level = max(0, min(8, level))
+
+                if _offence.aggravated:
+
+                prev_season = _offence.season
+                prev_round = _offence.round
+            
+            report.rule.levels[level]
+            """
+
+            report.penalty = "test"  # TODO
+        else:
+            report.penalty = "No Offence"
+
+        dao.closeReport(report=report)
+        report = await dao.getReport(id=report.id)
+
+        await self.sendReminder(data=report, offence=offence)
+
+        self.updateSpreadSheet(data=report)
+
+        await self.archiveThread(report.id)
+
+        return report
 
     async def deleteMessage(self, channelId: int, messageId: int) -> None:
         channel = await self.fetch_channel(channelId)
@@ -338,6 +454,23 @@ class MikeyBot(commands.Bot):
             return i + 1
 
         return 1
+
+    async def getUser(self, id: int) -> discord.Member | None:
+        dao = UserDAO(self, self.dbHandler)
+        
+        guild = await self.fetch_guild(self.server)
+        member = await guild.fetch_member(id)
+
+        if not await dao.userExists(id):
+            await dao.addUser(id, member.display_name)
+
+        return member
+    
+    def getRules(self) -> list[Rule]:
+        return RuleDAO(self.dbHandler).getRules()
+    
+    def getRule(self, id: int) -> Rule:
+        return RuleDAO(self.dbHandler).getRule(id)
 
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
         logging.error(f"Error: {event_method}")

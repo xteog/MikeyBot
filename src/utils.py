@@ -3,6 +3,7 @@ import json
 import logging
 import random
 import discord
+from database.beans import Report
 import googleApi
 import config
 import openpyxl
@@ -58,36 +59,7 @@ def loading(i, len):
     return str
 
 
-def updateSpreadSheet(data) -> None:
-    row = [
-        data.id,
-        data.offender_name,
-        data.penalty,
-        data.severity,
-        data.league,
-        data.round,
-        str(data.rule),
-        data.proof,
-        data.notes,
-        data.creator.display_name,
-        data.desc,
-        data.timestamp.strftime(config.timeFormat),
-    ]
-    if data.rule.isNone():
-        row[6] = data.notes
-        row[8] = ""
 
-    if data.penalty == "No offence":
-        return
-
-    outcome = False
-    i = 0
-    while not outcome and i < 3:
-        outcome = googleApi.appendRow(row)
-        i += 1
-
-    if not outcome:
-        logging.error("SpreadSheet not updated")
 
 
 def createWorkbook(path: str, data: list[list]):
@@ -228,7 +200,7 @@ def load_reportWindowNotice() -> dict[str, datetime.datetime]:
 
     for league in data.keys():
         data[league] = datetime.datetime.strptime(data[league], config.timeFormat)
-    
+
     for league in config.reportWindowDelta:
         if not league in data.keys():
             data[league] = datetime.datetime.strptime(
@@ -246,7 +218,7 @@ def update_reportWindowNotice(data: dict):
     write(config.reportWindowNoticePath, leagues)
 
 
-def load_schedule() -> dict:
+def loadSchedule() -> dict:
     data = read(config.schedulePath)
 
     if data == None:
@@ -264,3 +236,12 @@ def load_schedule() -> dict:
             data[league]["rounds"] = []
 
     return data
+
+def formatLeagueRounds(league: str, season: int, round: int) -> tuple[str, int]:
+    if league == "UL" or league == "CL":
+        return str(season), round
+    
+    if round <= 5:
+        return str(season)  + "A", round
+    
+    return str(season)  + "B", round - 5

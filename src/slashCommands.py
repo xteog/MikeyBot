@@ -1,43 +1,11 @@
 import discord
 import logging
 import config
-import moderation.violations as violation
-import moderation.views as views
+import views
 import utils
 from datetime import datetime
 from datetime import timedelta
 import os
-
-
-async def rules_autocomplete(interaction: discord.Interaction, current: str) -> list:
-    global cog
-
-    codes = cog.rules.keys()
-    list = []
-    current = current.upper()
-
-    for code in codes:
-        if (
-            len(code) >= len(current) and current == code[0 : len(current)]
-        ) or current == code:
-            name = f"{code}: {cog.rules[code]}"
-
-            if len(name) >= 100:
-                name = name[0:96] + "..."
-
-            list.append(
-                discord.app_commands.Choice(
-                    name=name,
-                    value=code,
-                )
-            )
-
-    """
-    if len(list) == 0:
-        # TODO lev_dist
-    """
-
-    return list[0:25]
 
 
 def leagueList() -> list:
@@ -46,7 +14,6 @@ def leagueList() -> list:
         discord.app_commands.Choice(name="Challenger League", value="CL"),
         discord.app_commands.Choice(name="Journeyman League", value="JL"),
         discord.app_commands.Choice(name="Apprentice League", value="AL"),
-        discord.app_commands.Choice(name="Formula E", value="FE"),
         discord.app_commands.Choice(name="Off-Track", value="Off-Track"),
     ]
 
@@ -79,7 +46,7 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
 
 
 def isWindowOpen(league: str, round: int) -> bool:
-    schedule = utils.load_schedule()
+    schedule = utils.loadSchedule()
 
     if league in schedule.keys():
         return (
@@ -121,7 +88,7 @@ class CommandsCog(discord.ext.commands.Cog):
             try:
                 open_date = self.client.schedule[league]["rounds"][round]
             except:
-                open_date = datetime().now() + timedelta(days=100)
+                open_date = datetime.now() + timedelta(days=100)
 
             await interaction.response.send_message(
                 f"Report window will open <t:{int(open_date.timestamp())}:R>",
@@ -139,24 +106,16 @@ class CommandsCog(discord.ext.commands.Cog):
             await interaction.followup.send(error, ephemeral=True)
             return
 
-        data = violation.ReportData(
+        season = self.client.schedule[league]["season"]
+        data = await self.client.openReport(
+            sender=interaction.user,
             offender=user,
-            league=league
-            + (
-                ""
-                if not league in self.client.schedule.keys()
-                else self.client.schedule[league]["season"]
-            ),
-            round=round if round > 0 else None,
-            creator=interaction.user,
+            league=league,
+            season=season,
+            round=round,
             proof=modal.link.value,
-            desc=modal.notes.value,
-            active=True,
+            description=modal.notes.value
         )
-
-        violation.addToHistory(data)
-
-        await self.client.sendReport(data)
 
         await modal.interaction.delete_original_response()
         await interaction.followup.send(f"Report `{data.id}` created", ephemeral=True)
@@ -187,6 +146,7 @@ class CommandsCog(discord.ext.commands.Cog):
         permission = utils.hasPermissions(
             interaction.user, roles=[config.devRole, config.URARole, config.devRole]
         )
+
         numbers = utils.read(config.numbersListPath)
 
         if (not permission) and (
@@ -212,7 +172,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
             desc = f"The number {number} is now available"
         else:
-            numbers[str(number)] = interaction.user.display_name
+            numbers[str(number)] = interaction.user.display_name #TODO use daatbase
 
             desc = (
                 f"The number of {interaction.user.mention} is now changed into {number}"
@@ -251,7 +211,7 @@ class CommandsCog(discord.ext.commands.Cog):
         )
 
         if not permission:
-            await interaction.response.send_message("You can't use this comand", ephemeral=True)
+            await interaction.response.send_message("You can't use this command", ephemeral=True)
             return
 
         await interaction.response.send_message("Mikey is restarting", ephemeral=True)
@@ -260,12 +220,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
     @report.error
     async def error(self, interaction: discord.Interaction, error):
-        try:
-            await interaction.followup.send("Error: " + str(error), ephemeral=True)
-        except:
-            await interaction.response.send_message(
-                "Error: " + str(error), ephemeral=True
-            )
+        logging.error(error)
         await self.client.errorChannel.send("Error: " + str(error))
 
     async def on_error(self, interaction: discord.Interaction, error):

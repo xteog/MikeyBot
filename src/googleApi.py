@@ -7,16 +7,14 @@ appendRowURL = "https://sheets.googleapis.com/v4/spreadsheets/{spreadSheetId}/va
 refreshTokenURL = "https://oauth2.googleapis.com/token?access_type=offline&refresh_token={refreshToken}&client_id={clientId}&client_secret={clientSecret}&grant_type=refresh_token"
 
 
-def appendRow(row: list) -> bool:
+def appendRow(row: list[str], sheetName: str) -> bool:
     token = refreshToken()
 
     headers = {"Authorization": f"Bearer {token}"}
     data = {"values": [row]}
 
     response = requests.post(
-        url=appendRowURL.format(
-            spreadSheetId=config.spreadSheetId, sheetName=config.sheetName
-        ),
+        url=appendRowURL.format(spreadSheetId=config.spreadSheetId, sheetName=sheetName),
         headers=headers,
         json=data,
     )
