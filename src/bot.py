@@ -60,7 +60,7 @@ class MikeyBot(commands.Bot):
         self.dbHandler.connect()
 
         reports = await ReportDAO(self, self.dbHandler).getActiveReports()
-        
+
         try:
             for r in reports:
                 view = views.ReportView(bot=self, data=r)
@@ -72,7 +72,7 @@ class MikeyBot(commands.Bot):
 
         self.lobbiesLists = [
             lobby.LobbiesList(0, self, self.lobbiesChannel.id, "pc"),
-            lobby.LobbiesList(1, self, 1142190503081803898, "mobile")
+            lobby.LobbiesList(1, self, 1142190503081803898, "mobile"),
         ]
 
         print("Mikey is up")
@@ -102,13 +102,15 @@ class MikeyBot(commands.Bot):
         while not self.is_closed():
             try:
 
-                #for lobbies in self.lobbiesLists:
-                    #await lobbies.update()
+                for lobbies in self.lobbiesLists:
+                    await lobbies.update()
 
                 if awake_at < datetime.utcnow():
                     awake_at = datetime.utcnow() + timedelta(hours=1)
 
-                    activeReports = await ReportDAO(self, self.dbHandler).getActiveReports()
+                    activeReports = await ReportDAO(
+                        self, self.dbHandler
+                    ).getActiveReports()
 
                     for thread in self.reportChannel.threads:
                         if not thread.archived:
@@ -134,7 +136,7 @@ class MikeyBot(commands.Bot):
                             and league in config.leaguesChannelIds.keys()
                         ):
                             if datetime.utcnow() > open_date:
-                                msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>. Use <1194650188376199239> to report"
+                                msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>. Use </report:1194650188376199239> to report"
                                 await self.sendMessage(
                                     msg, config.leaguesChannelIds[league]
                                 )
@@ -219,10 +221,10 @@ class MikeyBot(commands.Bot):
                 role = guild.get_role(config.connectedRole)
 
                 await message.author.add_roles(
-                    role, reason=f"Verified by {reaction.member.display_name}"
+                    role, reason=f"Verified by {self.getNick(reaction.member)}"
                 )
                 logging.info(
-                    f"@Connected role added to {message.author.display_name} by {reaction.member.display_name}"
+                    f"@Connected role added to {self.getNick(message.author)} by {self.getNick(reaction.member)}"
                 )
         except Exception as e:
             logging.error(f"Reaction error: {e}")
@@ -297,15 +299,17 @@ class MikeyBot(commands.Bot):
             await channel.send(message)
         else:
             await channel.send(message)
-            
+
     def updateSpreadSheet(self, data: Report) -> None:
         dao = UserDAO(self, self.dbHandler)
-        
-        season, round = utils.formatLeagueRounds(league=data.league, season=data.season, round=data.round) 
+
+        season, round = utils.formatLeagueRounds(
+            league=data.league, season=data.season, round=data.round
+        )
 
         row = [
             data.id,
-            dao.getNick(data.offender.id),
+            dao.getNick(data.offender),
             data.penalty,
             str(data.aggravated),
             season,
@@ -313,7 +317,7 @@ class MikeyBot(commands.Bot):
             str(data.rule),
             data.proof,
             data.notes,
-            dao.getNick(data.offender.id),
+            dao.getNick(data.offender),
             data.description,
             data.timestamp.strftime(config.timeFormat),
         ]
@@ -330,12 +334,15 @@ class MikeyBot(commands.Bot):
         if not outcome:
             logging.error("SpreadSheet not updated")
 
+    def getNick(self, member: discord.Member) -> str:
+        return UserDAO(self, self.dbHandler).getNick(member)
+
     async def sendReport(self, data: Report):
         view = views.ReportView(self, data)
         message = await self.reportChannel.send(embed=view.embed, view=view)
 
         await self.reportChannel.create_thread(
-            name=f"Report {data.offender.nick} ({data.id})",
+            name=f"Report {self.getNick(data.offender)} ({data.id})",
             message=message,
             auto_archive_duration=1440,
         )
@@ -377,38 +384,55 @@ class MikeyBot(commands.Bot):
 
         return report
 
+    def getOffenceLevel(self, report: Report) -> int:
+        previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(
+            rule_id=report.rule.id, league=report.league
+        )
+
+        if len(previousOffences) == 0:
+            return 0
+
+        level = 0
+        prev_round = 10 * previousOffences[0].season + previousOffences[0].round - 1
+
+        for _offence in previousOffences:
+            curr_round = 10 * _offence.season + _offence.round - 1
+
+            if _offence.aggravated:
+                level += 2 * report.rule.escalation
+            else:
+                level += report.rule.escalation
+
+            level = min(8, level)
+
+            if curr_round > prev_round:
+                level -= report.rule.de_escalation * (curr_round - prev_round - 1)
+
+            level = max(0, level)
+
+            prev_round = curr_round
+
+        return level
+
+    def getPenalty(self, report: Report) -> str:
+        level = self.getOffenceLevel(report=report)
+
+        penalty = report.rule.levels[level]
+
+        if report.aggravated:
+            penalty += (
+                " + " + report.rule.levels[min(8, level + report.rule.escalation)]
+            )
+
+        return penalty
+
     async def closeReport(self, report: Report, offence: bool) -> Report:
         dao = ReportDAO(self, self.dbHandler)
 
         report.active = False
 
         if offence:
-            """
-            previousOffences = dao.getPreviousOffences(report.rule.id, report.league)
-
-            level = 0
-            prev_season = _offence.season
-            prev_round = _offence.round
-            for _offence in previousOffences:
-                if _offence.season > prev_season:
-                    prev_round = 
-
-                if _offence.round > prev_round + 1:
-                    level -= report.rule.de_escalation * ()
-                else:
-                    level += report.rule.escalation
-
-                level = max(0, min(8, level))
-
-                if _offence.aggravated:
-
-                prev_season = _offence.season
-                prev_round = _offence.round
-            
-            report.rule.levels[level]
-            """
-
-            report.penalty = "test"  # TODO
+            report.penalty = self.getPenalty(report=report)
         else:
             report.penalty = "No Offence"
 
@@ -457,18 +481,18 @@ class MikeyBot(commands.Bot):
 
     async def getUser(self, id: int) -> discord.Member | None:
         dao = UserDAO(self, self.dbHandler)
-        
+
         guild = await self.fetch_guild(self.server)
         member = await guild.fetch_member(id)
 
-        if not await dao.userExists(id):
-            await dao.addUser(id, member.display_name)
+        if not dao.userExists(id):
+            dao.addUser(id, member.display_name)
 
         return member
-    
+
     def getRules(self) -> list[Rule]:
         return RuleDAO(self.dbHandler).getRules()
-    
+
     def getRule(self, id: int) -> Rule:
         return RuleDAO(self.dbHandler).getRule(id)
 

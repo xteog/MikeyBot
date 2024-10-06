@@ -29,6 +29,8 @@ class Report:
     def __init__(
         self,
         id: str,
+        senderId: int,
+        offenderId: int,
         league: str,
         season: int,
         round: int,
@@ -44,6 +46,8 @@ class Report:
         self.sender = None
         self.offender = None
         self.id = id
+        self.senderId = senderId
+        self.offenderId = offenderId
         self.league = league
         self.season = season
         self.round = round
@@ -56,6 +60,6 @@ class Report:
         self.active = active
         self.timestamp = timestamp
 
-    async def init(self, bot: commands.Bot, offenderId: int, senderId: int) -> None:
-        self.sender = await bot.getUser(senderId)
-        self.offender = await bot.getUser(offenderId)
+    async def init(self, bot: commands.Bot) -> None:
+        self.sender = await bot.getUser(self.senderId)
+        self.offender = await bot.getUser(self.offenderId)

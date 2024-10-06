@@ -29,7 +29,7 @@ class ReportView(discord.ui.View):
         if not self.rule_selected == None:
             self.add_item(
                 RemindButton(view=self, disabled=False)
-            )  # TODO Write Penalty or warning
+            )
         else:
             self.add_item(RemindButton(view=self, disabled=True))
 
@@ -64,7 +64,9 @@ class ReportEmbed(discord.Embed):
     ):
         super().__init__(title="Report", color=0xFFFFFF)
 
-        season, round = utils.formatLeagueRounds(league=data.league, season=data.season, round=data.round) 
+        season, round = utils.formatLeagueRounds(
+            league=data.league, season=data.season, round=data.round
+        )
 
         if data.penalty != None:
             self.title = data.penalty
@@ -76,14 +78,13 @@ class ReportEmbed(discord.Embed):
         if data.offender != None:
             self.description += f"({data.offender.mention})\n"
 
-        if data.aggravated:
-            self.description += f"**Aggravated:** ☑\n"
-        else:
-            self.description += f"**Aggravated:** ☐\n"
+        if not data.active:
+            if data.aggravated:
+                self.description += f"**Aggravated:** ☑\n"
+            else:
+                self.description += f"**Aggravated:** ☐\n"
 
-        self.description += (
-            f"**Round:** `{data.league}{season}R{round}`\n"
-        )
+        self.description += f"**Round:** `{data.league}{season}R{round}`\n"
 
         if data.rule != None:
             self.description += f"**Rule:** {data.rule.name}\n{utils.formatBlockQuote(data.rule.description)}\n"
@@ -95,7 +96,7 @@ class ReportEmbed(discord.Embed):
 
         self.description += f"**Proof:** [Click here]({data.proof})\n"
 
-        if data.notes != None:
+        if data.notes != None and len(data.notes) > 0:
             self.description += f"**Notes:**\n{utils.formatBlockQuote(data.notes)}\n"
 
         try:
@@ -200,6 +201,7 @@ class ReportRuleSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         rule = self.reportView.bot.getRule(self.values[0])
+        self.reportView.data.rule = rule
         newView = ReportView(self.reportView.bot, self.reportView.data, rule)
 
         await interaction.response.edit_message(view=newView, embed=newView.embed)
@@ -246,6 +248,12 @@ class RemindButton(discord.ui.Button):
             custom_id=f"{view.data.id}_2",
         )
         self.reportView = view
+        
+        if self.reportView.data.rule != None:
+            self.label = view.bot.getPenalty(report=view.data)
+
+        if len(self.label) > 50:
+            self.label = self.label[:50]
 
     async def callback(self, interaction: Interaction) -> None:
         logging.info(f'{interaction.user.name} used the "Remind" Button')
@@ -268,7 +276,7 @@ class RemindButton(discord.ui.Button):
         )
 
         await interaction.followup.send(
-            f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.data.offender.display_name}",
+            f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
             ephemeral=True,
         )
 

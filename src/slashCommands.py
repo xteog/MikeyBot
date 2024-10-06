@@ -172,7 +172,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
             desc = f"The number {number} is now available"
         else:
-            numbers[str(number)] = interaction.user.display_name #TODO use daatbase
+            numbers[str(number)] = interaction.user.display_name
 
             desc = (
                 f"The number of {interaction.user.mention} is now changed into {number}"

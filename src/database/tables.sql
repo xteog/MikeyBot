@@ -66,7 +66,7 @@ CREATE TABLE Reports (
     `description` TEXT NOT NULL,
     `rule` integer,
     `proof` varchar(64) NOT NULL,
-    `penalty` varchar(64),
+    `penalty` varchar(128),
     `aggravated` BOOLEAN,
     `notes` TEXT,
     `active` BOOLEAN DEFAULT TRUE,
@@ -122,10 +122,10 @@ INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 6, 'DQ + Race Ban
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 7, 'DQ + Race Ban + URA D');
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 8, 'DQ + Race Ban + URA D');
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 0, 'Warning + Connection Rehab');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 1, 'Grid Penalty (if necessary to mitigate stalling)');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 2, 'Grid Penalty (if necessary to mitigate stalling)');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 3, 'DQ (if a DNF due to lag could reasonably be expected)');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 4, 'DQ (if a DNF due to lag could reasonably be expected)');
+INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 1, 'Grid Penalty');
+INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 2, 'Grid Penalty');
+INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 3, 'DQ');
+INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 4, 'DQ');
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 5, 'Indefinite Race Ban');
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 6, 'Indefinite Race Ban');
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 7, 'Indefinite Race Ban');

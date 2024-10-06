@@ -14,7 +14,7 @@ class UserDAO:
         self.dbHandler = dbHandler
         self.bot = bot
 
-    async def userExists(self, id: int) -> bool:
+    def userExists(self, id: int) -> bool:
         query = """
             SELECT *
             FROM Users
@@ -31,24 +31,26 @@ class UserDAO:
 
         return True
 
-    def getNick(self, id: int) -> str | None:
+    def getNick(self, user: discord.Member) -> str:
+
+        if not self.userExists(user.id):
+            self.addUser(user.id, user.display_name)
+            return user.display_name
+
         query = """
             SELECT nick
             FROM Users
             WHERE `id` = %s
         """
-        values = (id,)
+        values = (user.id,)
 
         self.dbHandler.cursor.execute(query, values)
 
         result = self.dbHandler.cursor.fetchall()
 
-        if len(result) == 0:
-            return None
-
         return result[0][0]
 
-    async def addUser(self, id: int, nick: str) -> None:
+    def addUser(self, id: int, nick: str) -> None:
         query = """
             INSERT INTO Users (id, nick)
             VALUES (%s, %s)
@@ -145,6 +147,13 @@ class ReportDAO:
         self.bot = bot
 
     async def getReport(self, id: int) -> Report:
+        report = self.getReportSync(id)
+
+        await report.init(bot=self.bot)
+
+        return report
+
+    def getReportSync(self, id: int) -> Report:
         query = """
             SELECT *
             FROM Reports
@@ -163,6 +172,8 @@ class ReportDAO:
 
         report = Report(
             id=result[0],
+            senderId=result[1],
+            offenderId=result[2],
             league=result[3],
             season=result[4],
             round=result[5],
@@ -174,12 +185,6 @@ class ReportDAO:
             notes=result[11],
             active=result[12],
             timestamp=result[13],
-        )
-
-        await report.init(
-            bot=self.bot,
-            senderId=result[1],
-            offenderId=result[2],
         )
 
         return report
@@ -259,7 +264,7 @@ class ReportDAO:
         query = """
             SELECT id
             FROM Reports
-            WHERE rule = %s, league = %s
+            WHERE rule = %s AND league = %s AND penalty != "No Offence"
         """
 
         values = (rule_id, league)
@@ -269,10 +274,9 @@ class ReportDAO:
 
         reports = []
         for line in results:
-            reports.append(self.getReport(line[0]))
+            reports.append(self.getReportSync(line[0]))
 
         return reports
-
 
     def getNewId(self) -> str:
         query = """
