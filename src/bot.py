@@ -434,6 +434,8 @@ class MikeyBot(commands.Bot):
         if offence:
             report.penalty = self.getPenalty(report=report)
         else:
+            report.rule = None
+            report.aggravated = False
             report.penalty = "No Offence"
 
         dao.closeReport(report=report)

@@ -247,7 +247,7 @@ class ReportDAO:
         WHERE id = %s;
         """
         values = (
-            report.rule.id,
+            report.rule.id if report.rule != None else None,
             report.penalty,
             report.aggravated,
             report.notes,
