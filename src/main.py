@@ -1,6 +1,6 @@
-import bot
 import logging
 import config
+import MikeyBot
 
 
 if __name__ == "__main__":
@@ -10,4 +10,4 @@ if __name__ == "__main__":
         level=logging.INFO,
     )
 
-    bot.run()
+    MikeyBot.run()

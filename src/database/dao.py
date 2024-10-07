@@ -1,14 +1,13 @@
 import datetime
 import discord
-from discord.ext import commands
-
+from MikeyBotInterface import MikeyBotInterface
 from database.beans import Report, Rule
 from database.databaseHandler import Database
 import utils
 
 
 class UserDAO:
-    def __init__(self, bot: commands.Bot, dbHandler: Database) -> None:
+    def __init__(self, bot: MikeyBotInterface, dbHandler: Database) -> None:
         self.dbHandler = dbHandler
         self.bot = bot
 
@@ -140,7 +139,7 @@ class RuleDAO:
 
 
 class ReportDAO:
-    def __init__(self, bot: commands.Bot, dbHandler: Database) -> None:
+    def __init__(self, bot: MikeyBotInterface, dbHandler: Database) -> None:
         self.dbHandler = dbHandler
         self.bot = bot
 

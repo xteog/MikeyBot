@@ -2,13 +2,13 @@ import asyncio
 from datetime import datetime
 from datetime import timedelta
 import re
+from MikeyBotInterface import MikeyBotInterface
 from database.beans import Report, Rule
 from database.dao import ReportDAO, RuleDAO, UserDAO
 from database.databaseHandler import Database
 import googleApi
 import utils
 import discord
-from discord.ext import commands
 import slashCommands
 import views
 import config
@@ -19,7 +19,7 @@ import lobby
 # import load_log
 
 
-class MikeyBot(commands.Bot):
+class MikeyBot(MikeyBotInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -70,10 +70,11 @@ class MikeyBot(commands.Bot):
         except Exception as e:
             print(e)
 
-        self.lobbiesLists = [
-            lobby.LobbiesList(0, self, self.lobbiesChannel.id, "pc"),
-            lobby.LobbiesList(1, self, 1142190503081803898, "mobile"),
-        ]
+        if sys.argv[1] == "run":
+            self.lobbiesLists = [
+                lobby.LobbiesList(0, self, self.lobbiesChannel.id, "pc"),
+                lobby.LobbiesList(1, self, 1142190503081803898, "mobile"),
+            ]
 
         print("Mikey is up")
 

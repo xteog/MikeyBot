@@ -17,6 +17,43 @@ CREATE TABLE Rules (
     `de_escalation` integer NOT NULL
 );
 
+CREATE TABLE OffenceLevels (
+    `offence` integer NOT NULL,
+    `level` integer NOT NULL,
+    `penalty` varchar(64) NOT NULL,
+    PRIMARY KEY (`offence`, `level`),
+    FOREIGN KEY (`offence`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE Reports (
+    `id` char(4) PRIMARY KEY,
+    `sender` varchar(32) NOT NULL,
+    `offender` varchar(32) NOT NULL,
+    `league` varchar(8) NOT NULL,
+    `season` integer NOT NULL,
+    `round` integer NOT NULL,
+    `description` TEXT NOT NULL,
+    `rule` integer,
+    `proof` varchar(64) NOT NULL,
+    `penalty` varchar(128),
+    `aggravated` BOOLEAN DEFAULT FALSE,
+    `notes` TEXT,
+    `active` BOOLEAN DEFAULT TRUE,
+    `timestamp` DATETIME NOT NULL,
+    FOREIGN KEY (`sender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`offender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`rule`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE Votes (
+    `user` integer NOT NULL,
+    `report` integer NOT NULL,
+    `type` ENUM('Aggravated', 'Offence') NOT NULL,
+    PRIMARY KEY (`user`, `report`, `type`),
+    FOREIGN KEY (`user`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`report`) REFERENCES Reports(`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
 VALUES (0, '(Unreasonable) Edging/Bumping/Leaving Lanes/Swerving/Sudden Lane Changes', 'H.1.3', "Slowly closing off someone's lane, tackling or steering into/around them on straight so that it takes away their claimed racing line or removes them from the track. This includes abrupt and erratic lane changes and movements, brake checks, or defending causing contact, and impeding.", 1, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
@@ -48,33 +85,6 @@ VALUES (13, 'Abusing Exploits or Bugs/Using Cheats', '', '', 0, 0);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
 VALUES (14, 'Alting/Impersonating', '', '', 0, 0);
 
-CREATE TABLE OffenceLevels (
-    `offence` integer NOT NULL,
-    `level` integer NOT NULL,
-    `penalty` varchar(64) NOT NULL,
-    PRIMARY KEY (`offence`, `level`),
-    FOREIGN KEY (`offence`) REFERENCES Rules (`id`) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE Reports (
-    `id` char(4) PRIMARY KEY,
-    `sender` varchar(32) NOT NULL,
-    `offender` varchar(32) NOT NULL,
-    `league` varchar(8) NOT NULL,
-    `season` integer NOT NULL,
-    `round` integer NOT NULL,
-    `description` TEXT NOT NULL,
-    `rule` integer,
-    `proof` varchar(64) NOT NULL,
-    `penalty` varchar(128),
-    `aggravated` BOOLEAN,
-    `notes` TEXT,
-    `active` BOOLEAN DEFAULT TRUE,
-    `timestamp` DATETIME NOT NULL,
-    FOREIGN KEY (`sender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (`offender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (`rule`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE
-);
 
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 0, 'Warning');
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 1, 'Warning');
