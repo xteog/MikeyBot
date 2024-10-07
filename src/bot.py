@@ -58,7 +58,7 @@ class MikeyBot(commands.Bot):
 
         self.dbHandler = Database()
         self.dbHandler.connect()
-
+    
         reports = await ReportDAO(self, self.dbHandler).getActiveReports()
 
         try:
@@ -121,7 +121,7 @@ class MikeyBot(commands.Bot):
                                 if id == report.id and not report.active:
                                     await thread.edit(archived=True)
 
-                            if len(report) > 0 and not report[0].active:
+                            if len(activeReports) > 0 and not activeReports[0].active:
                                 await thread.edit(archived=True)
 
                     for league in config.reportWindowDelta.keys():

@@ -3,8 +3,6 @@ import json
 import logging
 import random
 import discord
-from database.beans import Report
-import googleApi
 import config
 import openpyxl
 
