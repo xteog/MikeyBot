@@ -1,7 +1,7 @@
 import datetime
 import discord
 from MikeyBotInterface import MikeyBotInterface
-from database.beans import Report, Rule
+from database.beans import Report, Rule, VoteType
 from database.databaseHandler import Database
 import utils
 
@@ -102,7 +102,7 @@ class RuleDAO:
             levels=self.getLevels(id),
         )
 
-    def getRules(self) -> list[Rule]:
+    def getRules(self) -> tuple[Rule]:
         query = """
             SELECT `id`
             FROM Rules
@@ -117,9 +117,9 @@ class RuleDAO:
         for line in results:
             rules.append(self.getRule(line[0]))
 
-        return rules
+        return tuple(rules)
 
-    def getLevels(self, rule_id: int) -> list[str]:
+    def getLevels(self, rule_id: int) -> tuple[str]:
         query = """
             SELECT penalty
             FROM OffenceLevels
@@ -135,7 +135,7 @@ class RuleDAO:
         for line in results:
             levels.append(line[0])
 
-        return levels
+        return tuple(levels)
 
 
 class ReportDAO:
@@ -186,7 +186,7 @@ class ReportDAO:
 
         return report
 
-    async def getActiveReports(self) -> list[Report]:
+    async def getActiveReports(self) -> tuple[Report]:
         query = """
             SELECT `id`
             FROM Reports
@@ -202,7 +202,7 @@ class ReportDAO:
         for line in results:
             reports.append(await self.getReport(line[0]))
 
-        return reports
+        return tuple(reports)
 
     async def addReport(
         self,
@@ -241,9 +241,9 @@ class ReportDAO:
 
     def closeReport(self, report: Report) -> None:
         query = """
-        UPDATE Reports
-        SET rule = %s, penalty = %s, aggravated = %s, notes = %s, active = %s
-        WHERE id = %s;
+            UPDATE Reports
+            SET rule = %s, penalty = %s, aggravated = %s, notes = %s, active = %s
+            WHERE id = %s;
         """
         values = (
             report.rule.id if report.rule != None else None,
@@ -257,7 +257,7 @@ class ReportDAO:
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
 
-    def getPreviousOffences(self, rule_id: int, league: str) -> list[Report]:
+    def getPreviousOffences(self, rule_id: int, league: str) -> tuple[Report]:
         query = """
             SELECT id
             FROM Reports
@@ -273,7 +273,7 @@ class ReportDAO:
         for line in results:
             reports.append(self.getReportSync(line[0]))
 
-        return reports
+        return tuple(reports)
 
     def getNewId(self) -> str:
         query = """
@@ -296,3 +296,85 @@ class ReportDAO:
             newId = utils.randomString(4)
 
         return newId
+
+
+class VotesDAO:
+    def __init__(self, dbHandler: Database) -> None:
+        self.dbHandler = dbHandler
+
+    def updateVote(
+        self, user: discord.Member, report: Report, type: VoteType, in_favor: bool
+    ) -> None:
+        query = """
+            UPDATE Votes
+            SET in_favor = %s
+            WHERE user = %s AND report = %s AND type = %s
+        """
+
+        values = (in_favor, user.id, report.id, type.value)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+    def addVote(
+        self, user: discord.Member, report: Report, type: VoteType, in_favor: bool
+    ) -> None:
+        if self.voteExists(user=user, report=report, type=type):
+            self.updateVote(user=user, report=report, type=type, in_favor=in_favor)
+            return
+
+        query = """
+            INSERT INTO Votes (user, report, type, in_favor)
+            VALUES (%s, %s, %s, %s)
+        """
+
+        values = (user.id, report.id, type.value, in_favor)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+    def voteExists(self, user: discord.Member, report: Report, type: VoteType) -> bool:
+        query = """
+            SELECT *
+            FROM Votes
+            WHERE user = %s AND report = %s AND type = %s
+        """
+
+        values = (user.id, report.id, type.value)
+        self.dbHandler.cursor.execute(query, values)
+
+        return len(self.dbHandler.cursor.fetchall()) > 0
+
+    def getVotesCount(self, report: Report, type: VoteType, in_favor: bool) -> int:
+        query = """
+            SELECT COUNT(*)
+            FROM Votes
+            WHERE report = %s AND type = %s AND in_favor = %s 
+        """
+
+        values = (report.id, type.value, in_favor)
+        self.dbHandler.cursor.execute(query, values)
+
+        result = self.dbHandler.cursor.fetchall()[0][0]
+
+        return result
+
+    def getVotesUsers(
+        self, report_id: int, type: VoteType, in_favor: bool
+    ) -> tuple[str]:
+        query = """
+            SELECT users
+            FROM Votes
+            WHERE report = %s AND type = %s AND in_favor = %s 
+        """
+
+        values = (report_id, type.value, in_favor)
+        self.dbHandler.cursor.execute(query, values)
+
+        results = self.dbHandler.cursor.fetchall()
+
+        users = []
+        for line in results:
+            users.append(line[0])
+
+        return users

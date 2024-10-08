@@ -57,9 +57,6 @@ def loading(i, len):
     return str
 
 
-
-
-
 def createWorkbook(path: str, data: list[list]):
     workbook = openpyxl.load_workbook(filename=path)
     sheet = workbook.active
@@ -180,7 +177,7 @@ def hasPermissions(
     return False
 
 
-def formatBlockQuote(str) -> str:
+def formatBlockQuote(str: str) -> str:
     str = "> " + str
 
     for i in range(len(str)):
@@ -235,11 +232,27 @@ def loadSchedule() -> dict:
 
     return data
 
+
 def formatLeagueRounds(league: str, season: int, round: int) -> tuple[str, int]:
     if league == "UL" or league == "CL":
         return str(season), round
-    
+
     if round <= 5:
-        return str(season)  + "A", round
-    
-    return str(season)  + "B", round - 5
+        return str(season) + "A", round
+
+    return str(season) + "B", round - 5
+
+
+def buildVoteBar(nos: int, yes: int, n_voters: int = config.stewardsNumber) -> str:
+    max_value = n_voters // 2 + 1
+
+    yes = min(yes, max_value)
+    nos = min(nos, max_value)
+
+    return (
+        nos * "▰"
+        + "▱" * (max_value - nos)
+        + " ᜵ "
+        + "▱" * (max_value - yes)
+        + "▰" * yes
+    )

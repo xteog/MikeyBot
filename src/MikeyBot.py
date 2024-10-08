@@ -3,8 +3,8 @@ from datetime import datetime
 from datetime import timedelta
 import re
 from MikeyBotInterface import MikeyBotInterface
-from database.beans import Report, Rule
-from database.dao import ReportDAO, RuleDAO, UserDAO
+from database.beans import Report, Rule, VoteType
+from database.dao import ReportDAO, RuleDAO, UserDAO, VotesDAO
 from database.databaseHandler import Database
 import googleApi
 import utils
@@ -19,7 +19,7 @@ import lobby
 # import load_log
 
 
-class MikeyBot(MikeyBotInterface):
+class MikeyBot(MikeyBotInterface): #TODO Controller
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -348,9 +348,6 @@ class MikeyBot(MikeyBotInterface):
             auto_archive_duration=1440,
         )
 
-        await message.add_reaction("👍")
-        await message.add_reaction("👎")
-
     async def sendReminder(self, data: Report, offence=True) -> None:
         embed = views.ReportEmbed(data, permission=False)
 
@@ -493,11 +490,26 @@ class MikeyBot(MikeyBotInterface):
 
         return member
 
-    def getRules(self) -> list[Rule]:
+    def getRules(self) -> tuple[Rule]:
         return RuleDAO(self.dbHandler).getRules()
 
     def getRule(self, id: int) -> Rule:
         return RuleDAO(self.dbHandler).getRule(id)
+    
+    def getVotesCount(self, report: Report, type: VoteType, in_favor: bool) -> int:
+        return VotesDAO(self.dbHandler).getVotesCount(report=report, type=type, in_favor=in_favor)
+
+    async def getVotesUsers(self, report: Report, type: VoteType, in_favor: bool) -> tuple[discord.Member]:
+        users = VotesDAO(self.dbHandler).getVotesUsers(report=report, type=type, in_favor=in_favor)
+
+        for i in range(len(users)):
+            users[i] = await self.getUser(id=users[i])
+
+        return users[i]
+    
+    async def addVote(self, user: discord.Member, report: Report, type: VoteType, in_favor: bool) -> None:
+        user = await self.getUser(user.id)
+        VotesDAO(self.dbHandler).addVote(user=user, report=report, type=type, in_favor=in_favor)
 
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
         logging.error(f"Error: {event_method}")
@@ -509,8 +521,3 @@ def run():
     intents.members = True
     bot = MikeyBot(intents=intents, command_prefix=".")
     bot.run(config.Token, reconnect=True)
-
-
-async def reconnect(bot):
-    await bot.close()
-    run()

@@ -1,5 +1,6 @@
 import discord
 import logging
+from MikeyBotInterface import MikeyBotInterface
 import config
 import views
 import utils
@@ -59,7 +60,7 @@ def isWindowOpen(league: str, round: int) -> bool:
 
 
 class CommandsCog(discord.ext.commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: MikeyBotInterface):
         self.client = client
 
     @discord.app_commands.command(
@@ -114,7 +115,7 @@ class CommandsCog(discord.ext.commands.Cog):
             season=season,
             round=round,
             proof=modal.link.value,
-            description=modal.notes.value
+            description=modal.notes.value,
         )
 
         await modal.interaction.delete_original_response()
@@ -203,15 +204,15 @@ class CommandsCog(discord.ext.commands.Cog):
         name="restart",
         description="Restarts the bot",
     )
-    async def restart(
-        self, interaction: discord.Interaction
-    ):
+    async def restart(self, interaction: discord.Interaction):
         permission = utils.hasPermissions(
             interaction.user, roles=[config.devRole, config.URARole]
         )
 
         if not permission:
-            await interaction.response.send_message("You can't use this command", ephemeral=True)
+            await interaction.response.send_message(
+                "You can't use this command", ephemeral=True
+            )
             return
 
         await interaction.response.send_message("Mikey is restarting", ephemeral=True)
@@ -219,18 +220,16 @@ class CommandsCog(discord.ext.commands.Cog):
         os.system("sudo reboot")
 
     @report.error
-    async def error(self, interaction: discord.Interaction, error):
+    async def on_error(self, interaction: discord.Interaction, error):
         logging.error(error)
         await self.client.errorChannel.send("Error: " + str(error))
 
-    async def on_error(self, interaction: discord.Interaction, error):
         try:
-            await interaction.followup.send("Error: " + str(error), ephemeral=True)
-        except:
-            await interaction.response.send_message(
+            await interaction.edit_original_response(
                 "Error: " + str(error), ephemeral=True
             )
-        await self.client.errorChannel.send("Error: " + str(error))
+        except:
+            await interaction.followup.send("Error: " + str(error), ephemeral=True)
 
 
 def setup(bot):

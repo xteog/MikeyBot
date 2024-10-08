@@ -1,4 +1,4 @@
-from database.beans import Report, Rule
+from database.beans import Report, Rule, VoteType
 import discord
 from discord.ext import commands
 
@@ -44,8 +44,17 @@ class MikeyBotInterface(commands.Bot):
     async def getUser(self, id: int) -> discord.Member | None:
         pass
 
-    def getRules(self) -> list[Rule]:
+    def getRules(self) -> tuple[Rule]:
         pass
 
     def getRule(self, id: int) -> Rule:
+        pass
+
+    def getVotesCount(self, report: Report, type: VoteType, in_favor: bool) -> int:
+        pass
+
+    def getVotesUsers(self, report: Report, type: VoteType, in_favor: bool) -> tuple[discord.Member]:
+        pass
+
+    async def addVote(self, user: discord.Member, report: Report, type: VoteType, in_favor: bool) -> None:
         pass

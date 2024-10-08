@@ -1,5 +1,6 @@
 import datetime
-from discord.ext import commands
+from enum import Enum
+import discord
 
 
 class Rule:
@@ -11,7 +12,7 @@ class Rule:
         description: str,
         escalation: int,
         de_escalation: int,
-        levels: list,
+        levels: tuple[str],
     ) -> None:
         self.id = id
         self.name = name
@@ -60,6 +61,11 @@ class Report:
         self.active = active
         self.timestamp = timestamp
 
-    async def init(self, bot: commands.Bot) -> None:
+    async def init(self, bot) -> None:
         self.sender = await bot.getUser(self.senderId)
         self.offender = await bot.getUser(self.offenderId)
+
+
+class VoteType(Enum):
+    OFFENCE = 0
+    AGGRAVATED = 1

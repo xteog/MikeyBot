@@ -34,7 +34,7 @@ CREATE TABLE Reports (
     `round` integer NOT NULL,
     `description` TEXT NOT NULL,
     `rule` integer,
-    `proof` varchar(64) NOT NULL,
+    `proof` varchar(128) NOT NULL,
     `penalty` varchar(128),
     `aggravated` BOOLEAN DEFAULT FALSE,
     `notes` TEXT,
@@ -46,44 +46,45 @@ CREATE TABLE Reports (
 );
 
 CREATE TABLE Votes (
-    `user` integer NOT NULL,
-    `report` integer NOT NULL,
+    `user` varchar(32) NOT NULL,
+    `report` char(4) NOT NULL,
     `type` ENUM('Aggravated', 'Offence') NOT NULL,
+    `in_favor` boolean NOT NULL,
     PRIMARY KEY (`user`, `report`, `type`),
     FOREIGN KEY (`user`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (`report`) REFERENCES Reports(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (0, '(Unreasonable) Edging/Bumping/Leaving Lanes/Swerving/Sudden Lane Changes', 'H.1.3', "Slowly closing off someone's lane, tackling or steering into/around them on straight so that it takes away their claimed racing line or removes them from the track. This includes abrupt and erratic lane changes and movements, brake checks, or defending causing contact, and impeding.", 1, 1);
+VALUES (0, '(Unreasonable) Edging/Bumping/Leaving Lanes/Swerving/Sudden Lane Changes', 'H.1.1', "Any case where a driver would reasonably be expected to leave a lane for another driver but fails to do so, swerves excessively on a straight, suddenly changes lane or direction in a potentially unsafe manner, causes an avoidable, potentially dangerous colission, or otherwise can be considered responsible for another car being forced off-track.", 1, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (1, 'Divebombing', 'H.1.5', "Entering a corner with late breaking, or no braking, in which the driver makes contact with, or aggressively attacks another driver putting them at risk of ruining their line of racing through turn, instead of taking a known or safe racing line through a turn. A divebomb pass can be done safely, but is wholly at the driver's responsibility to keep it safe. A late-Break is considered an accidental form of divebomb, but is still the responsibility of the driver.", 2, 1);
+VALUES (1, 'Divebombing', 'H.1.2', "Braking excessively late in an attempt to overtake, risking potentially pushing both themselves and/or other drivers off-track and/or causing a colission. While doing so safely may sometimes be possible, this is wholly up to the drivers responsibility.", 2, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (2, 'Unsafe Pit Entry/Unsafe Track Re-entry/Blocking', 'H.1.2', "Any violation of Pitting Code (G.2.2) or failure to return to track safely or staying in the entry/exit lane of the pits until safe to do otherwise. Failure to get into the exit side of the track safely ahead of the pit entry lane. Cutting across lanes with traffic, into faster traffic, and not allowing faster vehicles to pass, on any other unsafe motions involved in entering/exiting the track.", 2, 1);
+VALUES (2, 'Unsafe Pit Entry/Unsafe Track Re-entry/Blocking', 'H.1.3', "Any case where a driver unsafely enters the Pit Lane (such as but not limited to risking forcing another car to also enter the pits), any case where a driver unsafely rejoins the track after going off-track or when exiting the pit lane, and any case where a driver moves into another cars line reactively and/or while going notably slower (as this potentially risks a rear-end colission).", 2, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (3, 'Chatting during a Race/ Spamming in Lobby Chat', 'H.1.1', 'Failure to use approved communication / codes, and talking in any capacity during the race or after the flag while others are still racing', 4, 1);
+VALUES (3, 'Chatting during a Race/ Spamming in Lobby Chat', 'H.1.4', "Any case of chatting during the race (outside of approved communication codes or other necessary communication), including during the countdown (when the leader has finished but other cars may still be racing), any excessive spamming while in the lobby, and excessively and/or unnecessarily leaving and rejoining the race or lobby during a race.", 4, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (4, 'Racing w/o valid CT', '', '', 4, 1);
+VALUES (4, 'Racing w/o valid CT', 'H.1.5', "Any case where a driver is found Post-Race to have been racing without a valid Connection Test, or an approved exception to the requirement of one. Any driver found to not have a valid CT completed, nor an approved exception, must complete a valid CT as approved by a Connection Officer or explicitly receive an exception (either temporary or permanent) before the race from either the Host or the URA.", 4, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (5, 'Severe Lag Issues/Teleporting', '', '', 0, 0);
+VALUES (5, 'Severe Lag Issues/Teleporting', 'H.1.6', "Notable teleporting, stuttering, connection-caused disconnects, any any other connection-related issues, as well as any other technical problem causing similar issues. This category is not Escalated and De-escalated as others are, but is to be dealt with in whichever way is best to limit and resolve these issues while maintaining safety and competitive integrity.", 0, 0);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (6, 'Ignoring/Interfering with Officials', '', '', 4, 1);
+VALUES (6, 'Ignoring/Interfering with Officials', 'H.1.7', "Any case of a driver refusing to follow instructions from an Official 'in function', including off-track, in the lobby, and during the race, as well as any meaningful attempt to disrupt, unfairly influence, or undermine organisers, authorities, officials, communication, the overall organisation process of the Leagues or the process of hosting and running a race.", 4, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (7, 'Targeting a Driver', '', '', 4, 1);
+VALUES (7, 'Targeting a Driver', 'H.1.8', "Any deliberate action with the intent or purpose of unfairly interfering with or disrupting another drivers race, including any form of other kinds of Offenses, intentional negligence, or carelessness with such a purpose.", 4, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (8, 'Backwards Driving/Blocking the Finish Line Post-Race/Similar Offenses', '', '', 4, 1);
+VALUES (8, 'Backwards Driving/Blocking the Finish Line Post-Race/Similar Offenses', 'H.1.9', "Any case of drivers driving in the opposite direction to the track (except when absolutely necessary, or while ghosted in the pit lane provided the driver enters and exits the pits as intended), unsafely parking the car when manually DNF'ing, or exiting the intended accessible track area.", 4, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (9, 'Failure To Follow 2CR (In CL Feature Races and Dry UL Races (w Rain set to 0%))', '', '', 0, 0);
+VALUES (9, 'Failure To Follow 2CR (In CL Feature Races and Dry UL Races (w Rain set to 0%))', 'H.1.10', "Any case where drivers fail to field at least two different tyre compounds, in races where this is mandatory (CL Feature races and UL races where rain is disabled).", 0, 0);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (10, "Failure to Complete 80% of Race Winner's amount of Laps", '', '', 0, 0);
+VALUES (10, "Failure to Complete 80% of Race Winner's amount of Laps", 'H.1.11', "Any case where drivers fail to complete 80 percent of the race distance, or 80 percent of the race winners covered distance in the case of a red flag where the race can not be restarted.", 0, 0);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (11, 'Other (On-Track)', '', '', 0, 0);
+VALUES (11, 'Other (On-Track)', "H.1.13", "Any case of not-otherwise-classified dangerous driving, any severe on-track unsportsmanlike behavior, conspiracy to commit, and any on-track actions deemed significantly damaging or degrading to, violating the integrity of, or making a mockery of the League as a whole.", 0, 0);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (12, 'Other (Off-Track)', '', '', 0, 0);
+VALUES (12, 'Other (Off-Track)', 'H.1.14', "Any form of severe unsportsmanlike behavior off-track, including aggression, attempted exploitation of a perceived loophole or exploit, hate speech, harrasment, abuse, severe personal attacks, spam, conspiracy to commit, abuse of power, and any off-track actions deemed significantly damaging or degrading to, violating the integrity of, or making a mockery of the League as a whole", 0, 0);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (13, 'Abusing Exploits or Bugs/Using Cheats', '', '', 0, 0);
+VALUES (13, 'Abusing Exploits or Bugs/Using Cheats', 'H.1.15', "Any meaningful attempt to use any form of external software, file manipulation, glitch or exploit within the game, perceived loophole, exploit or oversight within the League's Rules, or any other means of attempting to gain an unfair advantage.", 0, 0);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
-VALUES (14, 'Alting/Impersonating', '', '', 0, 0);
+VALUES (14, 'Alting/Impersonating', 'H.1.16', "Any case where a driver races, or attempts to race, under a different name (that isn't recognizable) without adequately communicating this new identity, a well as any attempt at impersonating another person both on- or off-track.", 0, 0);
 
 
 INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 0, 'Warning');

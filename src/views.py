@@ -1,11 +1,10 @@
 import discord
 from discord.interactions import Interaction
-from database.beans import Report, Rule
+from MikeyBotInterface import MikeyBotInterface
+from database.beans import Report, Rule, VoteType
 import utils
 import config
-from discord.ext import commands
 import logging
-
 
 """ Views """
 
@@ -13,25 +12,64 @@ import logging
 class ReportView(discord.ui.View):
     def __init__(
         self,
-        bot: commands.Bot,
+        bot: MikeyBotInterface,
         data: Report,
-        rule_selected: Rule | None = None,
     ):
         super().__init__(timeout=None)
         self.bot = bot
         self.data = data
-        self.rule_selected = rule_selected
 
         self.embed = ReportEmbed(self.data)
+
+        self.add_item(LabelButton(view=self, type=VoteType.OFFENCE))
+        self.add_item(VoteButton(view=self, type=VoteType.OFFENCE, in_favor=False))
+        self.add_item(
+            BarButton(
+                view=self,
+                type=VoteType.OFFENCE,
+                nos=self.bot.getVotesCount(
+                    report=data, type=VoteType.OFFENCE, in_favor=False
+                ),
+                yes=self.bot.getVotesCount(
+                    report=data, type=VoteType.OFFENCE, in_favor=True
+                ),
+            )
+        )
+        self.add_item(VoteButton(view=self, type=VoteType.OFFENCE, in_favor=True))
+
+        self.add_item(LabelButton(view=self, type=VoteType.AGGRAVATED))
+        self.add_item(VoteButton(view=self, type=VoteType.AGGRAVATED, in_favor=False))
+        self.add_item(
+            BarButton(
+                view=self,
+                type=VoteType.AGGRAVATED,
+                nos=self.bot.getVotesCount(
+                    report=data, type=VoteType.AGGRAVATED, in_favor=False
+                ),
+                yes=self.bot.getVotesCount(
+                    report=data, type=VoteType.AGGRAVATED, in_favor=True
+                ),
+            )
+        )
+        self.add_item(VoteButton(view=self, type=VoteType.AGGRAVATED, in_favor=True))
+
+        self.add_item(CloseReportButton(self))
+
+
+class CloseReportView(discord.ui.View):
+    def __init__(self, bot: MikeyBotInterface, data: Report, report_interaction: discord.Interaction):
+        super().__init__(timeout=None)
+        self.bot = bot
+        self.data = data
+        self.report_interaction = report_interaction
+
         self.add_item(ReportRuleSelect(self))
         self.add_item(AggravatedButton(self))
         self.add_item(NoOffenceButton(self))
-        if not self.rule_selected == None:
-            self.add_item(
-                RemindButton(view=self, disabled=False)
-            )
+        if not self.data.rule == None:
+            self.add_item(OffenceButton(view=self, disabled=False))
         else:
-            self.add_item(RemindButton(view=self, disabled=True))
+            self.add_item(OffenceButton(view=self, disabled=True))
 
 
 class SwitchView(discord.ui.View):
@@ -163,14 +201,15 @@ class ReminderModal(discord.ui.Modal, title="Reminder Details"):
 
 
 class ReportRuleSelect(discord.ui.Select):
-    def __init__(self, view: ReportView) -> None:
+    def __init__(self, view: CloseReportView) -> None:
         self.reportView = view
+
         super().__init__(
             placeholder="Select a Rule",
             max_values=1,
-            options=self.getRuleSelectOptions(view.rule_selected, view.data.league),
+            options=self.getRuleSelectOptions(view.data.rule, view.data.league),
             row=0,
-            custom_id=f"{view.data.id}_0",
+            custom_id=f"{view.data.id}_select",
         )
 
     def getRuleSelectOptions(
@@ -202,18 +241,18 @@ class ReportRuleSelect(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction) -> None:
         rule = self.reportView.bot.getRule(self.values[0])
         self.reportView.data.rule = rule
-        newView = ReportView(self.reportView.bot, self.reportView.data, rule)
+        newView = CloseReportView(self.reportView.bot, self.reportView.data, self.reportView.report_interaction)
 
-        await interaction.response.edit_message(view=newView, embed=newView.embed)
+        await interaction.response.edit_message(view=newView)
 
 
 class NoOffenceButton(discord.ui.Button):
-    def __init__(self, view: ReportView):
+    def __init__(self, view: CloseReportView):
         super().__init__(
             style=discord.ButtonStyle.green,
             label="No offence",
             row=2,
-            custom_id=f"{view.data.id}_1",
+            custom_id=f"{view.data.id}_no",
         )
         self.reportView = view
 
@@ -233,22 +272,28 @@ class NoOffenceButton(discord.ui.Button):
         newEmbed = ReportEmbed(report, permission=True)
 
         await modal.interaction.delete_original_response()
+        await self.reportView.report_interaction.followup.edit_message(
+            report_interaction=self.reportView.report_interaction.message.id, embed=newEmbed, view=discord.ui.View()
+        )
+
         await interaction.followup.edit_message(
-            interaction.message.id, embed=newEmbed, view=discord.ui.View()
+            report_interaction=interaction.message.id,
+            content=f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
+            view=discord.ui.View(),
         )
 
 
-class RemindButton(discord.ui.Button):
-    def __init__(self, view: ReportView, disabled: bool = False):
+class OffenceButton(discord.ui.Button):
+    def __init__(self, view: CloseReportView, disabled: bool = False):
         super().__init__(
             style=discord.ButtonStyle.red,
             label="Remind",
             disabled=disabled,
             row=2,
-            custom_id=f"{view.data.id}_2",
+            custom_id=f"{view.data.id}_yes",
         )
         self.reportView = view
-        
+
         if self.reportView.data.rule != None:
             self.label = view.bot.getPenalty(report=view.data)
 
@@ -262,7 +307,7 @@ class RemindButton(discord.ui.Button):
         await modal.wait()
 
         self.reportView.data.notes = modal.notes.value
-        self.reportView.data.rule = self.reportView.rule_selected
+        self.reportView.data.rule = self.reportView.data.rule
 
         report = await self.reportView.bot.closeReport(
             report=self.reportView.data, offence=True
@@ -272,17 +317,19 @@ class RemindButton(discord.ui.Button):
 
         await modal.interaction.delete_original_response()
         await interaction.followup.edit_message(
-            interaction.message.id, embed=newEmbed, view=discord.ui.View()
+            self.reportView.report_interaction, embed=newEmbed, view=discord.ui.View()
         )
 
-        await interaction.followup.send(
-            f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
+        await interaction.followup.edit_message(
+            report_interaction=interaction.message.id,
+            content=f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
+            view=discord.ui.View(),
             ephemeral=True,
         )
 
 
 class AggravatedButton(discord.ui.Button):
-    def __init__(self, view: ReportView):
+    def __init__(self, view: CloseReportView):
         super().__init__(
             style=discord.ButtonStyle.gray,
             label="☐ Aggravated",
@@ -299,10 +346,86 @@ class AggravatedButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction) -> None:
         self.reportView.data.aggravated = not self.reportView.data.aggravated
 
+        newView = CloseReportView(
+            self.reportView.bot,
+            self.reportView.data,
+            self.reportView.report_interaction
+        )
+
+        await interaction.response.edit_message(view=newView)
+
+
+class LabelButton(discord.ui.Button):
+    def __init__(self, view: ReportView, type: VoteType):
+        super().__init__(
+            style=discord.ButtonStyle.gray,
+            disabled=True,
+            row=type.value,
+            custom_id=f"{view.data.id}_{type}",
+        )
+
+        if type == VoteType.AGGRAVATED:
+            self.label = "Aggravated:_"
+        else:
+            self.label = "Offence:____"
+
+
+class VoteButton(discord.ui.Button):
+    def __init__(self, view: ReportView, type: VoteType, in_favor: bool):
+        super().__init__(row=type.value, custom_id=f"{view.data.id}_{type}_{in_favor}")
+
+        if in_favor:
+            self.label = "Yes"
+            self.style = discord.ButtonStyle.red
+        else:
+            self.label = "No"
+            self.style = discord.ButtonStyle.blurple
+
+        self.reportView = view
+        self._type = type
+        self.in_favor = in_favor
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await self.reportView.bot.addVote(
+            user=interaction.user,
+            report=self.reportView.data,
+            type=self._type,
+            in_favor=self.in_favor,
+        )
+
         newView = ReportView(
             self.reportView.bot,
             self.reportView.data,
-            rule_selected=self.reportView.rule_selected,
         )
 
         await interaction.response.edit_message(view=newView, embed=newView.embed)
+
+
+class BarButton(discord.ui.Button):
+    def __init__(self, view: ReportView, type: VoteType, nos: int, yes: int):
+        super().__init__(
+            style=discord.ButtonStyle.gray,
+            row=type.value,
+            custom_id=f"{view.data.id}_{type}_bar",
+        )
+
+        self.label = utils.buildVoteBar(yes=yes, nos=nos)
+
+
+class CloseReportButton(discord.ui.Button):
+    def __init__(self, view: ReportView):
+        super().__init__(
+            style=discord.ButtonStyle.gray,
+            label="Close Report",
+            row=2,
+            custom_id=f"{view.data.id}_close",
+        )
+
+        self.reportView = view
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        newView = CloseReportView(
+            self.reportView.bot, self.reportView.data, interaction
+        )
+
+        await interaction.response.send_message(view=newView, ephemeral=True)
