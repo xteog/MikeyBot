@@ -439,9 +439,12 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
         dao.closeReport(report=report)
         report = await dao.getReport(id=report.id)
 
+        VotesDAO(self.dbHandler).deleteVotes(report=report)
+
         await self.sendReminder(data=report, offence=offence)
 
-        self.updateSpreadSheet(data=report)
+        if offence:
+            self.updateSpreadSheet(data=report)
 
         await self.archiveThread(report.id)
 
@@ -505,7 +508,7 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
         for i in range(len(users)):
             users[i] = await self.getUser(id=users[i])
 
-        return users[i]
+        return users
     
     async def addVote(self, user: discord.Member, report: Report, type: VoteType, in_favor: bool) -> None:
         user = await self.getUser(user.id)

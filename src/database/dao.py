@@ -360,7 +360,7 @@ class VotesDAO:
         return result
 
     def getVotesUsers(
-        self, report_id: int, type: VoteType, in_favor: bool
+        self, report: Report, type: VoteType, in_favor: bool
     ) -> tuple[str]:
         query = """
             SELECT users
@@ -368,7 +368,7 @@ class VotesDAO:
             WHERE report = %s AND type = %s AND in_favor = %s 
         """
 
-        values = (report_id, type.value, in_favor)
+        values = (report.id, type.value, in_favor)
         self.dbHandler.cursor.execute(query, values)
 
         results = self.dbHandler.cursor.fetchall()
@@ -378,3 +378,15 @@ class VotesDAO:
             users.append(line[0])
 
         return users
+    
+    def deleteVotes(self, report: Report) -> None:
+        query = """
+            DELETE
+            FROM Votes
+            WHERE report = %s
+        """
+
+        values = (report.id)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()

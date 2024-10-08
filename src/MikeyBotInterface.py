@@ -53,7 +53,7 @@ class MikeyBotInterface(commands.Bot):
     def getVotesCount(self, report: Report, type: VoteType, in_favor: bool) -> int:
         pass
 
-    def getVotesUsers(self, report: Report, type: VoteType, in_favor: bool) -> tuple[discord.Member]:
+    async def getVotesUsers(self, report: Report, type: VoteType, in_favor: bool) -> tuple[discord.Member]:
         pass
 
     async def addVote(self, user: discord.Member, report: Report, type: VoteType, in_favor: bool) -> None:

@@ -57,7 +57,12 @@ class ReportView(discord.ui.View):
 
 
 class CloseReportView(discord.ui.View):
-    def __init__(self, bot: MikeyBotInterface, data: Report, report_interaction: discord.Interaction):
+    def __init__(
+        self,
+        bot: MikeyBotInterface,
+        data: Report,
+        report_interaction: discord.Interaction,
+    ):
         super().__init__(timeout=None)
         self.bot = bot
         self.data = data
@@ -241,7 +246,11 @@ class ReportRuleSelect(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction) -> None:
         rule = self.reportView.bot.getRule(self.values[0])
         self.reportView.data.rule = rule
-        newView = CloseReportView(self.reportView.bot, self.reportView.data, self.reportView.report_interaction)
+        newView = CloseReportView(
+            self.reportView.bot,
+            self.reportView.data,
+            self.reportView.report_interaction,
+        )
 
         await interaction.response.edit_message(view=newView)
 
@@ -273,7 +282,9 @@ class NoOffenceButton(discord.ui.Button):
 
         await modal.interaction.delete_original_response()
         await self.reportView.report_interaction.followup.edit_message(
-            report_interaction=self.reportView.report_interaction.message.id, embed=newEmbed, view=discord.ui.View()
+            report_interaction=self.reportView.report_interaction.message.id,
+            embed=newEmbed,
+            view=discord.ui.View(),
         )
 
         await interaction.followup.edit_message(
@@ -349,7 +360,7 @@ class AggravatedButton(discord.ui.Button):
         newView = CloseReportView(
             self.reportView.bot,
             self.reportView.data,
-            self.reportView.report_interaction
+            self.reportView.report_interaction,
         )
 
         await interaction.response.edit_message(view=newView)
@@ -409,7 +420,50 @@ class BarButton(discord.ui.Button):
             custom_id=f"{view.data.id}_{type}_bar",
         )
 
-        self.label = utils.buildVoteBar(yes=yes, nos=nos)
+        self.reportView = view
+        self.label = self.buildVoteBar(yes=yes, nos=nos)
+
+    def buildVoteBar(nos: int, yes: int, n_voters: int = config.stewardsNumber) -> str:
+        max_value = n_voters // 2 + 1
+
+        yes = min(yes, max_value)
+        nos = min(nos, max_value)
+
+        return (
+            nos * "▰"
+            + "▱" * (max_value - nos)
+            + " ᜵ "
+            + "▱" * (max_value - yes)
+            + "▰" * yes
+        )
+
+    def formatVotesUsers(self, users: list[discord.Member], in_favour: bool) -> str:
+        if in_favour:
+            str = "Yes:\n"
+        else:
+            str = "No:\n"
+
+        for user in users:
+            str += f"   {self.reportView.bot.getNick(user)}\n"
+
+        return str
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        content = ""
+
+        content += self.formatVotesUsers(
+            await self.reportView.bot.getVotesUsers(
+                report=self.reportView.data, type=self.type, in_favor=True
+            )
+        )
+        content += "\n"
+        content += self.formatVotesUsers(
+            await self.reportView.bot.getVotesUsers(
+                report=self.reportView.data, type=self.type, in_favor=False
+            )
+        )
+
+        await interaction.response.send_message(content=content, ephemeral=True)
 
 
 class CloseReportButton(discord.ui.Button):
