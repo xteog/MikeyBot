@@ -423,7 +423,9 @@ class BarButton(discord.ui.Button):
         self.reportView = view
         self.label = self.buildVoteBar(yes=yes, nos=nos)
 
-    def buildVoteBar(self, nos: int, yes: int, n_voters: int = config.stewardsNumber) -> str:
+    def buildVoteBar(
+        self, nos: int, yes: int, n_voters: int = config.stewardsNumber
+    ) -> str:
         max_value = n_voters // 2 + 1
 
         yes = min(yes, max_value)
@@ -454,13 +456,15 @@ class BarButton(discord.ui.Button):
         content += self.formatVotesUsers(
             await self.reportView.bot.getVotesUsers(
                 report=self.reportView.data, type=self.type, in_favor=True
-            )
+            ),
+            in_favour=True,
         )
         content += "\n"
         content += self.formatVotesUsers(
             await self.reportView.bot.getVotesUsers(
                 report=self.reportView.data, type=self.type, in_favor=False
-            )
+            ),
+            in_favour=False,
         )
 
         await interaction.response.send_message(content=content, ephemeral=True)
