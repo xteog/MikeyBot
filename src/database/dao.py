@@ -363,7 +363,7 @@ class VotesDAO:
         self, report: Report, type: VoteType, in_favor: bool
     ) -> tuple[str]:
         query = """
-            SELECT users
+            SELECT user
             FROM Votes
             WHERE report = %s AND type = %s AND in_favor = %s 
         """
