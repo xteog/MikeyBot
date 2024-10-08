@@ -423,7 +423,7 @@ class BarButton(discord.ui.Button):
         self.reportView = view
         self.label = self.buildVoteBar(yes=yes, nos=nos)
 
-    def buildVoteBar(nos: int, yes: int, n_voters: int = config.stewardsNumber) -> str:
+    def buildVoteBar(self, nos: int, yes: int, n_voters: int = config.stewardsNumber) -> str:
         max_value = n_voters // 2 + 1
 
         yes = min(yes, max_value)
