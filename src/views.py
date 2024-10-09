@@ -100,12 +100,8 @@ class SwitchView(discord.ui.View):
 
 
 class ReportEmbed(discord.Embed):
-    def __init__(
-        self,
-        data: Report,
-        permission: bool = True,
-    ):
-        super().__init__(title="Report", color=0xFFFFFF)
+    def __init__(self, data: Report, permission: bool = True, color: int = 0xFFFFFF):
+        super().__init__(title="Report", color=color)
 
         season, round = utils.formatLeagueRounds(
             league=data.league, season=data.season, round=data.round
@@ -282,13 +278,13 @@ class NoOffenceButton(discord.ui.Button):
 
         await modal.interaction.delete_original_response()
         await self.reportView.report_interaction.followup.edit_message(
-            report_interaction=self.reportView.report_interaction.message.id,
+            message_id=self.reportView.report_interaction.message.id,
             embed=newEmbed,
             view=discord.ui.View(),
         )
 
         await interaction.followup.edit_message(
-            report_interaction=interaction.message.id,
+            message_id=interaction.message.id,
             content=f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
             view=discord.ui.View(),
         )
@@ -324,15 +320,22 @@ class OffenceButton(discord.ui.Button):
             report=self.reportView.data, offence=True
         )
 
-        newEmbed = ReportEmbed(self.reportView.data, permission=True)
+        newEmbed = ReportEmbed(
+            self.reportView.data,
+            permission=True,
+            color=self.reportView.bot.getColor(
+                offence=report.rule,
+                level=self.reportView.bot.getOffenceLevel(report=report),
+            ),
+        )
 
         await modal.interaction.delete_original_response()
         await interaction.followup.edit_message(
-            self.reportView.report_interaction, embed=newEmbed, view=discord.ui.View()
+            self.reportView.report_interaction.message.id, embed=newEmbed, view=discord.ui.View()
         )
 
         await interaction.followup.edit_message(
-            report_interaction=interaction.message.id,
+            message_id=interaction.message.id,
             content=f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
             view=discord.ui.View(),
             ephemeral=True,
@@ -422,6 +425,7 @@ class BarButton(discord.ui.Button):
 
         self.reportView = view
         self.label = self.buildVoteBar(yes=yes, nos=nos)
+        self._type = type
 
     def buildVoteBar(
         self, nos: int, yes: int, n_voters: int = config.stewardsNumber
@@ -455,14 +459,14 @@ class BarButton(discord.ui.Button):
 
         content += self.formatVotesUsers(
             await self.reportView.bot.getVotesUsers(
-                report=self.reportView.data, type=self.type, in_favor=True
+                report=self.reportView.data, type=self._type, in_favor=True
             ),
             in_favour=True,
         )
         content += "\n"
         content += self.formatVotesUsers(
             await self.reportView.bot.getVotesUsers(
-                report=self.reportView.data, type=self.type, in_favor=False
+                report=self.reportView.data, type=self._type, in_favor=False
             ),
             in_favour=False,
         )
