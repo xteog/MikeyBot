@@ -324,7 +324,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
             str(data.rule),
             data.proof,
             data.notes,
-            dao.getNick(data.offender),
+            dao.getNick(data.sender),
             data.description,
             data.timestamp.strftime(config.timeFormat),
         ]
@@ -392,8 +392,8 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         return RuleDAO(self.dbHandler).getColor(offence=offence, level=level)
 
     def getOffenceLevel(self, report: Report) -> int:
-        previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(
-            rule_id=report.rule.id, league=report.league
+        previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(offender=report.offender,
+            rule=report.rule, league=report.league
         )
 
         if len(previousOffences) == 0:

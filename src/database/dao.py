@@ -271,14 +271,14 @@ class ReportDAO:
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
 
-    def getPreviousOffences(self, rule_id: int, league: str) -> tuple[Report]:
+    def getPreviousOffences(self, offender: discord.Member, rule: Rule, league: str) -> tuple[Report]:
         query = """
             SELECT id
             FROM Reports
-            WHERE rule = %s AND league = %s AND penalty != "No Offence" AND active = FALSE
+            WHERE offender = %s, rule = %s AND league = %s AND penalty != "No Offence" AND active = FALSE
         """
 
-        values = (rule_id, league)
+        values = (offender.id, rule.id, league)
         self.dbHandler.cursor.execute(query, values)
 
         results = self.dbHandler.cursor.fetchall()
