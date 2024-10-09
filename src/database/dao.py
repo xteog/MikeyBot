@@ -275,7 +275,7 @@ class ReportDAO:
         query = """
             SELECT id
             FROM Reports
-            WHERE rule = %s AND league = %s AND penalty != "No Offence"
+            WHERE rule = %s AND league = %s AND penalty != "No Offence" AND active = FALSE
         """
 
         values = (rule_id, league)

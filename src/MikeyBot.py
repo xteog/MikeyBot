@@ -19,7 +19,7 @@ import lobby
 # import load_log
 
 
-class MikeyBot(MikeyBotInterface): #TODO Controller
+class MikeyBot(MikeyBotInterface):  # TODO Controller
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -47,7 +47,9 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
 
     async def on_ready(self):
         activity = discord.Game(name="Starting...", type=discord.ActivityType.streaming)
-        await self.change_presence(status=discord.Status.do_not_disturb, activity=activity)
+        await self.change_presence(
+            status=discord.Status.do_not_disturb, activity=activity
+        )
 
         await self.add_cog(
             slashCommands.setup(self), guild=discord.Object(id=self.server)
@@ -61,7 +63,7 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
 
         self.dbHandler = Database()
         self.dbHandler.connect()
-    
+
         reports = await ReportDAO(self, self.dbHandler).getActiveReports()
 
         try:
@@ -93,8 +95,6 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
 
         print("Done")
         """
-
-        
 
     async def setup_hook(self) -> None:
         self.bg_task = self.loop.create_task(self.background_task())
@@ -387,9 +387,9 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
         await self.sendReport(report)
 
         return report
-    
+
     def getColor(self, offence: Rule, level: int) -> int:
-        return RuleDAO(self, self.dbHandler).getColor(offence=offence, level=level)
+        return RuleDAO(self.dbHandler).getColor(offence=offence, level=level)
 
     def getOffenceLevel(self, report: Report) -> int:
         previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(
@@ -444,12 +444,6 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
             report.rule = None
             report.aggravated = False
             report.penalty = "No Offence"
-
-        
-
-        
-
-        
 
         if offence:
             self.updateSpreadSheet(data=report)
@@ -513,22 +507,32 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
 
     def getRule(self, id: int) -> Rule:
         return RuleDAO(self.dbHandler).getRule(id)
-    
-    def getVotesCount(self, report: Report, type: VoteType, in_favor: bool) -> int:
-        return VotesDAO(self.dbHandler).getVotesCount(report=report, type=type, in_favor=in_favor)
 
-    async def getVotesUsers(self, report: Report, type: VoteType, in_favor: bool) -> tuple[discord.Member]:
-        users = VotesDAO(self.dbHandler).getVotesUsers(report=report, type=type, in_favor=in_favor)
+    def getVotesCount(self, report: Report, type: VoteType, in_favor: bool) -> int:
+        return VotesDAO(self.dbHandler).getVotesCount(
+            report=report, type=type, in_favor=in_favor
+        )
+
+    async def getVotesUsers(
+        self, report: Report, type: VoteType, in_favor: bool
+    ) -> tuple[discord.Member]:
+        users = VotesDAO(self.dbHandler).getVotesUsers(
+            report=report, type=type, in_favor=in_favor
+        )
 
         users = list(users)
         for i in range(len(users)):
             users[i] = await self.getUser(id=users[i])
 
         return users
-    
-    async def addVote(self, user: discord.Member, report: Report, type: VoteType, in_favor: bool) -> None:
+
+    async def addVote(
+        self, user: discord.Member, report: Report, type: VoteType, in_favor: bool
+    ) -> None:
         user = await self.getUser(user.id)
-        VotesDAO(self.dbHandler).addVote(user=user, report=report, type=type, in_favor=in_favor)
+        VotesDAO(self.dbHandler).addVote(
+            user=user, report=report, type=type, in_favor=in_favor
+        )
 
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
         logging.error(f"Error: {event_method}")
