@@ -330,7 +330,7 @@ class OffenceButton(discord.ui.Button):
         )
 
         await modal.interaction.delete_original_response()
-        await interaction.followup.edit_message(
+        await self.reportView.report_interaction.followup.edit_message(
             self.reportView.report_interaction.message.id, embed=newEmbed, view=discord.ui.View()
         )
 
