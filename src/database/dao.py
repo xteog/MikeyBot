@@ -141,7 +141,7 @@ class RuleDAO:
         query = """
             SELECT color
             FROM OffenceLevels
-            WHERE offence = %s, level = %s
+            WHERE offence = %s AND level = %s
         """
 
         values = (offence.id, level)
