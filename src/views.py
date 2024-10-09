@@ -338,7 +338,6 @@ class OffenceButton(discord.ui.Button):
             message_id=interaction.message.id,
             content=f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
             view=discord.ui.View(),
-            ephemeral=True,
         )
 
 
