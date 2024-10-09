@@ -30,7 +30,7 @@ class UserDAO:
 
     def getNick(self, user: discord.Member) -> str:
 
-        if not self.userExists(user.id):
+        if not self.userExists(user.id):  # TODO bug
             self.addUser(user.id, user.display_name)
             return user.display_name
 
@@ -136,6 +136,20 @@ class RuleDAO:
             levels.append(line[0])
 
         return tuple(levels)
+
+    def getColor(self, offence: Rule, level: int) -> int:
+        query = """
+            SELECT color
+            FROM OffenceLevels
+            WHERE offence = %s, level = %s
+        """
+
+        values = (offence.id, level)
+        self.dbHandler.cursor.execute(query, values)
+
+        result = self.dbHandler.cursor.fetchall()
+
+        return result[0][0]
 
 
 class ReportDAO:
@@ -377,8 +391,8 @@ class VotesDAO:
         for line in results:
             users.append(line[0])
 
-        return users
-    
+        return tuple(users)
+
     def deleteVotes(self, report: Report) -> None:
         query = """
             DELETE
@@ -386,7 +400,7 @@ class VotesDAO:
             WHERE report = %s
         """
 
-        values = (report.id)
+        values = (report.id,)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
