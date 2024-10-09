@@ -46,6 +46,9 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
         self.ready = False
 
     async def on_ready(self):
+        activity = discord.Game(name="Starting...", type=discord.ActivityType.streaming)
+        await self.change_presence(status=discord.Status.do_not_disturb, activity=activity)
+
         await self.add_cog(
             slashCommands.setup(self), guild=discord.Object(id=self.server)
         )
@@ -76,7 +79,10 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
                 lobby.LobbiesList(1, self, 1142190503081803898, "mobile"),
             ]
 
+        self.ready = True
         print("Mikey is up")
+
+        await self.change_presence(status=discord.Status.online)
 
         """
         guild = await self.fetch_guild(self.server)
@@ -88,7 +94,7 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
         print("Done")
         """
 
-        self.ready = True
+        
 
     async def setup_hook(self) -> None:
         self.bg_task = self.loop.create_task(self.background_task())
@@ -381,6 +387,9 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
         await self.sendReport(report)
 
         return report
+    
+    def getColor(self, offence: Rule, level: int) -> int:
+        return RuleDAO(self, self.dbHandler).getColor(offence=offence, level=level)
 
     def getOffenceLevel(self, report: Report) -> int:
         previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(
@@ -436,17 +445,23 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
             report.aggravated = False
             report.penalty = "No Offence"
 
-        dao.closeReport(report=report)
-        report = await dao.getReport(id=report.id)
+        
 
-        VotesDAO(self.dbHandler).deleteVotes(report=report)
+        
 
-        await self.sendReminder(data=report, offence=offence)
+        
 
         if offence:
             self.updateSpreadSheet(data=report)
 
+        await self.sendReminder(data=report, offence=offence)
+
+        VotesDAO(self.dbHandler).deleteVotes(report=report)
+
         await self.archiveThread(report.id)
+
+        dao.closeReport(report=report)
+        report = await dao.getReport(id=report.id)
 
         return report
 
@@ -505,6 +520,7 @@ class MikeyBot(MikeyBotInterface): #TODO Controller
     async def getVotesUsers(self, report: Report, type: VoteType, in_favor: bool) -> tuple[discord.Member]:
         users = VotesDAO(self.dbHandler).getVotesUsers(report=report, type=type, in_favor=in_favor)
 
+        users = list(users)
         for i in range(len(users)):
             users[i] = await self.getUser(id=users[i])
 

@@ -1,7 +1,5 @@
 import datetime
 from enum import Enum
-import discord
-
 
 class Rule:
     def __init__(

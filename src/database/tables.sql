@@ -21,6 +21,7 @@ CREATE TABLE OffenceLevels (
     `offence` integer NOT NULL,
     `level` integer NOT NULL,
     `penalty` varchar(64) NOT NULL,
+    `color` int NOT NULL,
     PRIMARY KEY (`offence`, `level`),
     FOREIGN KEY (`offence`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
@@ -36,9 +37,9 @@ CREATE TABLE Reports (
     `rule` integer,
     `proof` varchar(128) NOT NULL,
     `penalty` varchar(128),
-    `aggravated` BOOLEAN DEFAULT FALSE,
+    `aggravated` BOOLEAN NOT NULL DEFAULT FALSE,
     `notes` TEXT,
-    `active` BOOLEAN DEFAULT TRUE,
+    `active` BOOLEAN NOT NULL DEFAULT TRUE,
     `timestamp` DATETIME NOT NULL,
     FOREIGN KEY (`sender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (`offender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -48,7 +49,7 @@ CREATE TABLE Reports (
 CREATE TABLE Votes (
     `user` varchar(32) NOT NULL,
     `report` char(4) NOT NULL,
-    `type` ENUM('Aggravated', 'Offence') NOT NULL,
+    `type` integer NOT NULL,
     `in_favor` boolean NOT NULL,
     PRIMARY KEY (`user`, `report`, `type`),
     FOREIGN KEY (`user`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -87,138 +88,138 @@ INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
 VALUES (14, 'Alting/Impersonating', 'H.1.16', "Any case where a driver races, or attempts to race, under a different name (that isn't recognizable) without adequately communicating this new identity, a well as any attempt at impersonating another person both on- or off-track.", 0, 0);
 
 
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 0, 'Warning');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 1, 'Warning');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 2, '2.5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 3, '2.5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 4, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 5, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 6, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 7, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (0, 8, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 0, 'Warning');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 1, '2.5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 2, '2.5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 3, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 4, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 5, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 6, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 7, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (1, 8, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 0, 'Warning');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 1, '2.5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 2, '2.5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 3, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 4, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 5, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 6, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 7, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (2, 8, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 0, 'Warning');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 1, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 2, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 3, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 4, '5s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 5, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 6, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 7, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (3, 8, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 0, 'Warning');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 1, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 2, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 3, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 4, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 5, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 6, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 7, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (4, 8, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 0, 'Warning + Connection Rehab');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 1, 'Grid Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 2, 'Grid Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 3, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 4, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 5, 'Indefinite Race Ban');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 6, 'Indefinite Race Ban');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 7, 'Indefinite Race Ban');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (5, 8, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 0, 'Warning');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 1, 'DQ/URA D (when Off-Track)');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 2, 'DQ/URA D (when Off-Track)');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 3, 'DQ/URA D (when Off-Track)');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 4, 'DQ/URA D (when Off-Track)');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 5, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 6, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 7, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (6, 8, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 0, '10s Penalty');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 1, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 2, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 3, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 4, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 5, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 6, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 7, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (7, 8, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 0, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 1, 'DQ + Race Ban');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 2, 'DQ + Race Ban');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 3, 'DQ + Race Ban');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 4, 'DQ + Race Ban');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 5, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 6, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 7, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (8, 8, 'DQ + Race Ban + URA D');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 0, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 1, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 2, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 3, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 4, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 5, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 6, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 7, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (9, 8, 'DQ');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 0, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 1, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 2, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 3, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 4, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 5, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 6, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 7, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (10, 8, 'Classified "From-The-Bottom-Up"');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 0, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 1, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 2, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 3, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 4, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 5, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 6, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 7, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (11, 8, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 0, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 1, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 2, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 3, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 4, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 5, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 6, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 7, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (12, 8, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 0, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 1, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 2, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 3, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 4, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 5, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 6, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 7, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (13, 8, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 0, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 1, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 2, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 3, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 4, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 5, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 6, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 7, 'URA Discretion');
-INSERT INTO OffenceLevels (offence, level, penalty) VALUES (14, 8, 'URA Discretion');
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 0, 'Warning', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 1, 'Warning', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 2, '2.5s Penalty', 0xFFE599);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 3, '2.5s Penalty', 0xFFE599);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 4, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 5, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 6, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 7, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (0, 8, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 0, 'Warning', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 1, '2.5s Penalty', 0xFFE599);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 2, '2.5s Penalty', 0xFFE599);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 3, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 4, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 5, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 6, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 7, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (1, 8, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 0, 'Warning', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 1, '2.5s Penalty', 0xFFE599);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 2, '2.5s Penalty', 0xFFE599);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 3, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 4, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 5, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 6, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 7, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (2, 8, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 0, 'Warning', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 1, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 2, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 3, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 4, '5s Penalty', 0xF9CB9C);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 5, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 6, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 7, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (3, 8, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 0, 'Warning', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 1, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 2, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 3, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 4, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 5, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 6, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 7, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (4, 8, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 0, 'Warning + Connection Rehab', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 1, 'Grid Penalty', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 2, 'Grid Penalty', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 3, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 4, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 5, 'Indefinite Race Ban', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 6, 'Indefinite Race Ban', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 7, 'Indefinite Race Ban', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (5, 8, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 0, 'Warning', 0x93C47D);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 1, 'DQ/URA D (when Off-Track)', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 2, 'DQ/URA D (when Off-Track)', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 3, 'DQ/URA D (when Off-Track)', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 4, 'DQ/URA D (when Off-Track)', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 5, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 6, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 7, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (6, 8, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 0, '10s Penalty', 0xF6B26B);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 1, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 2, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 3, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 4, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 5, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 6, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 7, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (7, 8, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 0, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 1, 'DQ + Race Ban', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 2, 'DQ + Race Ban', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 3, 'DQ + Race Ban', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 4, 'DQ + Race Ban', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 5, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 6, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 7, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (8, 8, 'DQ + Race Ban + URA D', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 0, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 1, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 2, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 3, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 4, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 5, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 6, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 7, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (9, 8, 'DQ', 0xEA9999);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 0, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 1, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 2, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 3, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 4, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 5, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 6, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 7, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (10, 8, 'Classified "From-The-Bottom-Up"', 0xD5A6BD);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 0, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 1, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 2, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 3, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 4, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 5, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 6, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 7, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (11, 8, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 0, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 1, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 2, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 3, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 4, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 5, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 6, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 7, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (12, 8, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 0, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 1, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 2, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 3, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 4, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 5, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 6, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 7, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (13, 8, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 0, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 1, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 2, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 3, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 4, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 5, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 6, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 7, 'URA Discretion', 0x000000);
+INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 8, 'URA Discretion', 0x000000);
