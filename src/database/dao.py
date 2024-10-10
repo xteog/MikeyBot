@@ -151,7 +151,7 @@ class RuleDAO:
         result = self.dbHandler.cursor.fetchall()
 
         if len(result) == 0:
-            return 0
+            return 0xFFFFFF
         
         return result[0][0]
 
