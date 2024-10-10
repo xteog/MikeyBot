@@ -19,7 +19,7 @@ class ReportView(discord.ui.View):
         self.bot = bot
         self.data = data
 
-        self.embed = ReportEmbed(self.data)
+        self.embed = ReportEmbed(bot=self.bot, data=self.data)
 
         self.add_item(LabelButton(view=self, type=VoteType.OFFENCE))
         self.add_item(VoteButton(view=self, type=VoteType.OFFENCE, in_favor=False))
@@ -100,8 +100,15 @@ class SwitchView(discord.ui.View):
 
 
 class ReportEmbed(discord.Embed):
-    def __init__(self, data: Report, permission: bool = True, color: int = 0xFFFFFF):
-        super().__init__(title="Report", color=color)
+    def __init__(
+        self,
+        bot: MikeyBotInterface,
+        data: Report,
+        permission: bool = True,
+    ):
+        super().__init__(title="Report")
+
+        self.color = bot.getColor(report=data)
 
         season, round = utils.formatLeagueRounds(
             league=data.league, season=data.season, round=data.round
@@ -112,7 +119,7 @@ class ReportEmbed(discord.Embed):
 
         self.description = f"**ID:** `{data.id}`\n"
 
-        self.description += f"**User:** {data.offender.display_name} "
+        self.description += f"**User:** {bot.getNick(data.offender)} "
 
         if data.offender != None:
             self.description += f"({data.offender.mention})\n"
@@ -146,7 +153,7 @@ class ReportEmbed(discord.Embed):
         self.timestamp = data.timestamp
 
         if permission:
-            footer = f"Created by {data.sender.display_name}"
+            footer = f"Created by {bot.getNick(data.sender)}"
 
             try:
                 self.set_footer(text=footer, icon_url=data.sender.avatar.url)
@@ -274,7 +281,7 @@ class NoOffenceButton(discord.ui.Button):
             report=self.reportView.data, offence=False
         )
 
-        newEmbed = ReportEmbed(report, permission=True)
+        newEmbed = ReportEmbed(self.reportView.bot, report, permission=True)
 
         await modal.interaction.delete_original_response()
         await self.reportView.report_interaction.followup.edit_message(
@@ -321,17 +328,16 @@ class OffenceButton(discord.ui.Button):
         )
 
         newEmbed = ReportEmbed(
+            self.reportView.bot,
             self.reportView.data,
             permission=True,
-            color=self.reportView.bot.getColor(
-                offence=report.rule,
-                level=self.reportView.bot.getOffenceLevel(report=report),
-            ),
         )
 
         await modal.interaction.delete_original_response()
         await self.reportView.report_interaction.followup.edit_message(
-            self.reportView.report_interaction.message.id, embed=newEmbed, view=discord.ui.View()
+            self.reportView.report_interaction.message.id,
+            embed=newEmbed,
+            view=discord.ui.View(),
         )
 
         await interaction.followup.edit_message(

@@ -355,10 +355,20 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         )
 
     async def sendReminder(self, data: Report, offence=True) -> None:
-        embed = views.ReportEmbed(data, permission=False)
-
         if offence:
+            embed = views.ReportEmbed(
+                self,
+                data,
+                permission=False,
+            )
+
             await data.offender.send(embed=embed)
+        else:
+            embed = views.ReportEmbed(
+                self,
+                data,
+                permission=False,
+            )
 
         await data.sender.send(embed=embed)
 
@@ -388,12 +398,12 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
 
         return report
 
-    def getColor(self, offence: Rule, level: int) -> int:
-        return RuleDAO(self.dbHandler).getColor(offence=offence, level=level)
+    def getColor(self, report: Report) -> int:
+        return RuleDAO(self.dbHandler).getColor(penalty=report.penalty)
 
     def getOffenceLevel(self, report: Report) -> int:
-        previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(offender=report.offender,
-            rule=report.rule, league=report.league
+        previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(
+            offender=report.offender, rule=report.rule, league=report.league
         )
 
         if len(previousOffences) == 0:

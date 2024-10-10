@@ -43,7 +43,7 @@ class MikeyBotInterface(commands.Bot):
     async def getUser(self, id: int) -> discord.Member | None:
         pass
 
-    def getColor(self, offence: Rule, level: int) -> int:
+    def getColor(self, report: Report) -> int:
         pass
 
     def getOffenceLevel(self, report: Report) -> int:

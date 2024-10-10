@@ -137,18 +137,22 @@ class RuleDAO:
 
         return tuple(levels)
 
-    def getColor(self, offence: Rule, level: int) -> int:
+    def getColor(self, penalty: str) -> int:
         query = """
             SELECT color
-            FROM OffenceLevels
-            WHERE offence = %s AND level = %s
+            From OffenceLevels
+            WHERE penalty = %s 
+            GROUP BY color
         """
 
-        values = (offence.id, level)
+        values = (penalty,)
         self.dbHandler.cursor.execute(query, values)
 
         result = self.dbHandler.cursor.fetchall()
 
+        if len(result) == 0:
+            return 0
+        
         return result[0][0]
 
 
