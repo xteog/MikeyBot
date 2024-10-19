@@ -12,3 +12,4 @@ src/config.py
 /data/report_window_notice.json
 /data/schedule.json
 /src/database/__pycache__/
+/src/google_sheets/__pycache__/

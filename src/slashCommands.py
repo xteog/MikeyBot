@@ -83,7 +83,7 @@ class CommandsCog(discord.ext.commands.Cog):
 
         if (
             (not isWindowOpen(race.league, race.round))
-            and (not utils.hasPermissions(interaction.user, config.stewardsRole))
+            and (not utils.hasPermissions(interaction.user, roles=[config.stewardsRole, config.devRole]))
             and league != League.OT
         ):
             try:

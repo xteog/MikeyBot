@@ -13,7 +13,7 @@ class League(Enum):
         return self.value
 
 
-class Race: #TODO finish formatting
+class Race:
     def __init__(self, league: str, season: int, round: int) -> None:
         self.league = self.getLeague(league)
         self.season = int(season)
@@ -41,12 +41,12 @@ class Race: #TODO finish formatting
 
     def __str__(self) -> str:
         if self.league == "UL" or self.league == "CL":
-            return str(self.season) + self.round
+            return str(self.league) + str(self.season) + "R" +  str(self.round)
 
         if self.round <= 5:
-            return str(self.season) + "A" + self.round
+            return str(self.league) + str(self.season) + "A" + "R" + str(self.round)
 
-        return str(self.league) + str(self.season) + "B" + self.round - 5
+        return str(self.league) + str(self.season) + "B" + "R" + str(self.round) - 5
 
 
 class Rule:

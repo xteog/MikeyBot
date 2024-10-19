@@ -402,7 +402,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
     def getOffenceLevel(self, report: Report) -> int:
 
         attendances = AttendanceDAO(self.dbHandler).getAttendances(
-            user=report.offender, League=report.race.league
+            user=report.offender, league=report.race.league
         )
 
         if len(attendances) == 0:
@@ -487,12 +487,12 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
                 await t.edit(archived=True)
 
     def getCurrentRace(self, league: str) -> Race:
-        if str(league) in self.schedule.keys():
-            season = self.schedule[repr(league)]["season"]
-            rounds = self.schedule[repr(league)]["rounds"]
+        if league in self.schedule.keys():
+            season = self.schedule[league]["season"]
+            rounds = self.schedule[league]["rounds"]
 
             found = False
-            for i in range(0, len(rounds)):
+            for i in range(len(rounds)):
                 if rounds[i] > datetime.utcnow():
                     found = True
                     break
