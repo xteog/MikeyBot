@@ -1,4 +1,4 @@
-from database.beans import Report, Rule, VoteType
+from database.beans import League, Race, Report, Rule, VoteType
 import discord
 from discord.ext import commands
 
@@ -16,9 +16,7 @@ class MikeyBotInterface(commands.Bot):
         self,
         sender: discord.Member,
         offender: discord.Member,
-        league: str,
-        season: int,
-        round: int,
+        race: Race,
         description: str,
         proof: str,
     ) -> Report:
@@ -37,7 +35,7 @@ class MikeyBotInterface(commands.Bot):
     async def archiveThread(self, id: str) -> None:
         pass
 
-    def getCurrentRound(self, league: str) -> int:
+    def getCurrentRace(self, league: str) -> Race:
         pass
 
     async def getUser(self, id: int) -> discord.Member | None:

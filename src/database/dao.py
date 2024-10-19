@@ -1,7 +1,7 @@
 import datetime
 import discord
 from MikeyBotInterface import MikeyBotInterface
-from database.beans import Report, Rule, VoteType
+from database.beans import League, Race, Report, Rule, VoteType
 from database.databaseHandler import Database
 import utils
 
@@ -10,6 +10,24 @@ class UserDAO:
     def __init__(self, bot: MikeyBotInterface, dbHandler: Database) -> None:
         self.dbHandler = dbHandler
         self.bot = bot
+
+    def getUsers(self) -> tuple[tuple[int, str]]:
+        query = """
+            SELECT `id`, nick
+            FROM Users
+            ORDER BY nick
+        """
+
+        values = ()
+        self.dbHandler.cursor.execute(query, values)
+
+        results = self.dbHandler.cursor.fetchall()
+
+        users = []
+        for line in results:
+            users.append((line[0], line[1]))
+
+        return tuple(users)
 
     def userExists(self, id: int) -> bool:
         query = """
@@ -30,8 +48,8 @@ class UserDAO:
 
     def getNick(self, user: discord.Member) -> str:
 
-        if not self.userExists(user.id):  # TODO bug
-            self.addUser(user.id, user.display_name)
+        if not self.userExists(user.id):
+            self.insertUser(user.id, user.display_name)
             return user.display_name
 
         query = """
@@ -47,7 +65,7 @@ class UserDAO:
 
         return result[0][0]
 
-    def addUser(self, id: int, nick: str) -> None:
+    def insertUser(self, id: int, nick: str) -> None:
         query = """
             INSERT INTO Users (id, nick)
             VALUES (%s, %s)
@@ -66,6 +84,18 @@ class UserDAO:
         """
 
         values = (number, id_user)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+    def setNick(self, id_user: int, nick: str) -> None:
+        query = """
+            UPDATE Users
+            SET nick = %s
+            WHERE id = %s
+        """
+
+        values = (nick, id_user)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
@@ -152,7 +182,7 @@ class RuleDAO:
 
         if len(result) == 0:
             return 0xFFFFFF
-        
+
         return result[0][0]
 
 
@@ -222,13 +252,11 @@ class ReportDAO:
 
         return tuple(reports)
 
-    async def addReport(
+    async def insertReport(
         self,
         sender: discord.Member,
         offender: discord.Member,
-        league: str,
-        season: int,
-        round: int,
+        race: Race,
         description: str,
         proof: str,
     ) -> Report:
@@ -244,9 +272,9 @@ class ReportDAO:
             id,
             sender.id,
             offender.id,
-            league,
-            season,
-            round,
+            str(race.league),
+            race.season,
+            race.round,
             description,
             proof,
             timestamp,
@@ -275,14 +303,19 @@ class ReportDAO:
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
 
-    def getPreviousOffences(self, offender: discord.Member, rule: Rule, league: str) -> tuple[Report]:
+    def searchReports(
+        self,
+        offender: discord.Member,
+        rule: Rule,
+        race: Race,
+    ) -> tuple[Report]:
         query = """
             SELECT id
             FROM Reports
-            WHERE offender = %s AND rule = %s AND league = %s AND penalty != "No Offence" AND active = FALSE
+            WHERE offender = %s AND rule = %s AND league = %s AND season = %s AND round = %s AND active = FALSE 
         """
 
-        values = (offender.id, rule.id, league)
+        values = (offender.id, rule.id, str(race.league), race.season, race.round)
         self.dbHandler.cursor.execute(query, values)
 
         results = self.dbHandler.cursor.fetchall()
@@ -334,7 +367,7 @@ class VotesDAO:
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
 
-    def addVote(
+    def insertVote(
         self, user: discord.Member, report: Report, type: VoteType, in_favor: bool
     ) -> None:
         if self.voteExists(user=user, report=report, type=type):
@@ -405,6 +438,62 @@ class VotesDAO:
         """
 
         values = (report.id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+
+class AttendanceDAO:
+    def __init__(self, dbHandler: Database) -> None:
+        self.dbHandler = dbHandler
+
+    def getAttendances(self, user: discord.Member, league: League) -> tuple[Race]:
+        query = """
+            SELECT league, season, round
+            FROM Attendance
+            WHERE user = %s AND league = %s
+            ORDER BY season, round
+        """
+
+        values = (user.id, str(league))
+
+        self.dbHandler.cursor.execute(query, values)
+        results = self.dbHandler.cursor.fetchall()
+
+        races = []
+        for line in results:
+            races.append(Race(league=line[0], season=line[1], round=line[2]))
+
+        return tuple(races)
+
+    def deleteAttendances(self, race: Race) -> None:
+        """
+        Deletes all attendances of a specific round.
+
+        Parameters
+        -----------
+        - race : `Race`
+            The object describing the round to teh delete its attendance.
+        """
+
+        query = """
+            DELETE
+            FROM Attendance
+            WHERE league = %s AND season = %s AND round = %s
+        """
+
+        values = (str(race.league), race.season, race.round)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+    def insertAttendance(self, user_id: int, race: Race) -> None:
+        query = """
+            INSERT INTO Attendance (user, league, season, round) 
+            VALUES (%s, %s, %s, %s)
+        """
+
+        values = (user_id, str(race.league), race.season, race.round)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()

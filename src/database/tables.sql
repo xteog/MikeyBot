@@ -56,6 +56,15 @@ CREATE TABLE Votes (
     FOREIGN KEY (`report`) REFERENCES Reports(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TABLE Attendance (
+    `user` varchar(32) NOT NULL,
+    `league` varchar(8) NOT NULL,
+    `season` integer NOT NULL,
+    `round` integer NOT NULL,
+    PRIMARY KEY (`user`, `league`, `season`, `round`),
+    FOREIGN KEY (`user`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
 VALUES (0, '(Unreasonable) Edging/Bumping/Leaving Lanes/Swerving/Sudden Lane Changes', 'H.1.1', "Any case where a driver would reasonably be expected to leave a lane for another driver but fails to do so, swerves excessively on a straight, suddenly changes lane or direction in a potentially unsafe manner, causes an avoidable, potentially dangerous colission, or otherwise can be considered responsible for another car being forced off-track.", 1, 1);
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)

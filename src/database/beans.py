@@ -1,6 +1,54 @@
 import datetime
 from enum import Enum
 
+
+class League(Enum):
+    UL = "UL"
+    CL = "CL"
+    JL = "JL"
+    AL = "AL"
+    OT = "Off-Track"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class Race: #TODO finish formatting
+    def __init__(self, league: str, season: int, round: int) -> None:
+        self.league = self.getLeague(league)
+        self.season = int(season)
+        self.round = int(round)
+
+        if self.season < 1:
+            raise ValueError("Season not valid")
+        
+        if self.round < 1 or self.round > 10:
+            raise ValueError("Round not valid")
+
+    def getLeague(self, str: str) -> League:
+        if str == League.UL.value:
+            return League.UL
+        elif str == League.CL.value:
+            return League.CL
+        elif str == League.JL.value:
+            return League.JL
+        elif str == League.AL.value:
+            return League.AL
+        elif str == League.OT.value:
+            return League.OT
+
+        raise ValueError("League not valid")
+
+    def __str__(self) -> str:
+        if self.league == "UL" or self.league == "CL":
+            return str(self.season) + self.round
+
+        if self.round <= 5:
+            return str(self.season) + "A" + self.round
+
+        return str(self.league) + str(self.season) + "B" + self.round - 5
+
+
 class Rule:
     def __init__(
         self,
@@ -47,9 +95,7 @@ class Report:
         self.id = id
         self.senderId = senderId
         self.offenderId = offenderId
-        self.league = league
-        self.season = season
-        self.round = round
+        self.race = Race(league=league, season=season, round=round)
         self.rule = rule
         self.proof = proof
         self.description = description

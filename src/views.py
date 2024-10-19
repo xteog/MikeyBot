@@ -1,7 +1,7 @@
 import discord
 from discord.interactions import Interaction
 from MikeyBotInterface import MikeyBotInterface
-from database.beans import Report, Rule, VoteType
+from database.beans import League, Report, Rule, VoteType
 import utils
 import config
 import logging
@@ -110,10 +110,6 @@ class ReportEmbed(discord.Embed):
 
         self.color = bot.getColor(report=data)
 
-        season, round = utils.formatLeagueRounds(
-            league=data.league, season=data.season, round=data.round
-        )
-
         if data.penalty != None:
             self.title = data.penalty
 
@@ -130,7 +126,7 @@ class ReportEmbed(discord.Embed):
             else:
                 self.description += f"**Aggravated:** ☐\n"
 
-        self.description += f"**Round:** `{data.league}{season}R{round}`\n"
+        self.description += f"**Round:** `{data.race}`\n"
 
         if data.rule != None:
             self.description += f"**Rule:** {data.rule.name}\n{utils.formatBlockQuote(data.rule.description)}\n"
@@ -215,13 +211,13 @@ class ReportRuleSelect(discord.ui.Select):
         super().__init__(
             placeholder="Select a Rule",
             max_values=1,
-            options=self.getRuleSelectOptions(view.data.rule, view.data.league),
+            options=self.getRuleSelectOptions(view.data.rule, view.data.race.league),
             row=0,
             custom_id=f"{view.data.id}_select",
         )
 
     def getRuleSelectOptions(
-        self, selected: Rule | None, league: str = ""
+        self, selected: Rule | None, league: League = ""
     ) -> list[discord.SelectOption]:
         options = []
 

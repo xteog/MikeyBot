@@ -6,6 +6,8 @@ import discord
 import config
 import openpyxl
 
+from database.beans import League, Race
+
 
 def lev_dist(s: str, t: str) -> int:
     """
@@ -154,7 +156,7 @@ def hasPermissions(
 
     Parameters
     -----------
-    - user : `discord.Member`\n
+    - user : `discord.Member`
         User to check if has permissions.
     - role : `Optional[int]`
         The role code that the user should have.
@@ -233,14 +235,14 @@ def loadSchedule() -> dict:
     return data
 
 
-def formatLeagueRounds(league: str, season: int, round: int) -> tuple[str, int]:
-    if league == "UL" or league == "CL":
-        return str(season), round
+def formatLeagueRounds(race: Race) -> tuple[str, int]:
+    if race.league == League.UL or race.league == League.CL:
+        return str(race.season), race.round
 
-    if round <= 5:
-        return str(season) + "A", round
+    if race.round <= 5:
+        return str(race.season) + "A", race.round
 
-    return str(season) + "B", round - 5
+    return str(race.season) + "B", race.round - 5
 
 
 

@@ -3,7 +3,7 @@ import logging
 import socket
 import discord
 import datetime
-import lobby
+import lobby as lobby
 
 class LobbiesList():
     def __init__(self, id, client, channelId, platform):

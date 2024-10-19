@@ -3,10 +3,10 @@ from datetime import datetime
 from datetime import timedelta
 import re
 from MikeyBotInterface import MikeyBotInterface
-from database.beans import Report, Rule, VoteType
-from database.dao import ReportDAO, RuleDAO, UserDAO, VotesDAO
+from database.beans import League, Race, Report, Rule, VoteType
+from database.dao import AttendanceDAO, ReportDAO, RuleDAO, UserDAO, VotesDAO
 from database.databaseHandler import Database
-import googleApi
+import google_sheets.api as api
 import utils
 import discord
 import slashCommands
@@ -14,7 +14,8 @@ import views
 import config
 import logging
 import sys
-import lobby
+import lobby as lobby
+import google_sheets.commands as sheets
 
 # import load_log
 
@@ -133,7 +134,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
 
                     for league in config.reportWindowDelta.keys():
                         open_date = self.schedule[league]["rounds"][
-                            self.getCurrentRound(league) - 1
+                            self.getCurrentRace(league).round - 1
                         ]
 
                         if (
@@ -247,6 +248,14 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         await user.send(text)
 
     async def devCommands(self, message: discord.Message):
+
+        if message.content.startswith("$load_attendance") and utils.hasPermissions(
+            message.author, roles=[config.stewardsRole, config.devRole]
+        ):
+            await self.updateAttendance()
+            await message.delete()
+
+
         if (
             message.content.startswith("$send")
             and message.author.id == 493028834640396289
@@ -311,7 +320,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         dao = UserDAO(self, self.dbHandler)
 
         season, round = utils.formatLeagueRounds(
-            league=data.league, season=data.season, round=data.round
+            race=data.race
         )
 
         row = [
@@ -332,14 +341,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         if data.penalty == "No offence":
             return
 
-        outcome = False
-        i = 0
-        while not outcome and i < 3:
-            outcome = googleApi.appendRow(row, sheetName=data.league)
-            i += 1
-
-        if not outcome:
-            logging.error("SpreadSheet not updated")
+        sheets.appendRow(row, sheetName=str(data.race.league))
 
     def getNick(self, member: discord.Member) -> str:
         return UserDAO(self, self.dbHandler).getNick(member)
@@ -376,20 +378,16 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         self,
         sender: discord.Member,
         offender: discord.Member,
-        league: str,
-        season: int,
-        round: int,
+        race:Race,
         description: str,
         proof: str,
     ) -> Report:
         dao = ReportDAO(self, self.dbHandler)
 
-        report = await dao.addReport(
+        report = await dao.insertReport(
             sender=await self.getUser(sender.id),
             offender=await self.getUser(offender.id),
-            league=league,
-            season=season,
-            round=round,
+            race=race,
             description=description,
             proof=proof,
         )
@@ -402,32 +400,36 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         return RuleDAO(self.dbHandler).getColor(penalty=report.penalty)
 
     def getOffenceLevel(self, report: Report) -> int:
-        previousOffences = ReportDAO(self, self.dbHandler).getPreviousOffences(
-            offender=report.offender, rule=report.rule, league=report.league
+
+        attendances = AttendanceDAO(self.dbHandler).getAttendances(
+            user=report.offender, League=report.race.league
         )
 
-        if len(previousOffences) == 0:
+        if len(attendances) == 0:
             return 0
 
         level = 0
-        prev_round = 10 * previousOffences[0].season + previousOffences[0].round - 1
 
-        for _offence in previousOffences:
-            curr_round = 10 * _offence.season + _offence.round - 1
+        for attendance in attendances:
 
-            if _offence.aggravated:
-                level += 2 * report.rule.escalation
+            offences = ReportDAO(self, self.dbHandler).searchReports(
+                offender=report.offender, rule=attendance.rule, race=attendance
+            )
+
+            if len(offences) == 0:
+                level -= report.rule.de_escalation
+                level = max(0, level)
+
             else:
-                level += report.rule.escalation
+                for offence in offences:
 
-            level = min(8, level)
+                    if offence.aggravated:
+                        level += 2 * offence.rule.escalation
+                    else:
+                        level += offence.rule.escalation
 
-            if curr_round > prev_round:
-                level -= report.rule.de_escalation * (curr_round - prev_round - 1)
-
-            level = max(0, level)
-
-            prev_round = curr_round
+                    level = min(8, level)
+                    level = max(0, level)
 
         return level
 
@@ -484,9 +486,10 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
             if t.name.find(id) != -1:
                 await t.edit(archived=True)
 
-    def getCurrentRound(self, league: str) -> int:
-        if league in self.schedule.keys():
-            rounds = self.schedule[league]["rounds"]
+    def getCurrentRace(self, league: str) -> Race:
+        if str(league) in self.schedule.keys():
+            season = self.schedule[repr(league)]["season"]
+            rounds = self.schedule[repr(league)]["rounds"]
 
             found = False
             for i in range(0, len(rounds)):
@@ -495,20 +498,23 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
                     break
 
             if found:
-                return i
+                return Race(league=league, season=season, round=i)
 
-            return i + 1
+            return Race(league=league, season=season, round=i + 1)
 
-        return 1
+        return Race(league=league, season=season, round=1)
 
     async def getUser(self, id: int) -> discord.Member | None:
         dao = UserDAO(self, self.dbHandler)
 
         guild = await self.fetch_guild(self.server)
-        member = await guild.fetch_member(id)
+        try:
+            member = await guild.fetch_member(id)
+        except:
+            return None
 
         if not dao.userExists(id):
-            dao.addUser(id, member.display_name)
+            dao.insertUser(id, member.display_name)
 
         return member
 
@@ -540,9 +546,56 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         self, user: discord.Member, report: Report, type: VoteType, in_favor: bool
     ) -> None:
         user = await self.getUser(user.id)
-        VotesDAO(self.dbHandler).addVote(
+        VotesDAO(self.dbHandler).insertVote(
             user=user, report=report, type=type, in_favor=in_favor
         )
+
+    async def updateAttendance(self) -> None:
+        sheets.statusAttendance("Loading...")
+
+        race, data = sheets.loadAttendance()
+
+        attendanceDao = AttendanceDAO(self.dbHandler)
+        userDao = UserDAO(self, self.dbHandler)
+
+        attendanceDao.deleteAttendances(race=race)
+
+        for row in data[:1000]:
+            try:
+                id = row[0]
+                nick = row[1]
+
+                if row[2] == "TRUE":
+                    attendance = True
+                elif row[2] == "FALSE":
+                    attendance = False
+                else:
+                    raise ValueError("Attendance is not bool")
+
+            except Exception as e:
+                sheets.statusAttendance(f"Error: row {id} not valid. {e}")
+                logging.warning(f"{id} not valid.  {e}")
+                return
+            
+            if id == "":
+                break 
+            
+            if not userDao.userExists(id):
+                user = await self.getUser(id)
+
+                if user == None:
+                    sheets.statusAttendance(f"Error: user {id} not found")
+                    logging.warning(f"{id} not valid")
+                    return
+            else:
+                userDao.setNick(id_user=id, nick=nick)
+            
+            if attendance:
+                attendanceDao.insertAttendance(user_id=id, race=race)
+
+        sheets.resetAttendance(users=userDao.getUsers())
+
+        sheets.statusAttendance("Ready")
 
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
         logging.error(f"Error: {event_method}")

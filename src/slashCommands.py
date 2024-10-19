@@ -2,6 +2,7 @@ import discord
 import logging
 from MikeyBotInterface import MikeyBotInterface
 import config
+from database.beans import League, Race
 import views
 import utils
 from datetime import datetime
@@ -78,16 +79,15 @@ class CommandsCog(discord.ext.commands.Cog):
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
 
-        league = league.value
-        round = self.client.getCurrentRound(league)
+        race = self.client.getCurrentRace(league.value)
 
         if (
-            (not isWindowOpen(league, round))
+            (not isWindowOpen(race.league, race.round))
             and (not utils.hasPermissions(interaction.user, config.stewardsRole))
-            and league != "Off-Track"
+            and league != League.OT
         ):
             try:
-                open_date = self.client.schedule[league]["rounds"][round]
+                open_date = self.client.schedule[str(race.league)]["rounds"][race.round]
             except:
                 open_date = datetime.now() + timedelta(days=100)
 
@@ -107,13 +107,10 @@ class CommandsCog(discord.ext.commands.Cog):
             await interaction.followup.send(error, ephemeral=True)
             return
 
-        season = self.client.schedule[league]["season"]
         data = await self.client.openReport(
             sender=interaction.user,
             offender=user,
-            league=league,
-            season=season,
-            round=round,
+            race=race,
             proof=modal.link.value,
             description=modal.notes.value,
         )
