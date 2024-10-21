@@ -121,16 +121,18 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
                     ).getActiveReports()
 
                     for thread in self.reportChannel.threads:
-                        if not thread.archived:
-                            match = re.search(r"\d{4}", thread.name)
-                            id = int(match.group())
+                        match = re.search(r"\d{4}", thread.name)
+                        id = match.group()
 
-                            for report in activeReports:
-                                if id == report.id and not report.active:
-                                    await thread.edit(archived=True)
+                        found = False
+                        for report in activeReports:
+                            if id == report.id:
+                                found = True
 
-                            if len(activeReports) > 0 and not activeReports[0].active:
-                                await thread.edit(archived=True)
+                        if found:
+                            await thread.edit(archived=False)
+                        else:
+                            await thread.edit(archived=True)
 
                     for league in config.reportWindowDelta.keys():
                         open_date = self.schedule[league]["rounds"][
@@ -252,8 +254,9 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         if message.content.startswith("$load_attendance") and utils.hasPermissions(
             message.author, roles=[config.stewardsRole, config.devRole]
         ):
-            await self.updateAttendance()
             await message.delete()
+            await self.updateAttendance()
+            
 
 
         if (

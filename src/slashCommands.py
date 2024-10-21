@@ -47,14 +47,14 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
     return choices
 
 
-def isWindowOpen(league: str, round: int) -> bool:
+def isWindowOpen(race: Race) -> bool:
     schedule = utils.loadSchedule()
 
-    if league in schedule.keys():
+    if str(race.league) in schedule.keys():
         return (
-            datetime.now() > schedule[league]["rounds"][round - 1]
+            datetime.now() > schedule[str(race.league)]["rounds"][race.round - 1]
             and datetime.now()
-            < schedule[league]["rounds"][round - 1] + config.reportWindowDelta[league]
+            < schedule[str(race.league)]["rounds"][race.round - 1] + config.reportWindowDelta[str(race.league)]
         )
 
     return False
@@ -82,7 +82,7 @@ class CommandsCog(discord.ext.commands.Cog):
         race = self.client.getCurrentRace(league.value)
 
         if (
-            (not isWindowOpen(race.league, race.round))
+            (not isWindowOpen(race))
             and (not utils.hasPermissions(interaction.user, roles=[config.stewardsRole, config.devRole]))
             and league != League.OT
         ):
