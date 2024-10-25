@@ -416,7 +416,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         for attendance in attendances:
 
             offences = ReportDAO(self, self.dbHandler).searchReports(
-                offender=report.offender, rule=attendance.rule, race=attendance
+                offender=report.offender, rule=report.rule, race=attendance
             )
 
             if len(offences) == 0:
