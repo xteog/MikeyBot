@@ -36,9 +36,6 @@ class Race:
         self.round = int(round)
         self.date = date
 
-        if self.season < 1:
-            raise ValueError("Season not valid")
-
         if self.round < 1 or self.round > 10:
             raise ValueError("Round not valid")
 
