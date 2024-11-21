@@ -488,10 +488,10 @@ class RaceDAO:
         query = """
             SELECT id
             FROM Races AS s
-            WHERE s.league = %s AND s.date = (
+            WHERE s.date = (
                     SELECT MAX(t.date)
                     FROM Races AS t
-                    WHERE t.date <= %s
+                    WHERE t.league = %s AND t.date <= %s
                 )
         """
 
