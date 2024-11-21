@@ -300,6 +300,8 @@ class AttendanceSelect(discord.ui.Select):
 
             i -= 1
 
+        options = options[::-1]
+        
         return options
 
     async def callback(self, interaction: discord.Interaction) -> None:
