@@ -32,7 +32,7 @@ class Race:
     def __init__(self, id: int, league: str, season: int, round: int, date: datetime.datetime) -> None:
         self.id = id
         self.league = getLeague(league)
-        self.season = int(season)
+        self.season = season
         self.round = int(round)
         self.date = date
 
