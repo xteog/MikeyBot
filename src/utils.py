@@ -1,14 +1,11 @@
 import datetime
 import json
-import logging
 import random
 import discord
-from MikeyBotInterface import MikeyBotInterface
 import config
 import openpyxl
 
 from database.beans import League, Race
-from database.dao import AttendanceDAO, RaceDAO
 from database.databaseHandler import Database
 
 
