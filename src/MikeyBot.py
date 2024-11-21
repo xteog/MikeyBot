@@ -1,10 +1,11 @@
 import asyncio
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 import re
 from MikeyBotInterface import MikeyBotInterface
-from database.beans import League, Race, Report, Rule, VoteType
-from database.dao import AttendanceDAO, ReportDAO, RuleDAO, UserDAO, VotesDAO
+from database.beans import League, Race, Report, Rule, VoteType, getLeague
+from database.dao import AttendanceDAO, RaceDAO, ReportDAO, RuleDAO, UserDAO, VotesDAO
 from database.databaseHandler import Database
 import google_sheets.api as api
 import utils
@@ -20,7 +21,7 @@ import google_sheets.commands as sheets
 # import load_log
 
 
-class MikeyBot(MikeyBotInterface):  # TODO Controller
+class MikeyBot(MikeyBotInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -41,8 +42,6 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         self.lobbiesChannel = None
 
         self.lobbiesLists = []
-        self.reportWindowNotice = utils.load_reportWindowNotice()
-        self.schedule = utils.loadSchedule()
 
         self.ready = False
 
@@ -83,6 +82,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
             ]
 
         self.ready = True
+
         print("Mikey is up")
 
         await self.change_presence(status=discord.Status.online)
@@ -101,7 +101,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         self.bg_task = self.loop.create_task(self.background_task())
 
     async def background_task(self):
-        awake_at = datetime.utcnow()
+        awake_at = datetime.now(timezone.utc)
 
         await self.wait_until_ready()
         while not self.ready:
@@ -113,8 +113,8 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
                 for lobbies in self.lobbiesLists:
                     await lobbies.update()
 
-                if awake_at < datetime.utcnow():
-                    awake_at = datetime.utcnow() + timedelta(hours=1)
+                if awake_at < datetime.now(timezone.utc):
+                    awake_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
                     activeReports = await ReportDAO(
                         self, self.dbHandler
@@ -134,29 +134,24 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
                         else:
                             await thread.edit(archived=True)
 
-                    for league in config.reportWindowDelta.keys():
-                        open_date = self.schedule[league]["rounds"][
-                            self.getCurrentRace(league).round - 1
-                        ]
+                    for league in League:
+                        currRace = self.getCurrentRace(league)
+                        now = datetime.now(timezone.utc)
+                        reportWindowNotice = utils.load_reportWindowNotice()
 
                         if (
-                            self.reportWindowNotice[league] < open_date
-                            and datetime.utcnow()
-                            < open_date + config.reportWindowDelta[league]
-                            and league in config.leaguesChannelIds.keys()
+                            reportWindowNotice[str(league)] < currRace.date
+                            and now < utils.closeWindowDate(race=currRace)
+                            and str(league) in config.leaguesChannelIds.keys()
                         ):
-                            if datetime.utcnow() > open_date:
-                                msg = f"Reports window is now open until <t:{int((open_date + config.reportWindowDelta[league]).timestamp())}:f>. Use </report:1194650188376199239> to report"
-                                await self.sendMessage(
-                                    msg, config.leaguesChannelIds[league]
-                                )
+                            msg = f"Reports window is now open until <t:{int(utils.closeWindowDate(race=currRace).timestamp())}:f>. Use </report:1194650188376199239> to report"
 
-                                self.reportWindowNotice[league] = datetime.utcnow()
-                                utils.update_reportWindowNotice(self.reportWindowNotice)
-                            elif datetime.utcnow() + timedelta(minutes=59) > open_date:
-                                awake_at = datetime.utcnow() + (
-                                    open_date - datetime.utcnow()
-                                )
+                            await self.sendMessage(
+                                msg, config.leaguesChannelIds[str(league)]
+                            )
+
+                            reportWindowNotice[str(league)] = datetime.now(timezone.utc)
+                            utils.update_reportWindowNotice()
 
                 await asyncio.sleep(60)
             except Exception as e:
@@ -255,9 +250,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
             message.author, roles=[config.stewardsRole, config.devRole]
         ):
             await message.delete()
-            await self.updateAttendance()
-            
-
+            await self.updateAttendanceSheet()
 
         if (
             message.content.startswith("$send")
@@ -322,9 +315,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
     def updateSpreadSheet(self, data: Report) -> None:
         dao = UserDAO(self, self.dbHandler)
 
-        season, round = utils.formatLeagueRounds(
-            race=data.race
-        )
+        season, round = str(data.race)
 
         row = [
             data.id,
@@ -381,10 +372,12 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         self,
         sender: discord.Member,
         offender: discord.Member,
-        race:Race,
+        race: Race,
         description: str,
         proof: str,
     ) -> Report:
+        self.updateAttendance(user=offender, race=race, attended=True)
+
         dao = ReportDAO(self, self.dbHandler)
 
         report = await dao.insertReport(
@@ -402,9 +395,13 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
     def getColor(self, report: Report) -> int:
         return RuleDAO(self.dbHandler).getColor(penalty=report.penalty)
 
-    def getOffenceLevel(self, report: Report) -> int:
+    def getAttendances(
+        self, user: discord.Member, league: League
+    ) -> tuple[tuple[Race, bool]]:
+        return AttendanceDAO(self.dbHandler).getAttendances(user=user, league=league)
 
-        attendances = AttendanceDAO(self.dbHandler).getAttendances(
+    def getOffenceLevel(self, report: Report) -> int:
+        attendances = self.getAttendances(
             user=report.offender, league=report.race.league
         )
 
@@ -414,6 +411,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
         level = 0
 
         for attendance in attendances:
+            attendance = attendance[0]
 
             offences = ReportDAO(self, self.dbHandler).searchReports(
                 offender=report.offender, rule=report.rule, race=attendance
@@ -489,23 +487,10 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
             if t.name.find(id) != -1:
                 await t.edit(archived=True)
 
-    def getCurrentRace(self, league: str) -> Race:
-        if league in self.schedule.keys():
-            season = self.schedule[league]["season"]
-            rounds = self.schedule[league]["rounds"]
-
-            found = False
-            for i in range(len(rounds)):
-                if rounds[i] > datetime.utcnow():
-                    found = True
-                    break
-
-            if found:
-                return Race(league=league, season=season, round=i)
-
-            return Race(league=league, season=season, round=i + 1)
-
-        return Race(league=league, season=season, round=1)
+    def getCurrentRace(self, league: League) -> Race:
+        return RaceDAO(self.dbHandler).getCurrentRace(
+            league=league, date=datetime.now(timezone.utc)
+        )
 
     async def getUser(self, id: int) -> discord.Member | None:
         dao = UserDAO(self, self.dbHandler)
@@ -553,7 +538,18 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
             user=user, report=report, type=type, in_favor=in_favor
         )
 
-    async def updateAttendance(self) -> None:
+    def getRace(self, id: int) -> Race:
+        return RaceDAO(self.dbHandler).getRaceById(id=id)
+
+    def updateAttendance(
+        self, user: discord.Member, race: Race, attended: bool
+    ) -> None:
+        if attended:
+            AttendanceDAO(self.dbHandler).insertAttendance(user_id=user.id, race=race)
+        else:
+            AttendanceDAO(self.dbHandler).deleteAttendance(user=user, race=race)
+
+    async def updateAttendanceSheet(self) -> None:
         sheets.statusAttendance("Loading...")
 
         race, data = sheets.loadAttendance()
@@ -579,10 +575,10 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
                 sheets.statusAttendance(f"Error: row {id} not valid. {e}")
                 logging.warning(f"{id} not valid.  {e}")
                 return
-            
+
             if id == "":
-                break 
-            
+                break
+
             if not userDao.userExists(id):
                 user = await self.getUser(id)
 
@@ -592,7 +588,7 @@ class MikeyBot(MikeyBotInterface):  # TODO Controller
                     return
             else:
                 userDao.setNick(id_user=id, nick=nick)
-            
+
             if attendance:
                 attendanceDao.insertAttendance(user_id=id, race=race)
 

@@ -67,7 +67,7 @@ class LobbiesEmbed(discord.Embed):
         super().__init__(colour=0x00B0F4, title="Lobbies online")
 
         self.set_footer(text="Last update")
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = datetime.datetime.now(datetime.timezone.utc)
 
         if len(lobbies) == 0:
             self.description = "No lobbies found"

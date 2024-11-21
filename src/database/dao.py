@@ -219,9 +219,7 @@ class ReportDAO:
             id=result[0],
             senderId=result[1],
             offenderId=result[2],
-            league=result[3],
-            season=result[4],
-            round=result[5],
+            race=RaceDAO(self.dbHandler).getRace(league=result[3], season=result[4], round=result[5]),
             description=result[6],
             rule=RuleDAO(self.dbHandler).getRule(result[7]),
             proof=result[8],
@@ -261,7 +259,7 @@ class ReportDAO:
         proof: str,
     ) -> Report:
         id = self.getNewId()
-        timestamp = datetime.datetime.utcnow()
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
 
         query = """
             INSERT INTO Reports (id, sender, offender, league, season, round, description, proof, timestamp)
@@ -443,16 +441,95 @@ class VotesDAO:
         self.dbHandler.database.commit()
 
 
+class RaceDAO:
+    def __init__(self, dbHandler: Database) -> None:
+        self.dbHandler = dbHandler
+
+    def getRaces(self, league: League, season: str) -> list[Race]:
+        query = """
+            SELECT id, date
+            FROM Races
+            WHERE league = %s AND season = %s
+            ORDER BY date
+        """
+
+        values = (str(league), season)
+
+        self.dbHandler.cursor.execute(query, values)
+        results = self.dbHandler.cursor.fetchall()
+
+        races = []
+
+        for line in results:
+            races.append(self.getRaceById(id=line[0]))
+
+        return races
+
+    def getRace(self, league: League, season: str, round: int) -> Race:
+        return self.getRaces(league=league, season=season)[int(round) - 1]
+
+    def getRaceById(self, id: int) -> Race:
+        query = """
+            SELECT *
+            FROM Races
+            WHERE id = %s
+        """
+
+        values = (id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        result = self.dbHandler.cursor.fetchall()[0]
+
+        return Race(
+            id=int(result[0]), league=result[1], season=result[2], round=int(result[3]), date=result[4]
+        )
+    
+    def getCurrentRace(self, league: League, date: datetime.datetime) -> Race:
+        query = """
+            SELECT id
+            FROM Races AS s
+            WHERE s.league = %s AND s.date = (
+                    SELECT MAX(t.date)
+                    FROM Races AS t
+                    WHERE t.date <= %s
+                )
+        """
+
+        values = (str(league), date)
+
+        self.dbHandler.cursor.execute(query, values)
+        result = self.dbHandler.cursor.fetchall()[0][0]
+
+        return self.getRaceById(id=result)
+
+
 class AttendanceDAO:
     def __init__(self, dbHandler: Database) -> None:
         self.dbHandler = dbHandler
 
-    def getAttendances(self, user: discord.Member, league: League) -> tuple[Race]:
+    def attendanceExists(self, user_id: discord.Member, race: Race) -> bool:
         query = """
-            SELECT league, season, round
+            SELECT *
             FROM Attendance
-            WHERE user = %s AND league = %s
-            ORDER BY season, round
+            WHERE user = %s AND race = %s
+        """
+
+        values = (user_id, race.id) #TODO cambia sto user id
+
+        self.dbHandler.cursor.execute(query, values)
+        results = self.dbHandler.cursor.fetchall()
+
+        return len(results) > 0
+
+    def getAttendances(
+        self, user: discord.Member, league: League
+    ) -> tuple[tuple[Race, bool]]:
+        query = """
+            SELECT R.league, R.season, R.round, IF(A.race = R.id, 1, 0)
+            FROM Races AS R
+            LEFT JOIN Attendance AS A ON A.race = R.id AND A.user = %s
+            WHERE  R.league = %s
+            ORDER BY R.season, R.round
         """
 
         values = (user.id, str(league))
@@ -462,38 +539,51 @@ class AttendanceDAO:
 
         races = []
         for line in results:
-            races.append(Race(league=line[0], season=line[1], round=line[2]))
+            races.append(
+                (
+                    RaceDAO(self.dbHandler).getRace(league=line[0], season=line[1], round=line[2]),
+                    True if line[3] == 1 else False,
+                )
+            )
 
         return tuple(races)
 
-    def deleteAttendances(self, race: Race) -> None:
+    def deleteAttendance(self, user:discord.Member, race: Race) -> None:
         """
-        Deletes all attendances of a specific round.
+        Deletes an attendance of a specific round.
 
         Parameters
         -----------
+        - user : `discord.Member`
+            The user to delete its attendance.
         - race : `Race`
-            The object describing the round to teh delete its attendance.
+            The object describing the round to delete its attendance.
         """
+
+        if not self.attendanceExists(user_id=user.id, race=race):
+            return
 
         query = """
             DELETE
             FROM Attendance
-            WHERE league = %s AND season = %s AND round = %s
+            WHERE user = %s AND race = %s
         """
 
-        values = (str(race.league), race.season, race.round)
+        values = (user.id, race.id)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
 
     def insertAttendance(self, user_id: int, race: Race) -> None:
+        if self.attendanceExists(user_id=user_id, race=race):
+            return
+        
         query = """
-            INSERT INTO Attendance (user, league, season, round) 
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO Attendance (user, race) 
+            VALUES (%s, %s)
         """
 
-        values = (user_id, str(race.league), race.season, race.round)
+        values = (user_id, race.id)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()

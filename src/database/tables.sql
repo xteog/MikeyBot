@@ -56,13 +56,20 @@ CREATE TABLE Votes (
     FOREIGN KEY (`report`) REFERENCES Reports(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE Attendance (
-    `user` varchar(32) NOT NULL,
+CREATE TABLE Attendance2 (
+    `user` varchar(32),
+    `race` integer,
+    PRIMARY KEY (`user`, `race`),
+    FOREIGN KEY (`user`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`race`) REFERENCES Races(`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE Races (
+    `id` integer PRIMARY AUTO_INCREMENT,
     `league` varchar(8) NOT NULL,
     `season` integer NOT NULL,
     `round` integer NOT NULL,
-    PRIMARY KEY (`user`, `league`, `season`, `round`),
-    FOREIGN KEY (`user`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE
+    `date` datetime NOT NULL
 );
 
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)

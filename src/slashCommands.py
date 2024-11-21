@@ -2,7 +2,7 @@ import discord
 import logging
 from MikeyBotInterface import MikeyBotInterface
 import config
-from database.beans import League, Race
+from database.beans import League, Race, getLeague
 import views
 import utils
 from datetime import datetime
@@ -48,16 +48,12 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
 
 
 def isWindowOpen(race: Race) -> bool:
-    schedule = utils.loadSchedule()
-
-    if str(race.league) in schedule.keys():
-        return (
-            datetime.now() > schedule[str(race.league)]["rounds"][race.round - 1]
-            and datetime.now()
-            < schedule[str(race.league)]["rounds"][race.round - 1] + config.reportWindowDelta[str(race.league)]
+    if race.league == League.OT:
+        return datetime.now() > race.date and datetime.now() < utils.closeWindowDate(
+            race=race
         )
 
-    return False
+    return True
 
 
 class CommandsCog(discord.ext.commands.Cog):
@@ -78,21 +74,19 @@ class CommandsCog(discord.ext.commands.Cog):
         league: discord.app_commands.Choice[str],
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
+        league = getLeague(league.value)
 
-        race = self.client.getCurrentRace(league.value)
+        race = self.client.getCurrentRace(league=league)
 
-        if (
-            (not isWindowOpen(race))
-            and (not utils.hasPermissions(interaction.user, roles=[config.stewardsRole, config.devRole]))
-            and league != League.OT
+        if (not isWindowOpen(race)) and (
+            not utils.hasPermissions(
+                interaction.user, roles=[config.stewardsRole, config.devRole]
+            )
         ):
-            try:
-                open_date = self.client.schedule[str(race.league)]["rounds"][race.round]
-            except:
-                open_date = datetime.now() + timedelta(days=100)
+            closeDate = utils.closeWindowDate(race=race)
 
             await interaction.response.send_message(
-                f"Report window will open <t:{int(open_date.timestamp())}:R>",
+                f"Report window closed <t:{int(closeDate.timestamp())}:R>",
                 ephemeral=True,
             )
             return

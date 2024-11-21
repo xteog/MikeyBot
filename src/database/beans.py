@@ -13,40 +13,37 @@ class League(Enum):
         return self.value
 
 
+def getLeague(str: str) -> League:
+    if str == League.UL.value:
+        return League.UL
+    elif str == League.CL.value:
+        return League.CL
+    elif str == League.JL.value:
+        return League.JL
+    elif str == League.AL.value:
+        return League.AL
+    elif str == League.OT.value:
+        return League.OT
+
+    raise ValueError("League not valid")
+
+
 class Race:
-    def __init__(self, league: str, season: int, round: int) -> None:
-        self.league = self.getLeague(league)
+    def __init__(self, id: int, league: str, season: int, round: int, date: datetime.datetime) -> None:
+        self.id = id
+        self.league = getLeague(league)
         self.season = int(season)
         self.round = int(round)
+        self.date = date
 
         if self.season < 1:
             raise ValueError("Season not valid")
-        
+
         if self.round < 1 or self.round > 10:
             raise ValueError("Round not valid")
 
-    def getLeague(self, str: str) -> League:
-        if str == League.UL.value:
-            return League.UL
-        elif str == League.CL.value:
-            return League.CL
-        elif str == League.JL.value:
-            return League.JL
-        elif str == League.AL.value:
-            return League.AL
-        elif str == League.OT.value:
-            return League.OT
-
-        raise ValueError("League not valid")
-
     def __str__(self) -> str:
-        if self.league == "UL" or self.league == "CL":
-            return str(self.league) + str(self.season) + "R" +  str(self.round)
-
-        if self.round <= 5:
-            return str(self.league) + str(self.season) + "A" + "R" + str(self.round)
-
-        return str(self.league) + str(self.season) + "B" + "R" + str(self.round) - 5
+        return str(self.league) + str(self.season) + "R" + str(self.round)
 
 
 class Rule:
@@ -78,9 +75,7 @@ class Report:
         id: str,
         senderId: int,
         offenderId: int,
-        league: str,
-        season: int,
-        round: int,
+        race: Race,
         description: str,
         proof: str,
         timestamp: datetime.datetime,
@@ -95,7 +90,7 @@ class Report:
         self.id = id
         self.senderId = senderId
         self.offenderId = offenderId
-        self.race = Race(league=league, season=season, round=round)
+        self.race = race
         self.rule = rule
         self.proof = proof
         self.description = description

@@ -68,8 +68,13 @@ class CloseReportView(discord.ui.View):
         self.data = data
         self.report_interaction = report_interaction
 
+        if self.data.race.league != League.OT:
+            self.add_item(AttendanceSelect(view=self))
+
         self.add_item(ReportRuleSelect(self))
+
         self.add_item(AggravatedButton(self))
+
         self.add_item(NoOffenceButton(self))
         if not self.data.rule == None:
             self.add_item(OffenceButton(view=self, disabled=False))
@@ -212,8 +217,8 @@ class ReportRuleSelect(discord.ui.Select):
             placeholder="Select a Rule",
             max_values=1,
             options=self.getRuleSelectOptions(view.data.rule, view.data.race.league),
-            row=0,
-            custom_id=f"{view.data.id}_select",
+            row=1,
+            custom_id=f"{view.data.id}_select_rule",
         )
 
     def getRuleSelectOptions(
@@ -254,12 +259,78 @@ class ReportRuleSelect(discord.ui.Select):
         await interaction.response.edit_message(view=newView)
 
 
+class AttendanceSelect(discord.ui.Select):
+    def __init__(self, view: CloseReportView) -> None:
+        self.reportView = view
+
+        options = self.getAttendanceOptions()
+        super().__init__(
+            placeholder="Check attendance",
+            options=options,
+            min_values=0,
+            max_values=len(options),
+            row=0,
+            custom_id=f"{view.data.id}_select_attendance",
+        )
+
+    def getAttendanceOptions(self) -> list[discord.SelectOption]:
+        options = []
+
+        attendances = self.reportView.bot.getAttendances(
+            user=self.reportView.data.offender, league=self.reportView.data.race.league
+        )
+
+        currRace = self.reportView.bot.getCurrentRace(
+            league=self.reportView.data.race.league
+        )
+
+        i = len(attendances) - 1
+        flag = False
+        while i >= 0 and len(options) <= 5:
+
+            if flag or attendances[i][0].id == currRace.id:
+                options.append(
+                    discord.SelectOption(
+                        label=str(attendances[i][0]),
+                        value=attendances[i][0].id,
+                        default=attendances[i][1],
+                    )
+                )
+                flag = True
+
+            i -= 1
+
+        return options
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+
+        bot = self.reportView.bot
+
+        for option in self.options:
+            attended = False
+            for id in self.values:
+                if str(id) == str(option.value):
+                    attended = True
+
+            race = bot.getRace(id=option.value)
+
+            bot.updateAttendance(user=interaction.user, race=race, attended=attended)
+
+        newView = CloseReportView(
+            bot=bot,
+            data=self.reportView.data,
+            report_interaction=self.reportView.report_interaction,
+        )
+
+        await interaction.response.edit_message(view=newView)
+
+
 class NoOffenceButton(discord.ui.Button):
     def __init__(self, view: CloseReportView):
         super().__init__(
             style=discord.ButtonStyle.green,
             label="No offence",
-            row=2,
+            row=3,
             custom_id=f"{view.data.id}_no",
         )
         self.reportView = view
@@ -299,7 +370,7 @@ class OffenceButton(discord.ui.Button):
             style=discord.ButtonStyle.red,
             label="Remind",
             disabled=disabled,
-            row=2,
+            row=3,
             custom_id=f"{view.data.id}_yes",
         )
         self.reportView = view
@@ -348,7 +419,7 @@ class AggravatedButton(discord.ui.Button):
         super().__init__(
             style=discord.ButtonStyle.gray,
             label="☐ Aggravated",
-            row=1,
+            row=2,
             custom_id=f"{view.data.id}_3",
         )
 

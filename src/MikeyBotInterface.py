@@ -35,13 +35,24 @@ class MikeyBotInterface(commands.Bot):
     async def archiveThread(self, id: str) -> None:
         pass
 
-    def getCurrentRace(self, league: str) -> Race:
+    def getCurrentRace(self, league: League) -> Race:
         pass
 
     async def getUser(self, id: int) -> discord.Member | None:
         pass
 
     def getColor(self, report: Report) -> int:
+        pass
+
+    def getRace(self, id: int) -> Race:
+        pass
+
+    def updateAttendance(
+        self, user: discord.Member, race: Race, attended: bool
+    ) -> None:
+        pass
+
+    def getAttendances(self, user: discord.Member, league: League) -> tuple[tuple[Race, bool]]:
         pass
 
     def getOffenceLevel(self, report: Report) -> int:

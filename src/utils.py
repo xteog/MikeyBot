@@ -3,10 +3,13 @@ import json
 import logging
 import random
 import discord
+from MikeyBotInterface import MikeyBotInterface
 import config
 import openpyxl
 
 from database.beans import League, Race
+from database.dao import AttendanceDAO, RaceDAO
+from database.databaseHandler import Database
 
 
 def lev_dist(s: str, t: str) -> int:
@@ -198,8 +201,8 @@ def load_reportWindowNotice() -> dict[str, datetime.datetime]:
     for league in data.keys():
         data[league] = datetime.datetime.strptime(data[league], config.timeFormat)
 
-    for league in config.reportWindowDelta:
-        if not league in data.keys():
+    for league in League:
+        if not str(league) in data.keys():
             data[league] = datetime.datetime.strptime(
                 "2001-11-09 8:09", config.timeFormat
             )
@@ -215,34 +218,27 @@ def update_reportWindowNotice(data: dict):
     write(config.reportWindowNoticePath, leagues)
 
 
-def loadSchedule() -> dict:
-    data = read(config.schedulePath)
+def formatDateTime(str: str) -> datetime.datetime:
+    return datetime.datetime.strptime(str, config.timeFormat)
 
-    if data == None:
-        logging.error("Schedule not found")
-        return None
+
+def loadSchedule(dbHandler: Database):
+    data = read(config.schedulePath)
 
     for league in data.keys():
         for i in range(len(data[league]["rounds"])):
-            data[league]["rounds"][i] = datetime.datetime.strptime(
-                data[league]["rounds"][i], config.timeFormat
-            )
+            query = """
+                INSERT INTO Races (league, season, round, date) 
+                VALUES (%s, %s, %s, %s)
+            """
 
-    for league in config.reportWindowDelta:
-        if not league in data.keys():
-            data[league]["rounds"] = []
+            values = (league, data[league]["season"], i + 1, data[league]["rounds"][i])
 
-    return data
-
-
-def formatLeagueRounds(race: Race) -> tuple[str, int]:
-    if race.league == League.UL or race.league == League.CL:
-        return str(race.season), race.round
-
-    if race.round <= 5:
-        return str(race.season) + "A", race.round
-
-    return str(race.season) + "B", race.round - 5
+            dbHandler.cursor.execute(query, values)
+            dbHandler.database.commit()
 
 
-
+def closeWindowDate(race: Race) -> datetime.datetime:
+    closeDate = race.date + datetime.timedelta(days=config.reportWindowDelta)
+    closeDate = closeDate.replace(hour=23, minute=59, second=0, microsecond=0)
+    return closeDate
