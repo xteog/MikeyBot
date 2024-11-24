@@ -409,26 +409,27 @@ class MikeyBot(MikeyBotInterface):
         level = 0
 
         for attendance in attendances:
-            attendance = attendance[0]
+            if attendance[1]:
+                attendance = attendance[0]
 
-            offences = ReportDAO(self, self.dbHandler).searchReports(
-                offender=report.offender, rule=report.rule, race=attendance
-            )
+                offences = ReportDAO(self, self.dbHandler).searchReports(
+                    offender=report.offender, rule=report.rule, race=attendance
+                )
 
-            if len(offences) == 0:
-                level -= report.rule.de_escalation
-                level = max(0, level)
-
-            else:
-                for offence in offences:
-
-                    if offence.aggravated:
-                        level += 2 * offence.rule.escalation
-                    else:
-                        level += offence.rule.escalation
-
-                    level = min(8, level)
+                if len(offences) == 0:
+                    level -= report.rule.de_escalation
                     level = max(0, level)
+
+                else:
+                    for offence in offences:
+
+                        if offence.aggravated:
+                            level += 2 * offence.rule.escalation
+                        else:
+                            level += offence.rule.escalation
+
+                        level = min(8, level)
+                        level = max(0, level)
 
         return level
 
