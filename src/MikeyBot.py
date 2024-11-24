@@ -407,6 +407,7 @@ class MikeyBot(MikeyBotInterface):
             return 0
 
         level = 0
+        max_level = len(report.rule.levels) - 1
 
         for attendance in attendances:
             if attendance[1]:
@@ -428,8 +429,7 @@ class MikeyBot(MikeyBotInterface):
                         else:
                             level += offence.rule.escalation
 
-                        level = min(8, level)
-                        level = max(0, level)
+                        level = min(max_level, level)
 
         return level
 
