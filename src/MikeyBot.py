@@ -315,15 +315,13 @@ class MikeyBot(MikeyBotInterface):
     def updateSpreadSheet(self, data: Report) -> None:
         dao = UserDAO(self, self.dbHandler)
 
-        season, round = str(data.race)
-
         row = [
             data.id,
             dao.getNick(data.offender),
             data.penalty,
             str(data.aggravated),
-            season,
-            round,
+            data.race.season,
+            data.race.round,
             str(data.rule),
             data.proof,
             data.notes,
