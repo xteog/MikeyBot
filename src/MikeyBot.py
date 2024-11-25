@@ -425,7 +425,7 @@ class MikeyBot(MikeyBotInterface):
                             level += offence.rule.escalation
 
                         level = min(max_level, level)
-                elif attendance[0].id != report.race.id:
+                elif attendance[0].date < report.race.date:
                     level -= report.rule.de_escalation
                     level = max(0, level)
 
