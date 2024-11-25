@@ -286,7 +286,7 @@ class AttendanceSelect(discord.ui.Select):
 
         i = len(attendances) - 1
         flag = False
-        while i >= 0 and len(options) <= 5:
+        while i >= 0 and len(options) <= 10:
 
             if flag or attendances[i][0].id == currRace.id:
                 options.append(
