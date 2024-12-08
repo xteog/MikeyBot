@@ -6,7 +6,6 @@ from database.beans import League, Race, getLeague
 import views
 import utils
 from datetime import datetime
-from datetime import timedelta
 import os
 
 
@@ -16,7 +15,7 @@ def leagueList() -> list:
         discord.app_commands.Choice(name="Challenger League", value="CL"),
         discord.app_commands.Choice(name="Journeyman League", value="JL"),
         discord.app_commands.Choice(name="Apprentice League", value="AL"),
-        discord.app_commands.Choice(name="Off-Track", value="Off-Track"),
+        discord.app_commands.Choice(name="Off-Track", value="OT"),
     ]
 
 
