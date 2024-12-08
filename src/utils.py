@@ -199,8 +199,8 @@ def load_reportWindowNotice() -> dict[str, datetime.datetime]:
         data[league] = datetime.datetime.strptime(data[league], config.timeFormat)
 
     for league in League:
-        if not str(league) in data.keys():
-            data[league] = datetime.datetime.strptime(
+        if not str(league) in data.keys() and league != League.OT:
+            data[str(league)] = datetime.datetime.strptime(
                 "2001-11-09 8:09", config.timeFormat
             )
 
@@ -209,6 +209,7 @@ def load_reportWindowNotice() -> dict[str, datetime.datetime]:
 
 def update_reportWindowNotice(data: dict):
     leagues = {}
+    
     for league in data.keys():
         leagues[league] = datetime.datetime.strftime(data[league], config.timeFormat)
 

@@ -219,7 +219,9 @@ class ReportDAO:
             id=result[0],
             senderId=result[1],
             offenderId=result[2],
-            race=RaceDAO(self.dbHandler).getRace(league=result[3], season=result[4], round=result[5]),
+            race=RaceDAO(self.dbHandler).getRace(
+                league=result[3], season=result[4], round=result[5]
+            ),
             description=result[6],
             rule=RuleDAO(self.dbHandler).getRule(result[7]),
             proof=result[8],
@@ -481,9 +483,13 @@ class RaceDAO:
         result = self.dbHandler.cursor.fetchall()[0]
 
         return Race(
-            id=int(result[0]), league=result[1], season=result[2], round=int(result[3]), date=result[4]
+            id=int(result[0]),
+            league=result[1],
+            season=result[2],
+            round=int(result[3]),
+            date=result[4],
         )
-    
+
     def getCurrentRace(self, league: League, date: datetime.datetime) -> Race:
         query = """
             SELECT id
@@ -514,7 +520,7 @@ class AttendanceDAO:
             WHERE user = %s AND race = %s
         """
 
-        values = (user_id, race.id) #TODO cambia sto user id
+        values = (user_id, race.id)  # TODO cambia sto user id
 
         self.dbHandler.cursor.execute(query, values)
         results = self.dbHandler.cursor.fetchall()
@@ -541,14 +547,16 @@ class AttendanceDAO:
         for line in results:
             races.append(
                 (
-                    RaceDAO(self.dbHandler).getRace(league=line[0], season=line[1], round=line[2]),
+                    RaceDAO(self.dbHandler).getRace(
+                        league=line[0], season=line[1], round=line[2]
+                    ),
                     True if line[3] == 1 else False,
                 )
             )
 
         return tuple(races)
 
-    def deleteAttendance(self, user:discord.Member, race: Race) -> None:
+    def deleteAttendance(self, user: discord.Member, race: Race) -> None:
         """
         Deletes an attendance of a specific round.
 
@@ -577,7 +585,7 @@ class AttendanceDAO:
     def insertAttendance(self, user_id: int, race: Race) -> None:
         if self.attendanceExists(user_id=user_id, race=race):
             return
-        
+
         query = """
             INSERT INTO Attendance (user, race) 
             VALUES (%s, %s)

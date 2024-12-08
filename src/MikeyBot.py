@@ -135,23 +135,23 @@ class MikeyBot(MikeyBotInterface):
                             await thread.edit(archived=True)
 
                     for league in League:
-                        currRace = self.getCurrentRace(league)
-                        now = datetime.now(timezone.utc)
-                        reportWindowNotice = utils.load_reportWindowNotice()
+                        if str(league) in config.leaguesChannelIds.keys():
+                            currRace = self.getCurrentRace(league)
+                            now = datetime.now(timezone.utc)
+                            reportWindowNotice = utils.load_reportWindowNotice()
 
-                        if (
-                            reportWindowNotice[str(league)].timestamp() < currRace.date.timestamp()
-                            and now.timestamp() < utils.closeWindowDate(race=currRace).timestamp()
-                            and str(league) in config.leaguesChannelIds.keys()
-                        ):
-                            msg = f"Reports window is now open until <t:{int(utils.closeWindowDate(race=currRace).timestamp())}:f>. Use </report:1194650188376199239> to report"
+                            if (
+                                reportWindowNotice[str(league)].timestamp() < currRace.date.timestamp()
+                                and now.timestamp() < utils.closeWindowDate(race=currRace).timestamp()
+                            ):
+                                msg = f"Reports window is now open until <t:{int(utils.closeWindowDate(race=currRace).timestamp())}:f>. Use </report:1194650188376199239> to report"
 
-                            await self.sendMessage(
-                                msg, config.leaguesChannelIds[str(league)]
-                            )
+                                await self.sendMessage(
+                                    msg, config.leaguesChannelIds[str(league)]
+                                )
 
-                            reportWindowNotice[str(league)] = datetime.now(timezone.utc)
-                            utils.update_reportWindowNotice(reportWindowNotice)
+                                reportWindowNotice[str(league)] = datetime.now(timezone.utc)
+                                utils.update_reportWindowNotice(reportWindowNotice)
 
                 await asyncio.sleep(60)
             except Exception as e:
