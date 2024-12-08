@@ -151,7 +151,7 @@ class MikeyBot(MikeyBotInterface):
                             )
 
                             reportWindowNotice[str(league)] = datetime.now(timezone.utc)
-                            utils.update_reportWindowNotice()
+                            utils.update_reportWindowNotice(reportWindowNotice)
 
                 await asyncio.sleep(60)
             except Exception as e:

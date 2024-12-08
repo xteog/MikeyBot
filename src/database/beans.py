@@ -40,6 +40,9 @@ class Race:
             raise ValueError("Round not valid")
 
     def __str__(self) -> str:
+        if self.league == League.OT:
+            return "Off-Track"
+        
         return str(self.league) + str(self.season) + "R" + str(self.round)
 
 
