@@ -48,7 +48,7 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
 
 
 def isWindowOpen(race: Race) -> bool:
-    if race.league == League.OT:
+    if race.league != League.OT:
         return datetime.now() > race.date and datetime.now() < utils.closeWindowDate(
             race=race
         )
@@ -76,7 +76,10 @@ class CommandsCog(discord.ext.commands.Cog):
         logging.info(f'"\\report" used by {interaction.user.name}')
         league = getLeague(league.value)
 
-        race = self.client.getCurrentRace(league=league)
+        if league.value == str(League.OT):
+            race = Race(id=0, league=league.value, season=0, round=0, date=datetime.now())
+        else:
+            race = self.client.getCurrentRace(league=league)
 
         if (not isWindowOpen(race)) and (
             not utils.hasPermissions(
@@ -100,7 +103,7 @@ class CommandsCog(discord.ext.commands.Cog):
             await modal.interaction.delete_original_response()
             await interaction.followup.send(error, ephemeral=True)
             return
-
+        
         data = await self.client.openReport(
             sender=interaction.user,
             offender=user,

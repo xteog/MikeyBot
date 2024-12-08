@@ -140,8 +140,8 @@ class MikeyBot(MikeyBotInterface):
                         reportWindowNotice = utils.load_reportWindowNotice()
 
                         if (
-                            reportWindowNotice[str(league)] < currRace.date
-                            and now < utils.closeWindowDate(race=currRace)
+                            reportWindowNotice[str(league)].timestamp() < currRace.date.timestamp()
+                            and now.timestamp() < utils.closeWindowDate(race=currRace).timestamp()
                             and str(league) in config.leaguesChannelIds.keys()
                         ):
                             msg = f"Reports window is now open until <t:{int(utils.closeWindowDate(race=currRace).timestamp())}:f>. Use </report:1194650188376199239> to report"
@@ -229,7 +229,7 @@ class MikeyBot(MikeyBotInterface):
                     role, reason=f"Verified by {self.getNick(reaction.member)}"
                 )
                 logging.info(
-                    f"@Connected role added to {self.getNick(message.author)} by {self.getNick(reaction.member)}"
+                   f"@Connected role added to {self.getNick(message.author)} by {self.getNick(reaction.member)}"
                 )
         except Exception as e:
             logging.error(f"Reaction error: {e}")
