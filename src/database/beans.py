@@ -7,7 +7,7 @@ class League(Enum):
     CL = "CL"
     JL = "JL"
     AL = "AL"
-    OT = "Off-Track"
+    OT = "OT"
 
     def __str__(self) -> str:
         return self.value
