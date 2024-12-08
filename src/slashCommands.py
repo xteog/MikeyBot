@@ -77,7 +77,7 @@ class CommandsCog(discord.ext.commands.Cog):
         league = getLeague(league.value)
 
         if league.value == str(League.OT):
-            race = Race(id=0, league=league.value, season=0, round=0, date=datetime.now())
+            race = Race(id=0, league=league.value, season=1, round=1, date=datetime.now())
         else:
             race = self.client.getCurrentRace(league=league)
 
