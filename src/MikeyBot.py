@@ -374,7 +374,6 @@ class MikeyBot(MikeyBotInterface):
         description: str,
         proof: str,
     ) -> Report:
-        self.updateAttendance(user=offender, race=race, attended=True)
 
         dao = ReportDAO(self, self.dbHandler)
 
@@ -387,6 +386,8 @@ class MikeyBot(MikeyBotInterface):
         )
 
         await self.sendReport(report)
+
+        self.updateAttendance(user=offender, race=race, attended=True)
 
         return report
 
