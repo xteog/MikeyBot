@@ -316,7 +316,7 @@ class AttendanceSelect(discord.ui.Select):
 
             race = bot.getRace(id=option.value)
 
-            bot.updateAttendance(user=interaction.user, race=race, attended=attended)
+            bot.updateAttendance(user=self.reportView.data.offender, race=race, attended=attended)
 
         newView = CloseReportView(
             bot=bot,

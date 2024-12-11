@@ -531,10 +531,10 @@ class AttendanceDAO:
         self, user: discord.Member, league: League
     ) -> tuple[tuple[Race, bool]]:
         query = """
-            SELECT R.league, R.season, R.round, IF(A.race = R.id, 1, 0)
+            SELECT R.round, IF(A.race = R.id, 1, 0), R.league, R.season
             FROM Races AS R
             LEFT JOIN Attendance AS A ON A.race = R.id AND A.user = %s
-            WHERE  R.league = %s
+            WHERE R.league = %s
             ORDER BY R.season, R.round
         """
 
@@ -547,10 +547,8 @@ class AttendanceDAO:
         for line in results:
             races.append(
                 (
-                    RaceDAO(self.dbHandler).getRace(
-                        league=line[0], season=line[1], round=line[2]
-                    ),
-                    True if line[3] == 1 else False,
+                    RaceDAO(self.dbHandler).getRaceById(id=line[0]),
+                    True if line[1] == 1 else False,
                 )
             )
 
