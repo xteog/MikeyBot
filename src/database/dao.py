@@ -531,7 +531,7 @@ class AttendanceDAO:
         self, user: discord.Member, league: League
     ) -> tuple[tuple[Race, bool]]:
         query = """
-            SELECT R.round, IF(A.race = R.id, 1, 0), R.league, R.season
+            SELECT R.id, IF(A.race = R.id, 1, 0), R.season, R.round
             FROM Races AS R
             LEFT JOIN Attendance AS A ON A.race = R.id AND A.user = %s
             WHERE R.league = %s
