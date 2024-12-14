@@ -566,7 +566,7 @@ class CloseReportButton(discord.ui.Button):
             self.reportView.bot, self.reportView.data, interaction
         )
 
-        await interaction.response.edit_message(view=newView, ephemeral=True)
+        await interaction.response.edit_message(view=newView)
 
 
 class ReturnButton(discord.ui.Button):
@@ -585,6 +585,6 @@ class ReturnButton(discord.ui.Button):
             self.reportView.bot, self.reportView.data
         )
 
-        await interaction.response.edit_message(view=newView, ephemeral=True)
+        await interaction.response.edit_message(view=newView)
 
 
