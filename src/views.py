@@ -81,6 +81,8 @@ class CloseReportView(discord.ui.View):
         else:
             self.add_item(OffenceButton(view=self, disabled=True))
 
+        self.add_item(ReturnButton(view=self))
+
 
 class SwitchView(discord.ui.View):
     def __init__(self, bot):
@@ -564,4 +566,25 @@ class CloseReportButton(discord.ui.Button):
             self.reportView.bot, self.reportView.data, interaction
         )
 
-        await interaction.response.send_message(view=newView, ephemeral=True)
+        await interaction.response.edit_message(view=newView, ephemeral=True)
+
+
+class ReturnButton(discord.ui.Button):
+    def __init__(self, view: CloseReportView):
+        super().__init__(
+            style=discord.ButtonStyle.gray,
+            label="✖",
+            row=4,
+            custom_id=f"{view.data.id}_close",
+        )
+
+        self.reportView = view
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        newView = ReportView(
+            self.reportView.bot, self.reportView.data
+        )
+
+        await interaction.response.edit_message(view=newView, ephemeral=True)
+
+
