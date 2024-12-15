@@ -303,7 +303,7 @@ class AttendanceSelect(discord.ui.Select):
             i -= 1
 
         options = options[::-1]
-        
+
         return options
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -318,7 +318,9 @@ class AttendanceSelect(discord.ui.Select):
 
             race = bot.getRace(id=option.value)
 
-            bot.updateAttendance(user=self.reportView.data.offender, race=race, attended=attended)
+            bot.updateAttendance(
+                user=self.reportView.data.offender, race=race, attended=attended
+            )
 
         newView = CloseReportView(
             bot=bot,
@@ -361,10 +363,9 @@ class NoOffenceButton(discord.ui.Button):
             view=discord.ui.View(),
         )
 
-        await interaction.followup.edit_message(
-            message_id=interaction.message.id,
+        await interaction.followup.send(
             content=f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
-            view=discord.ui.View(),
+            ephemeral=True,
         )
 
 
@@ -411,10 +412,9 @@ class OffenceButton(discord.ui.Button):
             view=discord.ui.View(),
         )
 
-        await interaction.followup.edit_message(
-            message_id=interaction.message.id,
+        await interaction.followup.send(
             content=f"{report.penalty} `{self.reportView.data.id}` sent to {self.reportView.bot.getNick(self.reportView.data.offender)}",
-            view=discord.ui.View(),
+            ephemeral=True,
         )
 
 
@@ -581,10 +581,6 @@ class ReturnButton(discord.ui.Button):
         self.reportView = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        newView = ReportView(
-            self.reportView.bot, self.reportView.data
-        )
+        newView = ReportView(self.reportView.bot, self.reportView.data)
 
         await interaction.response.edit_message(view=newView)
-
-
