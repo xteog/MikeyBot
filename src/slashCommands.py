@@ -142,6 +142,7 @@ class CommandsCog(discord.ext.commands.Cog):
         )
 
         numbers = utils.read(config.numbersListPath)
+        ids = utils.read("../data/numbersIds.json")
 
         if (not permission) and (
             (user != None and user.id != interaction.user.id)
@@ -155,6 +156,7 @@ class CommandsCog(discord.ext.commands.Cog):
         delete = []
         if user != None:
             numbers[str(number)] = user.name
+            ids[str(number)] = user.id
 
             desc = f"The number of {user.mention} is now changed into {number}"
 
@@ -167,6 +169,7 @@ class CommandsCog(discord.ext.commands.Cog):
             desc = f"The number {number} is now available"
         else:
             numbers[str(number)] = interaction.user.display_name
+            ids[str(number)] = user.id
 
             desc = (
                 f"The number of {interaction.user.mention} is now changed into {number}"
@@ -179,16 +182,9 @@ class CommandsCog(discord.ext.commands.Cog):
             numbers.pop(key, None)
 
         utils.write(config.numbersListPath, numbers)
+        utils.write("../data/numbersIds.json", ids)
 
-        matrix = [[0, 0] for i in range(1000)]
-        for i in range(1000):
-            matrix[i][0] = str(i)
-            if str(i) in numbers.keys():
-                matrix[i][1] = numbers[str(i)]
-            else:
-                matrix[i][1] = "Available"
-
-        utils.createWorkbook(config.numbersSheetPath, matrix)
+        utils.createNumbersSheet(config.numbersSheetPath, numbers)
         await interaction.response.send_message(
             content=desc, file=discord.File(config.numbersSheetPath)
         )

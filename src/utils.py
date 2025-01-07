@@ -59,9 +59,20 @@ def loading(i, len):
     return str
 
 
-def createWorkbook(path: str, data: list[list]):
+def createNumbersSheet(path: str, numbers: list[list]):
     workbook = openpyxl.load_workbook(filename=path)
     sheet = workbook.active
+
+    ids = read("../data/numbersIds.json")
+
+    data = [[0, 0] for i in range(1000)]
+    for i in range(1000):
+        data[i][0] = str(i)
+        if str(i) in numbers.keys():
+            data[i][1] = numbers[str(i)]
+            data[i][2] = ids[str(i)]
+        else:
+            data[i][1] = "Available"
 
     for i in range(len(data)):
         for j in range(len(data[0])):

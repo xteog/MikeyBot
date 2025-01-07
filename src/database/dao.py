@@ -76,17 +76,33 @@ class UserDAO:
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
 
-    def setNumber(self, id_user: int, number: int) -> None:
+    def setNumber(self, user: discord.Member, number: int) -> None:
         query = """
             UPDATE Users
-            SET number = %s
+            SET `number` = %s
             WHERE id = %s
         """
-
-        values = (number, id_user)
+        values = (number, user.id)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()
+
+    def getNumbers(self) -> dict[str, str]:
+        query = """
+            SELECT `nick`, `number`
+            FROM Users
+            WHERE `number` IS NOT NULL
+        """
+        values = ()
+
+        self.dbHandler.cursor.execute(query, values)
+
+        result = self.dbHandler.cursor.fetchall()
+
+        if len(result) == 0:
+            return False
+
+        return True
 
     def setNick(self, id_user: int, nick: str) -> None:
         query = """
