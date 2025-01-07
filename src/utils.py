@@ -70,7 +70,10 @@ def createNumbersSheet(path: str, numbers: list[list]):
         data[i][0] = str(i)
         if str(i) in numbers.keys():
             data[i][1] = numbers[str(i)]
-            data[i][2] = ids[str(i)]
+            if str(i) in ids.keys():
+                data[i][2] = ids[str(i)]
+            else:
+                data[i][2] = ""
         else:
             data[i][1] = "Available"
 
