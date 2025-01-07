@@ -65,7 +65,7 @@ def createNumbersSheet(path: str, numbers: list[list]):
 
     ids = read("../data/numbersIds.json")
 
-    data = [[0, 0] for i in range(1000)]
+    data = [[0, 0, 0] for i in range(1000)]
     for i in range(1000):
         data[i][0] = str(i)
         if str(i) in numbers.keys():
