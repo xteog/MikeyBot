@@ -30,9 +30,7 @@ CREATE TABLE Reports (
     `id` char(4) PRIMARY KEY,
     `sender` varchar(32) NOT NULL,
     `offender` varchar(32) NOT NULL,
-    `league` varchar(8) NOT NULL,
-    `season` integer NOT NULL,
-    `round` integer NOT NULL,
+    `race` integer NOT NULL,
     `description` TEXT NOT NULL,
     `rule` integer,
     `proof` varchar(128) NOT NULL,
@@ -43,7 +41,8 @@ CREATE TABLE Reports (
     `timestamp` DATETIME NOT NULL,
     FOREIGN KEY (`sender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (`offender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (`rule`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (`rule`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`race`) REFERENCES Races(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE Votes (

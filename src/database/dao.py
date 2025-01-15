@@ -216,7 +216,7 @@ class ReportDAO:
 
     def getReportSync(self, id: int) -> Report:
         query = """
-            SELECT *
+            SELECT id, sender, offender, race, description, rule, proof, penalty, aggravated, notes, active, timestamp
             FROM Reports
             WHERE `id` = %s
         """
@@ -235,17 +235,15 @@ class ReportDAO:
             id=result[0],
             senderId=result[1],
             offenderId=result[2],
-            race=RaceDAO(self.dbHandler).getRace(
-                league=result[3], season=result[4], round=result[5]
-            ),
-            description=result[6],
-            rule=RuleDAO(self.dbHandler).getRule(result[7]),
-            proof=result[8],
-            penalty=result[9],
-            aggravated=result[10],
-            notes=result[11],
-            active=result[12],
-            timestamp=result[13],
+            race=RaceDAO(self.dbHandler).getRaceById(id=result[3]),
+            description=result[4],
+            rule=RuleDAO(self.dbHandler).getRule(result[5]),
+            proof=result[6],
+            penalty=result[7],
+            aggravated=result[8],
+            notes=result[9],
+            active=result[10],
+            timestamp=result[11],
         )
 
         return report
@@ -280,7 +278,7 @@ class ReportDAO:
         timestamp = datetime.datetime.now(datetime.timezone.utc)
 
         query = """
-            INSERT INTO Reports (id, sender, offender, league, season, round, description, proof, timestamp)
+            INSERT INTO Reports (id, sender, offender, race, description, proof, timestamp)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
@@ -288,9 +286,7 @@ class ReportDAO:
             id,
             sender.id,
             offender.id,
-            str(race.league),
-            race.season,
-            race.round,
+            race.id,
             description,
             proof,
             timestamp,
@@ -328,10 +324,10 @@ class ReportDAO:
         query = """
             SELECT id
             FROM Reports
-            WHERE offender = %s AND rule = %s AND league = %s AND season = %s AND round = %s AND active = FALSE 
+            WHERE offender = %s AND rule = %s AND race = %s AND active = FALSE 
         """
 
-        values = (offender.id, rule.id, str(race.league), race.season, race.round)
+        values = (offender.id, rule.id, race.id)
         self.dbHandler.cursor.execute(query, values)
 
         results = self.dbHandler.cursor.fetchall()
@@ -462,29 +458,6 @@ class VotesDAO:
 class RaceDAO:
     def __init__(self, dbHandler: Database) -> None:
         self.dbHandler = dbHandler
-
-    def getRaces(self, league: League, season: str) -> list[Race]:
-        query = """
-            SELECT id, date
-            FROM Races
-            WHERE league = %s AND season = %s
-            ORDER BY date
-        """
-
-        values = (str(league), season)
-
-        self.dbHandler.cursor.execute(query, values)
-        results = self.dbHandler.cursor.fetchall()
-
-        races = []
-
-        for line in results:
-            races.append(self.getRaceById(id=line[0]))
-
-        return races
-
-    def getRace(self, league: League, season: str, round: int) -> Race:
-        return self.getRaces(league=league, season=season)[int(round) - 1]
 
     def getRaceById(self, id: int) -> Race:
         query = """
