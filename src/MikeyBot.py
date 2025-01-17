@@ -443,7 +443,10 @@ class MikeyBot(MikeyBotInterface):
         return level
 
     def getPenalty(self, report: Report) -> str:
-        level = self.getOffenceLevel(report=report)
+        if report.race.league != League.OT:
+            level = self.getOffenceLevel(report=report)
+        else:
+            level = 0
 
         penalty = report.rule.levels[level]
 
