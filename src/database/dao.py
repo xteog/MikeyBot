@@ -279,7 +279,7 @@ class ReportDAO:
 
         query = """
             INSERT INTO Reports (id, sender, offender, race, description, proof, timestamp)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
         values = (
