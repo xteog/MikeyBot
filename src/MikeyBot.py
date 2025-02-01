@@ -357,6 +357,18 @@ class MikeyBot(MikeyBotInterface):
             )
 
             await data.offender.send(embed=embed)
+
+            if data.penalty != "Warning":
+                msg = f"{str(data.race)} {data.offender.mention} {data.penalty}"
+
+                user = await self.getUser(id=361575602244943872)
+                await user.send(msg)
+
+                user = await self.getUser(id=666666262490906647)
+                await user.send(msg)
+
+                user = await self.getUser(id=493028834640396289)
+                await user.send(msg)
         else:
             embed = views.ReportEmbed(
                 self,
