@@ -361,7 +361,7 @@ class MikeyBot(MikeyBotInterface):
             if data.penalty != "Warning":
                 msg = f"[{data.id}] {str(data.race)} {self.getNick(data.offender)}({data.offender.mention}) {data.penalty}"
 
-                user = await self.getUser(id=361575602244943872)
+                user = await self.getUser(id=992795187900321802)
                 await user.send(msg)
 
                 user = await self.getUser(id=666666262490906647)
