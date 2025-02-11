@@ -108,7 +108,7 @@ class Report:
         self.offender = await bot.getUser(self.offenderId)
 
         if self.messageId != None:
-            await bot.reportChannel.fetch_message(self.message_id)
+            self.message = await bot.reportChannel.fetch_message(self.messageId)
 
 
 class VoteType(Enum):

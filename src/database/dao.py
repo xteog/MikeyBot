@@ -253,7 +253,7 @@ class ReportDAO:
         query = """
             SELECT `id`
             FROM Reports
-            WHERE `active` = TRUE AND (%s OR creator = %s)
+            WHERE `active` = TRUE AND (%s OR sender = %s)
         """
 
         if user == None:
@@ -372,9 +372,9 @@ class ReportDAO:
         query = """
             UPDATE Reports
             SET message_id = %s
-            WHERE id = %s;
+            WHERE id = %s
         """
-        values = (message.id,)
+        values = (message.id, report.id)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()

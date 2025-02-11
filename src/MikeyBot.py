@@ -572,7 +572,7 @@ class MikeyBot(MikeyBotInterface):
     def getRace(self, id: int) -> Race:
         return RaceDAO(self.dbHandler).getRaceById(id=id)
 
-    async def getActiveReports(user: discord.Member = None) -> tuple[Report]:
+    async def getActiveReports(self, user: discord.Member = None) -> tuple[Report]:
         activeReports = await ReportDAO(self, self.dbHandler).getActiveReports(
             user=user
         )

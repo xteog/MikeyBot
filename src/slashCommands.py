@@ -114,7 +114,7 @@ class CommandsCog(discord.ext.commands.Cog):
         )
 
         await modal.interaction.delete_original_response()
-        await interaction.followup.send(f"Report `{data.id}` created.", ephemeral=True)
+        await interaction.followup.send(f"Report `{data.id}` created.\n The result takes too much to arrive? Use the comand </remind:1338975422456791152>", ephemeral=True)
 
     @discord.app_commands.command(
         name="set_number",
@@ -193,14 +193,14 @@ class CommandsCog(discord.ext.commands.Cog):
 
     @discord.app_commands.command(
         name="remind",
-        description="Restarts the bot",
+        description="Sends a reminder to the stewards",
     )
     async def remind(self, interaction: discord.Interaction):
-        reports = await self.client.getActiveReports(interaction.user.id)
+        reports = await self.client.getActiveReports(user=interaction.user)
 
         view = views.ActiveReportsView(bot=self.client, reports=reports)
 
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.response.send_message(content="The result takes too much to come? Let me care of those mentally challenged stewards.\n Choose the reports you want to send the reminder of", view=view, ephemeral=True)
 
     @discord.app_commands.command(
         name="restart",

@@ -360,25 +360,44 @@ class AttendanceSelect(discord.ui.Select):
 class ActiveReportsSelect(discord.ui.Select):
     def __init__(self, view: ActiveReportsView, reports: tuple[Report]):
         self.activeReportsView = view
-        options = self.getOptions(reports)
         self.reports = reports
 
+        options = self.getOptions(self.reports)
+        disabled = False
+
+        if len(options) > 0:
+            placeholder = "Select the reports"
+            options = self.getOptions(self.reports)
+            disabled = False
+        else:
+            options = []
+            options.append(
+                discord.SelectOption(
+                    label="No reports open found",
+                    value=0,
+                )
+            )
+            placeholder = "No reports open found"
+            options = tuple(options)
+            disabled = True
+
         super().__init__(
-            placeholder="Check attendance",
+            placeholder=placeholder,
             options=options,
             min_values=0,
             max_values=len(options),
             row=0,
-            disabled=False if len(options) > 0 else True,
+            disabled=disabled,
         )
 
-    def getOptions(reports: tuple[Report]) -> tuple[discord.SelectOption]:
+    def getOptions(self, reports: tuple[Report]) -> tuple[discord.SelectOption]:
         options = []
+
         for report in reports:
             options.append(
                 discord.SelectOption(
-                    label=f"[{report.race}] {report.offender.mention}",
-                    description=report.id,
+                    label=f"[{report.id}] {self.activeReportsView.bot.getNick(report.offender)}",
+                    description=report.race,
                     value=report.id,
                 )
             )
@@ -393,13 +412,14 @@ class ActiveReportsSelect(discord.ui.Select):
         await interaction.response.send_modal(modal)
         await modal.wait()
 
+        guild = await self.activeReportsView.bot.fetch_guild(config.serverId)
         for id in self.values:
             for report in self.reports:
                 if report.id == id:
-                    str = f"{self.get_guild(config.serverId).get_role(config.stewardsRole).mention} {modal.notes.value}"
+                    str = f"{guild.get_role(config.stewardsRole).mention} {modal.notes.value}"
                     await report.message.thread.send(str)
 
-        await modal.interaction.edit_original_response()
+        await modal.interaction.edit_original_response(content="Sent")
 
 
 class NoOffenceButton(discord.ui.Button):
