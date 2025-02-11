@@ -39,6 +39,7 @@ CREATE TABLE Reports (
     `notes` TEXT,
     `active` BOOLEAN NOT NULL DEFAULT TRUE,
     `timestamp` DATETIME NOT NULL,
+    `message_id` varchar(32),
     FOREIGN KEY (`sender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (`offender`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (`rule`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE,

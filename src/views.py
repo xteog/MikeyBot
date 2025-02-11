@@ -103,6 +103,14 @@ class SwitchView(discord.ui.View):
         await interaction.response.send_message("Role added", ephemeral=True)
 
 
+class ActiveReportsView(discord.ui.View):
+    def __init__(self, bot: MikeyBotInterface, reports: tuple[Report]):
+        super().__init__(timeout=None)
+        self.bot = bot
+
+        self.add_item(ActiveReportsSelect(self, reports))
+
+
 """ Embeds """
 
 
@@ -190,13 +198,31 @@ class ReportModal(discord.ui.Modal, title="Report"):
         self.stop()
 
 
-class ReminderModal(discord.ui.Modal, title="Reminder Details"):
+class PenaltyModal(discord.ui.Modal, title="Penalty Details"):
     def __init__(self):
         super().__init__()
         self.notes = discord.ui.TextInput(
             label="Notes",
             required=False,
             placeholder="Enter additional details",
+            style=discord.TextStyle.paragraph,
+        )
+
+        self.add_item(self.notes)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        self.interaction = interaction
+        self.stop()
+
+
+class ReminderModal(discord.ui.Modal, title="Reminder Details"):
+    def __init__(self):
+        super().__init__()
+        self.notes = discord.ui.TextInput(
+            label="Notes to the stewards",
+            required=True,
+            placeholder="Are you slow? Close this report bunch of retards",
             style=discord.TextStyle.paragraph,
         )
 
@@ -331,6 +357,51 @@ class AttendanceSelect(discord.ui.Select):
         await interaction.response.edit_message(view=newView)
 
 
+class ActiveReportsSelect(discord.ui.Select):
+    def __init__(self, view: ActiveReportsView, reports: tuple[Report]):
+        self.activeReportsView = view
+        options = self.getOptions(reports)
+        self.reports = reports
+
+        super().__init__(
+            placeholder="Check attendance",
+            options=options,
+            min_values=0,
+            max_values=len(options),
+            row=0,
+            disabled=False if len(options) > 0 else True,
+        )
+
+    def getOptions(reports: tuple[Report]) -> tuple[discord.SelectOption]:
+        options = []
+        for report in reports:
+            options.append(
+                discord.SelectOption(
+                    label=f"[{report.race}] {report.offender.mention}",
+                    description=report.id,
+                    value=report.id,
+                )
+            )
+
+        return tuple(options)
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        if len(self.values) == 0:
+            return
+
+        modal = ReminderModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+
+        for id in self.values:
+            for report in self.reports:
+                if report.id == id:
+                    str = f"{self.get_guild(config.serverId).get_role(config.stewardsRole).mention} {modal.notes.value}"
+                    await report.message.thread.send(str)
+
+        await modal.interaction.edit_original_response()
+
+
 class NoOffenceButton(discord.ui.Button):
     def __init__(self, view: CloseReportView):
         super().__init__(
@@ -344,7 +415,7 @@ class NoOffenceButton(discord.ui.Button):
     async def callback(self, interaction: Interaction) -> None:
         logging.info(f'{interaction.user.name} used the "No offence" Button')
 
-        modal = ReminderModal()
+        modal = PenaltyModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
 
@@ -388,7 +459,7 @@ class OffenceButton(discord.ui.Button):
 
     async def callback(self, interaction: Interaction) -> None:
         logging.info(f'{interaction.user.name} used the "Remind" Button')
-        modal = ReminderModal()
+        modal = PenaltyModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
 

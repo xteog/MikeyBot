@@ -116,9 +116,7 @@ class MikeyBot(MikeyBotInterface):
                 if awake_at < datetime.now(timezone.utc):
                     awake_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
-                    activeReports = await ReportDAO(
-                        self, self.dbHandler
-                    ).getActiveReports()
+                    activeReports = await self.getActiveReports()
 
                     for thread in self.reportChannel.threads:
                         match = re.search(r"\d{4}", thread.name)
@@ -141,8 +139,10 @@ class MikeyBot(MikeyBotInterface):
                             reportWindowNotice = utils.load_reportWindowNotice()
 
                             if (
-                                reportWindowNotice[str(league)].timestamp() < currRace.date.timestamp()
-                                and now.timestamp() < utils.closeWindowDate(race=currRace).timestamp()
+                                reportWindowNotice[str(league)].timestamp()
+                                < currRace.date.timestamp()
+                                and now.timestamp()
+                                < utils.closeWindowDate(race=currRace).timestamp()
                             ):
                                 msg = f"Reports window is now open until <t:{int(utils.closeWindowDate(race=currRace).timestamp())}:f>. Use </report:1194650188376199239> to report"
 
@@ -150,7 +150,9 @@ class MikeyBot(MikeyBotInterface):
                                     msg, config.leaguesChannelIds[str(league)]
                                 )
 
-                                reportWindowNotice[str(league)] = datetime.now(timezone.utc)
+                                reportWindowNotice[str(league)] = datetime.now(
+                                    timezone.utc
+                                )
                                 utils.update_reportWindowNotice(reportWindowNotice)
 
                 await asyncio.sleep(60)
@@ -229,7 +231,7 @@ class MikeyBot(MikeyBotInterface):
                     role, reason=f"Verified by {self.getNick(reaction.member)}"
                 )
                 logging.info(
-                   f"@Connected role added to {self.getNick(message.author)} by {self.getNick(reaction.member)}"
+                    f"@Connected role added to {self.getNick(message.author)} by {self.getNick(reaction.member)}"
                 )
         except Exception as e:
             logging.error(f"Reaction error: {e}")
@@ -348,7 +350,9 @@ class MikeyBot(MikeyBotInterface):
             auto_archive_duration=1440,
         )
 
-    async def sendReminder(self, data: Report, offence=True) -> None:
+        return message
+
+    async def sendPenalty(self, data: Report, offence=True) -> None:
         if offence:
             embed = views.ReportEmbed(
                 self,
@@ -397,7 +401,9 @@ class MikeyBot(MikeyBotInterface):
             proof=proof,
         )
 
-        await self.sendReport(report)
+        message = await self.sendReport(report)
+
+        report = await dao.setMessageId(report, message)
 
         self.updateAttendance(user=offender, race=race, attended=True)
 
@@ -465,7 +471,8 @@ class MikeyBot(MikeyBotInterface):
         if report.aggravated:
             max_level = len(report.rule.levels) - 1
             penalty += (
-                " + " + report.rule.levels[min(max_level, level + report.rule.escalation)]
+                " + "
+                + report.rule.levels[min(max_level, level + report.rule.escalation)]
             )
 
         return penalty
@@ -485,7 +492,7 @@ class MikeyBot(MikeyBotInterface):
         if offence:
             self.updateSpreadSheet(data=report)
 
-        await self.sendReminder(data=report, offence=offence)
+        await self.sendPenalty(data=report, offence=offence)
 
         VotesDAO(self.dbHandler).deleteVotes(report=report)
 
@@ -564,6 +571,13 @@ class MikeyBot(MikeyBotInterface):
 
     def getRace(self, id: int) -> Race:
         return RaceDAO(self.dbHandler).getRaceById(id=id)
+
+    async def getActiveReports(user: discord.Member = None) -> tuple[Report]:
+        activeReports = await ReportDAO(self, self.dbHandler).getActiveReports(
+            user=user
+        )
+
+        return activeReports
 
     def updateAttendance(
         self, user: discord.Member, race: Race, attended: bool

@@ -76,7 +76,9 @@ class CommandsCog(discord.ext.commands.Cog):
         league = getLeague(league.value)
 
         if league.value == str(League.OT):
-            race = Race(id=41, league=league.value, season=1, round=1, date=datetime.now())
+            race = Race(
+                id=41, league=league.value, season=1, round=1, date=datetime.now()
+            )
         else:
             race = self.client.getCurrentRace(league=league)
 
@@ -102,7 +104,7 @@ class CommandsCog(discord.ext.commands.Cog):
             await modal.interaction.delete_original_response()
             await interaction.followup.send(error, ephemeral=True)
             return
-        
+
         data = await self.client.openReport(
             sender=interaction.user,
             offender=user,
@@ -112,7 +114,7 @@ class CommandsCog(discord.ext.commands.Cog):
         )
 
         await modal.interaction.delete_original_response()
-        await interaction.followup.send(f"Report `{data.id}` created", ephemeral=True)
+        await interaction.followup.send(f"Report `{data.id}` created.", ephemeral=True)
 
     @discord.app_commands.command(
         name="set_number",
@@ -188,6 +190,17 @@ class CommandsCog(discord.ext.commands.Cog):
         await interaction.response.send_message(
             content=desc, file=discord.File(config.numbersSheetPath)
         )
+
+    @discord.app_commands.command(
+        name="remind",
+        description="Restarts the bot",
+    )
+    async def remind(self, interaction: discord.Interaction):
+        reports = await self.client.getActiveReports(interaction.user.id)
+
+        view = views.ActiveReportsView(bot=self.client, reports=reports)
+
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     @discord.app_commands.command(
         name="restart",

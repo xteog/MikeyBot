@@ -84,12 +84,15 @@ class Report:
         aggravated: bool = False,
         notes: str | None = None,
         active: bool = True,
+        messageId: int = None,
     ) -> None:
         self.sender = None
         self.offender = None
+        self.message = None
         self.id = id
         self.senderId = senderId
         self.offenderId = offenderId
+        self.messageId = messageId
         self.race = race
         self.rule = rule
         self.proof = proof
@@ -103,6 +106,9 @@ class Report:
     async def init(self, bot) -> None:
         self.sender = await bot.getUser(self.senderId)
         self.offender = await bot.getUser(self.offenderId)
+
+        if self.messageId != None:
+            await bot.reportChannel.fetch_message(self.message_id)
 
 
 class VoteType(Enum):

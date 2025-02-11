@@ -216,7 +216,7 @@ class ReportDAO:
 
     def getReportSync(self, id: int) -> Report:
         query = """
-            SELECT id, sender, offender, race, description, rule, proof, penalty, aggravated, notes, active, timestamp
+            SELECT id, sender, offender, race, description, rule, proof, penalty, aggravated, notes, active, timestamp, message_id
             FROM Reports
             WHERE `id` = %s
         """
@@ -244,18 +244,23 @@ class ReportDAO:
             notes=result[9],
             active=result[10],
             timestamp=result[11],
+            messageId=result[12],
         )
 
         return report
 
-    async def getActiveReports(self) -> tuple[Report]:
+    async def getActiveReports(self, user: discord.Member = None) -> tuple[Report]:
         query = """
             SELECT `id`
             FROM Reports
-            WHERE `active` = TRUE
+            WHERE `active` = TRUE AND (%s OR creator = %s)
         """
 
-        values = ()
+        if user == None:
+            values = (True, None)
+        else:
+            values = (False, user.id)
+
         self.dbHandler.cursor.execute(query, values)
 
         results = self.dbHandler.cursor.fetchall()
@@ -359,6 +364,22 @@ class ReportDAO:
             newId = utils.randomString(4)
 
         return newId
+
+    def setMessageId(self, report: Report, message: discord.Message) -> Report:
+        report.messageId = message.id
+        report.message = message
+
+        query = """
+            UPDATE Reports
+            SET message_id = %s
+            WHERE id = %s;
+        """
+        values = (message.id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+        return report
 
 
 class VotesDAO:
