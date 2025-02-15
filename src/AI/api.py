@@ -1,3 +1,4 @@
+import logging
 import time
 import requests
 
@@ -32,6 +33,6 @@ def sendMessage(history: list, message: str) -> str:
 
     response = sendRequest(url=geminiApiUrl.format(apiKey=apiKey), data=data)
 
-    print(response)
+    logging.info(response)
 
     return response["candidates"][0]["content"]["parts"][0]["text"]

@@ -64,7 +64,7 @@ class MikeyBot(MikeyBotInterface):
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
         self.dbHandler = Database()
-        # self.dbHandler.connect()
+        self.dbHandler.connect()
 
         self.geminiChat = Chat(dbHandler=self.dbHandler)
 
