@@ -168,19 +168,13 @@ def hasPermissions(
 
     Only one of the parameters `role` or `roles` should be given.
 
-    Parameters
-    -----------
-    - user : `discord.Member`
-        User to check if has permissions.
-    - role : `Optional[int]`
-        The role code that the user should have.
-    - roles : `Optional[list[int]]`
-        The roles codes that the user should have.
+    Args:
+        user (`discord.Member`): User to check if has permissions.
+        role (`Optional[int]`): The role code that the user should have.
+        roles (`Optional[list[int]]`):The roles codes that the user should have.
 
-    Returns
-    ----------
-    `bool`
-        the outcome of the check.
+    Returns:
+        `bool`: The outcome of the check.
     """
     if role != None:
         roles = [role]

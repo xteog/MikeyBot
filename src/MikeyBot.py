@@ -3,6 +3,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 import re
+from AI.Chat import Chat
 from MikeyBotInterface import MikeyBotInterface
 from database.beans import League, Race, Report, Rule, VoteType, getLeague
 from database.dao import AttendanceDAO, RaceDAO, ReportDAO, RuleDAO, UserDAO, VotesDAO
@@ -34,7 +35,7 @@ class MikeyBot(MikeyBotInterface):
         else:
             raise ValueError
 
-        self.server = config.serverId
+        self.serverId = config.serverId
         self.dmsChannel = None
         self.errorChannel = None
         self.reportChannel = None
@@ -42,6 +43,7 @@ class MikeyBot(MikeyBotInterface):
         self.lobbiesChannel = None
 
         self.lobbiesLists = []
+        self.geminiChat = None
 
         self.ready = False
 
@@ -52,9 +54,9 @@ class MikeyBot(MikeyBotInterface):
         )
 
         await self.add_cog(
-            slashCommands.setup(self), guild=discord.Object(id=self.server)
+            slashCommands.setup(self), guild=discord.Object(id=self.serverId)
         )
-        await self.tree.sync(guild=discord.Object(id=self.server))
+        await self.tree.sync(guild=discord.Object(id=self.serverId))
         self.errorChannel = self.get_channel(config.errorChannelId)
         self.reportChannel = self.get_channel(config.reportChannelId)
         self.ccChannel = self.get_channel(config.ccChannelId)
@@ -62,11 +64,13 @@ class MikeyBot(MikeyBotInterface):
         self.lobbiesChannel = self.get_channel(config.lobbiesChannelId)
 
         self.dbHandler = Database()
-        self.dbHandler.connect()
+        # self.dbHandler.connect()
 
-        reports = await ReportDAO(self, self.dbHandler).getActiveReports()
+        self.geminiChat = Chat(dbHandler=self.dbHandler)
 
         try:
+
+            reports = await ReportDAO(self, self.dbHandler).getActiveReports()
             for r in reports:
                 view = views.ReportView(bot=self, data=r)
                 self.add_view(view)
@@ -98,7 +102,8 @@ class MikeyBot(MikeyBotInterface):
         """
 
     async def setup_hook(self) -> None:
-        self.bg_task = self.loop.create_task(self.background_task())
+        return
+        # self.bg_task = self.loop.create_task(self.background_task())
 
     async def background_task(self):
         awake_at = datetime.now(timezone.utc)
@@ -164,6 +169,28 @@ class MikeyBot(MikeyBotInterface):
             return
 
         await self.devCommands(message)
+
+        reply = False
+        if message.reference:
+            replied_message = await message.channel.fetch_message(
+                message.reference.message_id
+            )
+            if replied_message.author == self.user:
+                reply = True
+
+        if message.guild.id == self.serverId and (
+            self.user in message.mentions or reply
+        ):
+            msg = message.content
+            msg = msg.replace(self.user.mention, "Mikey")
+            try:
+                response, command = self.geminiChat.sendMessage(
+                    user=message.author, message=msg
+                )
+                msg = await message.reply(response)
+                await self.dmsChannel.send(msg.jump_url)
+            except Exception as e:
+                await message.reply(e)
 
         if message.mention_everyone:
             await message.author.ban(reason="Gotcha u moron", delete_message_seconds=60)
@@ -526,7 +553,7 @@ class MikeyBot(MikeyBotInterface):
     async def getUser(self, id: int) -> discord.Member | None:
         dao = UserDAO(self, self.dbHandler)
 
-        guild = await self.fetch_guild(self.server)
+        guild = await self.fetch_guild(self.serverId)
         try:
             member = await guild.fetch_member(id)
         except:

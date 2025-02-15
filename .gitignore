@@ -9,7 +9,9 @@ src/load_log.py
 src/config.py
 /data/AvailableNumbers.xlsx
 /data/google_credentials.json
+/data/gemini_credentials.json
 /data/report_window_notice.json
 /data/schedule.json
 /src/database/__pycache__/
 /src/google_sheets/__pycache__/
+/src/AI/__pycache__/
