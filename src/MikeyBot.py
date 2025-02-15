@@ -101,8 +101,7 @@ class MikeyBot(MikeyBotInterface):
         """
 
     async def setup_hook(self) -> None:
-        return
-        # self.bg_task = self.loop.create_task(self.background_task())
+        self.bg_task = self.loop.create_task(self.background_task())
 
     async def background_task(self):
         awake_at = datetime.now(timezone.utc)
