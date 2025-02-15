@@ -8,7 +8,6 @@ from MikeyBotInterface import MikeyBotInterface
 from database.beans import League, Race, Report, Rule, VoteType, getLeague
 from database.dao import AttendanceDAO, RaceDAO, ReportDAO, RuleDAO, UserDAO, VotesDAO
 from database.databaseHandler import Database
-import google_sheets.api as api
 import utils
 import discord
 import slashCommands

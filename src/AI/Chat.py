@@ -28,7 +28,7 @@ class Chat:
             self.history = [self.formatMessage("user", description)]
 
     def sendMessage(self, user: discord.Member, message: str) -> tuple[str, dict]:
-        nick = UserDAO(self.dbHandler).getNick(user)
+        nick = user.name
         message = f"{nick}({user.id}): " + message
         self.history.append(self.formatMessage("user", message))
 
