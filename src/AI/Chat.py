@@ -1,48 +1,93 @@
+from datetime import datetime, timezone
 import json
 import logging
 import re
 import discord
+from AI.ChatMessage import ChatMessage, ChatResponse, convertMessage
 import AI.api as api
 import config
-from database.dao import UserDAO
-from database.databaseHandler import Database
+from utils import listInsert
 
 
 class Chat:
-    def __init__(self, dbHandler: Database, previous_chats: dict = None):
-        self.dbHandler = dbHandler
+    def __init__(self):
         self.model = "gemini-2.0-flash"
-        self.history = []
+        self.history = self.loadDatabase()
 
         with open(config.geminiDescPath, "r") as f:
-            description = f.read()
+            self.description = f.read()
 
-        if previous_chats:
-            for user_message, model_response in previous_chats:
-                self.history.append(self.formatMessage("user", user_message))
-                self.history.append(self.formatMessage("model", model_response))
+    def loadDatabase(self) -> list[ChatMessage]:
+        return []
 
-        if self.history:
-            self.history = [self.formatMessage("user", description)] + self.history
+    def updateHistory(self, messages: list[discord.Message]) -> None: #TODO salva in database
+        for message in messages:
+            msg = convertMessage(message)
+            i = len(self.history) - 1
+
+            found = False
+            while i >= 0:
+
+                if self.history[i] == msg:
+                    found = True
+                    break
+
+                if self.history[i].date < msg.date:
+                    listInsert(list=self.history, value=msg, index=i + 1)
+                    found = True
+                    break
+
+                i -= 1
+
+            if not found:
+                listInsert(list=self.history, value=msg, index=0)
+
+    def formatHistory(self) -> list:
+        data = []
+
+        for msg in self.history:
+            data.append(msg.formatMessage())
+
+        desc = {"role": "user", "parts": {"text": self.description}}
+
+        if data:
+            data = [desc] + data
         else:
-            self.history = [self.formatMessage("user", description)]
+            data = [desc]
 
-    def sendMessage(self, user: discord.Member, message: str) -> tuple[str, dict]:
-        nick = user.name
-        message = f"{nick}({user.id}): " + message
-        self.history.append(self.formatMessage("user", message))
+        return data
 
-        response = api.sendMessage(history=self.history, message=message)
-        response, command = self.extractJson(response)
+    def sendMessage(self, message: discord.Message, pastMessages: list[discord.Message] = None) -> ChatResponse:
+        if pastMessages:
+            self.updateHistory(pastMessages)
 
-        self.history.append(self.formatMessage("model", response))
+        msg = convertMessage(message=message)
 
-        return self.extractJson(response)
-    
-    def formatMessage(self, author: str, message: str) -> dict:
-        return {"role": author, "parts": {"text": message}}
+        response = api.sendMessage(history=self.formatHistory(), message=str(msg))
+        response = self.extractResponse(response)
 
-    def extractJson(self, string: str) -> tuple[str, dict]:
+        return response
+
+    def sendSystemMessage(self, message: str) -> ChatResponse:
+        msg = ChatMessage(
+            id=0,
+            content=message,
+            author_id=0,
+            author_name="System",
+            channel_id=0,
+            channel_name="",
+            date=datetime.now(timezone.utc),
+        )
+        self.history.append(msg)
+
+        response = api.sendMessage(history=self.formatHistory(), message=str(msg))
+        response = self.extractResponse(response)
+
+        self.history.append(response)
+
+        return response
+
+    def extractResponse(self, string: str) -> ChatResponse:
         pattern = r"```json(.|\n)*```"
 
         match = re.search(pattern, string)
@@ -61,4 +106,4 @@ class Chat:
 
         text = re.split(pattern, string)[0].strip()
 
-        return text, json_data
+        return ChatResponse(content=text, command=json_data)

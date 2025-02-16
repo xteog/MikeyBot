@@ -65,7 +65,7 @@ class MikeyBot(MikeyBotInterface):
         self.dbHandler = Database()
         self.dbHandler.connect()
 
-        self.geminiChat = Chat(dbHandler=self.dbHandler)
+        self.geminiChat = Chat()
 
         try:
 
@@ -179,16 +179,28 @@ class MikeyBot(MikeyBotInterface):
         if message.guild.id == self.serverId and (
             self.user in message.mentions or reply
         ):
-            msg = message.content
-            msg = msg.replace(self.user.mention, "Mikey")
-            try:
-                response, command = self.geminiChat.sendMessage(
-                    user=message.author, message=msg
-                )
-                msg = await message.reply(response)
-                await self.dmsChannel.send(msg.jump_url)
-            except Exception as e:
-                await message.reply(e)
+            async with message.channel.typing():
+                try:
+                    pastMsg = []
+
+                    if message.reference:
+                        replied_message = await message.channel.fetch_message(
+                            message.reference.message_id
+                        )
+                        pastMsg.append(replied_message)
+                        
+                    async for msg in message.channel.history(limit=10):
+                        if msg.id != message.id and msg.content:
+                            pastMsg.append(msg)
+
+                    response = self.geminiChat.sendMessage(message=message, pastMessages=pastMsg) #TODO needs to be async, for the api request mainly
+
+                    msg = await message.reply(response.content)
+                    await self.dmsChannel.send(msg.jump_url)
+
+                    self.geminiChat.updateHistory([message, msg]) #TODO forse async
+                except Exception as e:
+                    await message.reply(e)
 
         if message.mention_everyone:
             await message.author.ban(reason="Gotcha u moron", delete_message_seconds=60)

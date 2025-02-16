@@ -248,3 +248,13 @@ def closeWindowDate(race: Race) -> datetime.datetime:
     closeDate = race.date + datetime.timedelta(days=config.reportWindowDelta)
     closeDate = closeDate.replace(hour=23, minute=59, second=0, microsecond=0)
     return closeDate
+
+def listInsert(list: list, value, index:int) -> list:
+    prev = value
+
+    for i in range(index, len(list)): #TODO messages se è ordinato semplifica la complessità
+        next = list[i]
+        list[i] = prev
+        prev = next
+
+    list.append(prev)

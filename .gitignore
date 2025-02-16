@@ -6,8 +6,8 @@ src/__pycache__
 src/moderation/__pycache__/
 /__pycache__/
 src/load_log.py
-src/config.py
 /data/AvailableNumbers.xlsx
+/data/discord_credentials.json
 /data/google_credentials.json
 /data/gemini_credentials.json
 /data/report_window_notice.json
@@ -15,3 +15,5 @@ src/config.py
 /src/database/__pycache__/
 /src/google_sheets/__pycache__/
 /src/AI/__pycache__/
+/data/gemini_commands.txt
+/data/gemini_description.txt

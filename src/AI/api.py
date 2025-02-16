@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import requests
@@ -17,12 +18,12 @@ def sendRequest(url: str, data: dict, tries: int = 0) -> requests.Response:
     )
 
     if response.status_code != 200 and tries <= 5:
-        time.sleep(pow(2, tries))
+        asyncio.sleep(pow(2, tries))
         response = sendRequest(url=url, data=data, tries=tries + 1)
         if response.status_code != 200:
             raise response.text
 
-    return response.json()
+    return response
 
 
 def sendMessage(history: list, message: str) -> str:
@@ -31,7 +32,7 @@ def sendMessage(history: list, message: str) -> str:
 
     apiKey = utils.read(config.geminiCredentialsPath)["api_key"]
 
-    response = sendRequest(url=geminiApiUrl.format(apiKey=apiKey), data=data)
+    response = sendRequest(url=geminiApiUrl.format(apiKey=apiKey), data=data).json()
 
     logging.info(response)
 

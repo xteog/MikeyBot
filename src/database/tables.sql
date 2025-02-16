@@ -26,6 +26,14 @@ CREATE TABLE OffenceLevels (
     FOREIGN KEY (`offence`) REFERENCES Rules(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TABLE Races (
+    `id` integer PRIMARY KEY AUTO_INCREMENT,
+    `league` varchar(8) NOT NULL,
+    `season` integer NOT NULL,
+    `round` integer NOT NULL,
+    `date` datetime NOT NULL
+);
+
 CREATE TABLE Reports (
     `id` char(4) PRIMARY KEY,
     `sender` varchar(32) NOT NULL,
@@ -64,13 +72,7 @@ CREATE TABLE Attendance2 (
     FOREIGN KEY (`race`) REFERENCES Races(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE Races (
-    `id` integer PRIMARY AUTO_INCREMENT,
-    `league` varchar(8) NOT NULL,
-    `season` integer NOT NULL,
-    `round` integer NOT NULL,
-    `date` datetime NOT NULL
-);
+
 
 INSERT INTO Rules (id, name, code, description, escalation, de_escalation)
 VALUES (0, '(Unreasonable) Edging/Bumping/Leaving Lanes/Swerving/Sudden Lane Changes', 'H.1.1', "Any case where a driver would reasonably be expected to leave a lane for another driver but fails to do so, swerves excessively on a straight, suddenly changes lane or direction in a potentially unsafe manner, causes an avoidable, potentially dangerous colission, or otherwise can be considered responsible for another car being forced off-track.", 1, 1);
