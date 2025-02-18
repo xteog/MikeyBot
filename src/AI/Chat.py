@@ -65,6 +65,9 @@ class Chat:
 
         response = self.extractResponse(response)
 
+        response.content = response.content.replace("@everyone", "@ everyone")
+        response.content = response.content.replace("@here", "@ here")
+
         return response
 
     async def sendSystemMessage(self, message: str) -> ChatResponse:
@@ -81,6 +84,9 @@ class Chat:
 
         response = await api.sendMessage(history=self.formatHistory(), message=str(msg))
         response = self.extractResponse(response)
+
+        response.content = response.content.replace("@everyone", "@ everyone")
+        response.content = response.content.replace("@here", "@ here")
 
         return response
 

@@ -78,6 +78,7 @@ def convertMessage(message: discord.Message) -> ChatMessage:
 
     for user in message.mentions:
         msg = msg.replace(user.mention, f"@{user.name}({user.id})")
+        
 
     reply = None
     if message.reference:
