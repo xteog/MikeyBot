@@ -530,7 +530,7 @@ class AttendanceDAO:
             WHERE user = %s AND race = %s
         """
 
-        values = (user_id, race.id)  # TODO cambia sto user id
+        values = (user_id, race.id)
 
         self.dbHandler.cursor.execute(query, values)
         results = self.dbHandler.cursor.fetchall()

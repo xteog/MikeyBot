@@ -1,6 +1,7 @@
 import discord
 import logging
 from MikeyBotInterface import MikeyBotInterface
+import commands
 import config
 from database.beans import League, Race, getLeague
 import views
@@ -46,15 +47,6 @@ async def availableNumbers(interaction: discord.Interaction, current: str) -> li
     return choices
 
 
-def isWindowOpen(race: Race) -> bool:
-    if race.league != League.OT:
-        return datetime.now() > race.date and datetime.now() < utils.closeWindowDate(
-            race=race
-        )
-
-    return True
-
-
 class CommandsCog(discord.ext.commands.Cog):
     def __init__(self, client: MikeyBotInterface):
         self.client = client
@@ -73,27 +65,8 @@ class CommandsCog(discord.ext.commands.Cog):
         league: discord.app_commands.Choice[str],
     ):
         logging.info(f'"\\report" used by {interaction.user.name}')
+
         league = getLeague(league.value)
-
-        if league.value == str(League.OT):
-            race = Race(
-                id=41, league=league.value, season=1, round=1, date=datetime.now()
-            )
-        else:
-            race = self.client.getCurrentRace(league=league)
-
-        if (not isWindowOpen(race)) and (
-            not utils.hasPermissions(
-                interaction.user, roles=[config.stewardsRole, config.devRole]
-            )
-        ):
-            closeDate = utils.closeWindowDate(race=race)
-
-            await interaction.response.send_message(
-                f"Report window closed <t:{int(closeDate.timestamp())}:R>",
-                ephemeral=True,
-            )
-            return
 
         modal = views.ReportModal()
         await interaction.response.send_modal(modal)
@@ -105,19 +78,21 @@ class CommandsCog(discord.ext.commands.Cog):
             await interaction.followup.send(error, ephemeral=True)
             return
 
-        data = await self.client.openReport(
-            sender=interaction.user,
-            offender=user,
-            race=race,
-            proof=modal.link.value,
-            description=modal.notes.value,
-        )
+        try:
+            result = await commands.report(
+                bot=self.client,
+                sender=interaction.user,
+                offender=user,
+                league=league,
+                proof=modal.link.value,
+                description=modal.notes.value,
+            )
+        except Exception as e:
+            await modal.interaction.delete_original_response()
+            await interaction.followup.send(e)
 
         await modal.interaction.delete_original_response()
-        await interaction.followup.send(
-            f"Report `{data.id}` created.\n The result takes too much to arrive? Use the comand </remind:1338975422456791152>",
-            ephemeral=True,
-        )
+        await interaction.followup.send(result, ephemeral=True)
 
     @discord.app_commands.command(
         name="set_number",
@@ -131,68 +106,21 @@ class CommandsCog(discord.ext.commands.Cog):
     ):
         logging.info(f'"\\set_number" used by {interaction.user.name}')
 
-        if interaction.channel.id != 990229907479076914:
-            channel = await self.client.fetch_channel(990229907479076914)
+        channel = await self.client.fetch_channel(config.numbersChannelId)
+        if interaction.channel != channel:
             await interaction.response.send_message(
                 f"Use this command on {channel.mention}", ephemeral=True
             )
             return
 
-        if not (number >= 0 and number <= 999):
-            await interaction.response.send_message(f"Number not valid", ephemeral=True)
-            return
-
-        permission = utils.hasPermissions(
-            interaction.user, roles=[config.devRole, config.URARole, config.devRole]
-        )
-
-        numbers = utils.read(config.numbersListPath)
-        ids = utils.read("../data/numbersIds.json")
-
-        if (not permission) and (
-            (user != None and user.id != interaction.user.id)
-            or (str(number) in numbers.keys())
-        ):
-            await interaction.response.send_message(
-                "You can't set someone else number", ephemeral=True
+        try:
+            await commands.setNumber(
+                channel=channel, author=interaction.user, user=user, number=number
             )
-            return
+        except Exception as e:
+            await interaction.response.send_message(e)
 
-        delete = []
-        if user != None:
-            numbers[str(number)] = user.name
-            ids[str(number)] = user.id
-
-            desc = f"The number of {user.mention} is now changed into {number}"
-
-            for key in numbers.keys():
-                if numbers[key] == numbers[str(number)] and key != str(number):
-                    delete.append(key)
-        elif permission:
-            numbers.pop(str(number), None)
-
-            desc = f"The number {number} is now available"
-        else:
-            numbers[str(number)] = interaction.user.display_name
-            ids[str(number)] = user.id
-
-            desc = (
-                f"The number of {interaction.user.mention} is now changed into {number}"
-            )
-            for key in numbers.keys():
-                if numbers[key] == numbers[str(number)] and key != str(number):
-                    delete.append(key)
-
-        for key in delete:
-            numbers.pop(key, None)
-
-        utils.write(config.numbersListPath, numbers)
-        utils.write("../data/numbersIds.json", ids)
-
-        utils.createNumbersSheet(config.numbersSheetPath, numbers)
-        await interaction.response.send_message(
-            content=desc, file=discord.File(config.numbersSheetPath)
-        )
+        await interaction.response.send_message("Number updated", ephemeral=True)
 
     @discord.app_commands.command(
         name="remind",

@@ -3,6 +3,7 @@ src/__pycache__
 /.env
 /data/logging.log
 /data/numbersList.json
+/data/numbersIds.json
 src/moderation/__pycache__/
 /__pycache__/
 src/load_log.py
@@ -17,3 +18,5 @@ src/load_log.py
 /src/AI/__pycache__/
 /data/gemini_commands.txt
 /data/gemini_description.txt
+/data/gemini_descriptions/
+/src/AI/commands/

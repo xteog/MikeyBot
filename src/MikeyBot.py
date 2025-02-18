@@ -4,10 +4,13 @@ from datetime import timedelta
 from datetime import timezone
 import re
 from AI.Chat import Chat
+from AI.ChatMessage import ChatResponse
 from MikeyBotInterface import MikeyBotInterface
+import commands
 from database.beans import League, Race, Report, Rule, VoteType, getLeague
 from database.dao import AttendanceDAO, RaceDAO, ReportDAO, RuleDAO, UserDAO, VotesDAO
 from database.databaseHandler import Database
+from exceptions import ResponseException
 import utils
 import discord
 import slashCommands
@@ -32,7 +35,7 @@ class MikeyBot(MikeyBotInterface):
         elif sys.argv[1] == "test":
             config.TEST()
         else:
-            raise ValueError
+            raise ValueError()
 
         self.serverId = config.serverId
         self.dmsChannel = None
@@ -176,35 +179,55 @@ class MikeyBot(MikeyBotInterface):
             if replied_message.author == self.user:
                 reply = True
 
-        if message.guild.id == self.serverId and (
-            self.user in message.mentions or reply
+        if (
+            message.content
+            and message.guild.id == self.serverId
+            and (self.user in message.mentions or reply)
         ):
             async with message.channel.typing():
+
+                pastMsg = []
+                messagesHistory = [message]
+
+                if message.reference:
+                    replied_message = await message.channel.fetch_message(
+                        message.reference.message_id
+                    )
+                    pastMsg.append(replied_message)
+
+                async for msg in message.channel.history(limit=10):
+                    if msg.id != message.id and msg.content:
+                        pastMsg.append(msg)
+
                 try:
-                    pastMsg = []
-
-                    if message.reference:
-                        replied_message = await message.channel.fetch_message(
-                            message.reference.message_id
-                        )
-                        pastMsg.append(replied_message)
-                        
-                    async for msg in message.channel.history(limit=10):
-                        if msg.id != message.id and msg.content:
-                            pastMsg.append(msg)
-
-                    response = self.geminiChat.sendMessage(message=message, pastMessages=pastMsg) #TODO needs to be async, for the api request mainly
+                    response = await self.geminiChat.sendMessage(
+                        message=message, pastMessages=pastMsg
+                    )
 
                     msg = await message.reply(response.content)
-                    await self.dmsChannel.send(msg.jump_url)
+                    messagesHistory.append(msg)
 
-                    self.geminiChat.updateHistory([message, msg]) #TODO forse async
+                    await self.executeCommand(
+                        channel=message.channel,
+                        response=response,
+                        history=messagesHistory,
+                    )
+
+                except ResponseException as e:
+                    await self.errorHandlingAI(channel=message.channel, error=e, history=messagesHistory)
                 except Exception as e:
-                    await message.reply(e)
+                    await message.reply(e)  # TODO error handling, Rate limit missing
+                    logging.error(e)
+
+                self.geminiChat.updateHistory(
+                    messagesHistory
+                )  # TODO async, problema di sync list
 
         if message.mention_everyone:
-            await message.author.ban(reason="Gotcha u moron", delete_message_seconds=60)
-            await message.channel.send("Gotcha u moron")
+            await message.author.ban(
+                reason="Silence. Enforced.", delete_message_seconds=60
+            )
+            await message.channel.send("Silence. Enforced.")
 
         if message.channel.id == self.reportChannel.id:
             await self.deleteMessage(self.reportChannel.id, message.id)
@@ -440,7 +463,7 @@ class MikeyBot(MikeyBotInterface):
 
         message = await self.sendReport(report)
 
-        report = await dao.setMessageId(report, message)
+        report = dao.setMessageId(report, message)
 
         self.updateAttendance(user=offender, race=race, attended=True)
 
@@ -546,8 +569,9 @@ class MikeyBot(MikeyBotInterface):
         await msg.delete()
 
     async def sendMessage(self, msg: str, channelId: int) -> None:
-        channel = self.get_channel(channelId)
-        await channel.send(msg)
+        if msg:
+            channel = self.get_channel(channelId)
+            await channel.send(msg)
 
     async def archiveThread(self, id: str) -> None:
         threads = self.reportChannel.threads
@@ -671,8 +695,51 @@ class MikeyBot(MikeyBotInterface):
 
         sheets.statusAttendance("Ready")
 
+    async def errorHandlingAI(
+        self,
+        channel: discord.TextChannel,
+        error: str,
+        history: list[discord.Message],
+        tries: int = 1,
+    ) -> None:
+        logging.error(error)
+        if tries >= 3:
+            raise Exception("Too many tries, the command can't be executed.")
+
+        try:
+            response = await self.geminiChat.sendSystemMessage(error)
+            if response.content:
+                msg = await channel.send(response.content)
+                history.append(msg)
+            await self.executeCommand(
+                channel=channel, response=response, history=history, tries=tries + 1
+            )
+        except ResponseException as e:
+            await self.errorHandlingAI(channel=channel, error=e, history=history, tries=tries + 1)
+
+    async def executeCommand(
+        self,
+        channel: discord.TextChannel,
+        response: ChatResponse,
+        history: list[discord.Message],
+        tries: int = 0,
+    ) -> None:
+
+        if tries >= 3:
+            raise Exception("Too many tries, the command can't be executed.")
+
+        if response.command:
+            result = await commands.executeCommand(bot=self, command=response.command)
+            newResponse = await self.geminiChat.sendSystemMessage(result)
+            if newResponse.content:
+                msg = await channel.send(newResponse.content)
+                history.append(msg)
+            await self.executeCommand(
+                channel=channel, response=newResponse, history=history, tries=tries + 1
+            )
+
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
-        logging.error(f"Error: {event_method}")
+        logging.error(sys.exc_info())
 
 
 def run():

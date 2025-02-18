@@ -6,6 +6,7 @@ import discord
 from AI.ChatMessage import ChatMessage, ChatResponse, convertMessage
 import AI.api as api
 import config
+from exceptions import ResponseException
 from utils import listInsert
 
 
@@ -50,25 +51,23 @@ class Chat:
 
         desc = {"role": "user", "parts": {"text": self.description}}
 
-        if data:
-            data = [desc] + data
-        else:
-            data = [desc]
+        data = [desc] + data
 
         return data
 
-    def sendMessage(self, message: discord.Message, pastMessages: list[discord.Message] = None) -> ChatResponse:
+    async def sendMessage(self, message: discord.Message, pastMessages: list[discord.Message] = None) -> ChatResponse:
         if pastMessages:
             self.updateHistory(pastMessages)
 
         msg = convertMessage(message=message)
 
-        response = api.sendMessage(history=self.formatHistory(), message=str(msg))
+        response = await api.sendMessage(history=self.formatHistory(), message=str(msg))
+
         response = self.extractResponse(response)
 
         return response
 
-    def sendSystemMessage(self, message: str) -> ChatResponse:
+    async def sendSystemMessage(self, message: str) -> ChatResponse:
         msg = ChatMessage(
             id=0,
             content=message,
@@ -80,10 +79,8 @@ class Chat:
         )
         self.history.append(msg)
 
-        response = api.sendMessage(history=self.formatHistory(), message=str(msg))
+        response = await api.sendMessage(history=self.formatHistory(), message=str(msg))
         response = self.extractResponse(response)
-
-        self.history.append(response)
 
         return response
 
@@ -100,9 +97,12 @@ class Chat:
 
             try:
                 json_data = json.loads(json_string)
-            except json.JSONDecodeError as e:
+
+                if not isinstance(json_data, dict):
+                    raise Exception("Command not formatted correctly")
+            except Exception as e:
                 logging.error(f"Error decoding JSON: {e}")
-                raise e
+                raise ResponseException("Command not formatted correctly")
 
         text = re.split(pattern, string)[0].strip()
 

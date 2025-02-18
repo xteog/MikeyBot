@@ -252,7 +252,7 @@ def closeWindowDate(race: Race) -> datetime.datetime:
 def listInsert(list: list, value, index:int) -> list:
     prev = value
 
-    for i in range(index, len(list)): #TODO messages se è ordinato semplifica la complessità
+    for i in range(index, len(list)):
         next = list[i]
         list[i] = prev
         prev = next

@@ -44,8 +44,11 @@ errorChannelId = None
 leaguesChannelIds = None
 ccChannelId = None
 lobbiesChannelId = None
+nummbersChannelId = None
 
 reportWindowDelta = 5
+TODO = "This is a summary of what happened before:"
+summaryRequest = "Summarize all the previous messages in no more than 4000 characters. Make sure to include the important stuff. Your response will be used as long term memory, so make sure to not mess it up and include only the summary, no other messages."
 
 
 def TEST():
@@ -60,6 +63,7 @@ def TEST():
     global leaguesChannelIds
     global ccChannelId
     global lobbiesChannelId
+    global numbersChannelId
     botId = 881632829547642972
     serverId = 881632566589915177
     reportChannelId = 1151111851170598983
@@ -72,6 +76,7 @@ def TEST():
     }
     ccChannelId = 1150943947812778024
     lobbiesChannelId = 1150943947812778024
+    numbersChannelId = 1150943947812778024
 
     global stewardsRole
     global devRole
@@ -103,6 +108,7 @@ def RUN():
     global leaguesChannelIds
     global ccChannelId
     global lobbiesChannelId
+    global numbersChannelId
     botId = 1150936522263101461
     serverId = 449754203238301698
     reportChannelId = 1181745012971679764
@@ -116,6 +122,7 @@ def RUN():
     }
     ccChannelId = 930047083510132746
     lobbiesChannelId = 903892486399868978
+    numbersChannelId = 990229907479076914
 
     global stewardsRole
     global devRole
