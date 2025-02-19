@@ -237,7 +237,7 @@ async def mute(author: discord.Member, offender: discord.Member):
         not utils.hasPermissions(
             author, [config.devRole, config.stewardsRole, config.URARole]
         )
-        and author.id != config.botId and False
+        and author.id != config.botId
     ):
         return f"User {author}({author.id}) doesn't have permissions to mute."
 
