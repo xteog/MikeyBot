@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 import discord
 
@@ -80,6 +80,26 @@ async def executeCommand(bot: MikeyBotInterface, command: dict) -> str:
             proof=proof,
             description=description,
         )
+    elif command["command"] == "mute":
+        authorId, offenderId = retrieveParameters(
+            command=command,
+            keys=["author", "offender"],
+        )
+
+        try:
+            author = await bot.getUser(authorId)
+        except Exception as e:
+            logging.error(e)
+            raise ResponseException(f'"sender" not found from the id "{senderId}"')
+
+        try:
+            offender = await bot.getUser(offenderId)
+        except Exception as e:
+            logging.error(e)
+            raise ResponseException(f'"offender" not found from the id "{offenderId}"')
+
+        result = await mute(author=author, offender=offender)
+
     else:
         raise ResponseException(f'Command {command["command"]} not found')
 
@@ -210,3 +230,16 @@ def isWindowOpen(race: Race) -> bool:
         )
 
     return True
+
+
+async def mute(author: discord.Member, offender: discord.Member):
+    if (
+        not utils.hasPermissions(
+            author, [config.devRole, config.stewardsRole, config.URARole]
+        )
+        and author.id != config.botId and False
+    ):
+        return f"User {author}({author.id}) doesn't have permissions to mute."
+
+    await offender.timeout(datetime.now(timezone.utc) + timedelta(minutes=10))
+    return f"User {offender}({offender.id}) has been muted for 10minutes."

@@ -80,6 +80,7 @@ class Chat:
             channel_name="",
             date=datetime.now(timezone.utc),
         )
+        logging.info(str(msg))
         self.history.append(msg)
 
         response = await api.sendMessage(history=self.formatHistory(), message=str(msg))
