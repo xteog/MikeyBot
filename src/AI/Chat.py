@@ -120,7 +120,7 @@ class Chat:
 
     async def generateSummary(self) -> None:
         history = self.history[
-            : len(self.history) // 2
+            : int(len(self.history) * config.summaryPartition)
         ]  # TODO based on the number of the tokens
         data = []
 

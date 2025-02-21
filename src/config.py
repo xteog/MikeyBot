@@ -50,7 +50,8 @@ reportWindowDelta = 5
 
 summaryRequest = "Summarize all the previous messages in no more than 4000 characters. Make sure to include the important stuff. Your response will be used as long term memory, so make sure to not mess it up and include only the summary, no other messages."
 
-maxTokens = 8000
+summaryPartition = 0.75
+maxTokens = 16000
 maxCharsText = 4000
 
 def TEST():
