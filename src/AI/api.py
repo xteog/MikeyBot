@@ -22,8 +22,8 @@ async def sendRequest(url: str, data: dict, tries: int = 0) -> httpx.Response:
         raise RateLimitException()
 
     if response.status_code != 200:
-        logging.error(response.getText())
-        raise Exception(response.getText())
+        logging.error(response.text)
+        raise Exception(response.text)
 
     return response
 
