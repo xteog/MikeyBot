@@ -252,5 +252,5 @@ CREATE TABLE Messages (
 
 CREATE TABLE Summaries (
     `guild` varchar(32) PRIMARY KEY,
-    `summary` TEXT NOT NULL,
+    `summary` TEXT NOT NULL
 );

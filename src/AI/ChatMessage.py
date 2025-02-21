@@ -86,7 +86,7 @@ class ChatMessage(ChatResponse):
         result = ""
         if self.authorId == str(config.botId):
             if self.getCommand():
-                return self.getText() + "\n" + self.getCommand()
+                return self.getText() + "\n" + f"```json\n{self.getCommand()}\n```"
             else:
                 return self.getText()
         else:
