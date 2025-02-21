@@ -49,18 +49,18 @@ class Chat:
 
         return msg
 
-    def formatInput(self, prompt: bool = True) -> list:
+    def formatInput(self) -> list:
         data = []
 
-        if prompt:
-            desc = {"role": "user", "parts": {"text": self.prompt}}
-            data.append(desc)
+        desc = {"role": "user", "parts": {"text": self.prompt}}
+        data.append(desc)
 
         if self.summary:
             summary = {
                 "role": "user",
                 "parts": {
-                    "text": "This is a summary of what happened before:\n" + self.summary
+                    "text": "This is a summary of what happened before:\n"
+                    + self.summary
                 },
             }
 
@@ -84,10 +84,11 @@ class Chat:
             if msg.id != message.id and msg.content:
                 self.updateHistory(msg)
 
-        
         msg = self.bot.insertMessage(message)
 
-        response, tokens = await api.sendMessage(history=self.formatInput(), message=str(msg))
+        response, tokens = await api.sendMessage(
+            history=self.formatInput(), message=str(msg)
+        )
 
         self.updateHistory(message)
 
@@ -111,23 +112,38 @@ class Chat:
 
         logging.info(str(msg))
 
-        response, tokens = await api.sendMessage(history=self.formatInput(), message=str(msg))
+        response, tokens = await api.sendMessage(
+            history=self.formatInput(), message=str(msg)
+        )
 
         return response
-    
 
     async def generateSummary(self) -> None:
-        history = self.history[:len(self.history) // 2] #TODO based on the number of the tokens
-
+        history = self.history[
+            : len(self.history) // 2
+        ]  # TODO based on the number of the tokens
         data = []
+
+        if self.summary:
+            summary = {
+                "role": "user",
+                "parts": {
+                    "text": "This is a summary of what happened before:\n"
+                    + self.summary
+                },
+            }
+
+            data.append(summary)
+
         for msg in history:
             data.append(msg.formatMessage())
 
-        response, tokens = await api.sendMessage(history=self.formatInput(prompt=False), message=config.summaryRequest)
+        response, tokens = await api.sendMessage(
+            history=data, message=config.summaryRequest
+        )
 
         self.bot.updateSummary(guild=self.guild, summary=response.getText())
         self.summary = response.getText()
 
-        self.bot.deleteMessages(messages=history) #TODO potrebbe volerci un po'
+        self.bot.deleteMessages(messages=history)  # TODO potrebbe volerci un po'
         self.history = self.loadMessages()
-
