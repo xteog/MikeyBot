@@ -1,33 +1,34 @@
-import asyncio
 import logging
-import time
-import requests
 
+import httpx
+
+from AI.ChatMessage import ChatResponse
 import config
+from exceptions import RateLimitException
 import utils
 
 
 geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={apiKey}"
 
 
-async def sendRequest(url: str, data: dict, tries: int = 0) -> requests.Response:
+async def sendRequest(url: str, data: dict, tries: int = 0) -> httpx.Response:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            url=url,
+            json=data,
+        )
 
-    response = requests.post(
-        url=url,
-        json=data,
-    )
+    if response.status_code == 429:
+        raise RateLimitException()
 
-    if response.status_code != 200 and tries <= 5:
-        print(data)
-        await asyncio.sleep(pow(2, tries)) #TODO forse meglio far gestire il retry dal bot così può avvisare l'utente di rate limited
-        response = await sendRequest(url=url, data=data, tries=tries + 1)
-        if response.status_code != 200:
-            raise Exception(response.text)
+    if response.status_code != 200:
+        logging.error(response.getText())
+        raise Exception(response.getText())
 
     return response
 
 
-async def sendMessage(history: list, message: str) -> str:
+async def sendMessage(history: list, message: str) -> tuple[ChatResponse, int]:
     msgFormatted = {"role": "user", "parts": [{"text": message}]}
     data = {"contents": history + [msgFormatted]}
 
@@ -36,6 +37,9 @@ async def sendMessage(history: list, message: str) -> str:
     response = await sendRequest(url=geminiApiUrl.format(apiKey=apiKey), data=data)
     response = response.json()
 
-    logging.info(response)
+    tokens = response['usageMetadata']['promptTokenCount']
+    text = response["candidates"][0]["content"]["parts"][0]["text"]
 
-    return response["candidates"][0]["content"]["parts"][0]["text"]
+    logging.info(f"({tokens}) {text}")
+
+    return ChatResponse(content=text), tokens

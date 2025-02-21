@@ -258,3 +258,12 @@ def listInsert(list: list, value, index:int) -> list:
         prev = next
 
     list.append(prev)
+
+
+def convertMentions(message: discord.Message) -> str:
+    msg = message.content
+
+    for user in message.mentions:
+        msg = msg.replace(user.mention, f"@{user.name}({user.id})")
+
+    return msg

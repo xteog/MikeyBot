@@ -1,16 +1,47 @@
 from datetime import datetime, timezone
-
-import discord
+import json
+import logging
+import re
 
 import config
+from exceptions import ResponseException
 
 
 class ChatResponse:
-    def __init__(self, content: str, command: dict = None):
+    def __init__(self, content: str):
         self.content = content
-        self.command = command
         self.authorId = config.botId
         self.authorName = "Mikey"
+
+        self.content = self.content.replace("@everyone", "@ everyone")
+        self.content = self.content.replace("@here", "@ here")
+
+    def getText(self) -> str:
+        pattern = r"```json(.|\n)*```"
+        return re.split(pattern, self.content)[0].strip()
+
+    def getCommand(self) -> dict:
+        pattern = r"```json(.|\n)*```"
+        match = re.search(pattern, self.content)
+
+        if match:
+            json_string = match.group()
+            json_string = json_string.removeprefix("```json")
+            json_string = json_string.removesuffix("```")
+
+            try:
+                json_data = json.loads(json_string)
+
+                if not isinstance(json_data, dict):
+                    raise Exception("Command not formatted correctly")
+            except Exception as e:
+                logging.error(f"Error decoding JSON: {e}")
+                raise ResponseException("Command not formatted correctly")
+
+            return json_data
+        # else: TODO caso in cui {}
+
+        return None
 
 
 class ChatMessage(ChatResponse):
@@ -23,17 +54,16 @@ class ChatMessage(ChatResponse):
         channel_name: str,
         channel_id: str | int,
         date: datetime,
-        command: dict = None,
-        replying_to: str | int = None,
+        reference: ChatResponse | None = None,
     ):
-        super().__init__(content=content, command=command)
+        super().__init__(content=content)
         self.id = id
         self.authorName = author_name
         self.authorId = author_id
         self.channelName = channel_name
         self.channelId = channel_id
         self.date = date
-        self.replying_to = replying_to
+        self.reference = reference
 
     def formatMessage(self) -> dict:
         if int(self.authorId) == config.botId:
@@ -51,46 +81,23 @@ class ChatMessage(ChatResponse):
         """
 
         if self.id == 0:
-            return f"[System]: {self.content}"
+            return f"[System]: {self.getText()}"
 
         result = ""
-        if self.authorId == config.botId:
-            if self.command:
-                return self.content  # TODO valuta se serve command
+        if self.authorId == str(config.botId):
+            if self.getCommand():
+                return self.getText() + "\n" + self.getCommand()
             else:
-                return self.content
+                return self.getText()
         else:
-            if self.replying_to and False: # TODO do this
-                result = self.replying_to + "\n"
+            if self.reference:
+                result = f"[Reply to {self.reference.authorName}: {self.reference.getText()[:50]}...]\n\n"
 
         result += f"#{self.channelName}({self.channelId})\n"
         result += f"{self.date.strftime(config.timeFormat)}\n"
-        result += f"{self.authorName}({self.authorId}): {self.content}"
+        result += f"{self.authorName}({self.authorId}): {self.getText()}"
 
         return result
 
     def __eq__(self, value: object):
         return self.id == value.id
-
-
-def convertMessage(message: discord.Message) -> ChatMessage:
-    msg = message.content
-
-    for user in message.mentions:
-        msg = msg.replace(user.mention, f"@{user.name}({user.id})")
-        
-
-    reply = None
-    if message.reference:
-        reply = message.reference.message_id
-
-    return ChatMessage(
-        id=message.id,
-        content=msg,
-        author_name=message.author.name,
-        author_id=message.author.id,
-        channel_name=message.channel.name,
-        channel_id=message.channel.id,
-        date=message.created_at,
-        replying_to=reply,
-    )

@@ -1,3 +1,4 @@
+from AI.ChatMessage import ChatMessage
 from database.beans import League, Race, Report, Rule, VoteType
 import discord
 from discord.ext import commands
@@ -52,7 +53,9 @@ class MikeyBotInterface(commands.Bot):
     ) -> None:
         pass
 
-    def getAttendances(self, user: discord.Member, league: League) -> tuple[tuple[Race, bool]]:
+    def getAttendances(
+        self, user: discord.Member, league: League
+    ) -> tuple[tuple[Race, bool]]:
         pass
 
     def getOffenceLevel(self, report: Report) -> int:
@@ -70,6 +73,21 @@ class MikeyBotInterface(commands.Bot):
     async def getVotesUsers(
         self, report: Report, type: VoteType, in_favor: bool
     ) -> tuple[discord.Member]:
+        pass
+
+    def insertMessage(self, message: discord.Message) -> ChatMessage:
+        pass
+
+    def getMessages(self, guild: discord.Guild) -> tuple[ChatMessage]:
+        pass
+
+    def getSummary(self, guild: discord.Guild) -> str | None:
+        pass
+
+    def updateSummary(self, guild: discord.Guild, summary: str) -> None:
+        pass
+
+    def deleteMessages(self, messages: tuple[ChatMessage]) -> None:
         pass
 
     async def addVote(

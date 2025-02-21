@@ -231,19 +231,26 @@ INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 7, 'URA D
 INSERT INTO OffenceLevels (offence, level, penalty, color) VALUES (14, 8, 'URA Discretion', 0x000000);
 
 
+CREATE TABLE Channels (
+    `id` varchar(32) PRIMARY KEY,
+    `name` varchar(100) NOT NULL
+);
+
+
 CREATE TABLE Messages (
     `id` varchar(32) PRIMARY KEY,
+    `guild` varchar(32) NOT NULL,
     `author` varchar(32) NOT NULL,
     `channel` varchar(32) NOT NULL,
     `content` TEXT,
-    `command` TEXT,
     `date` datetime NOT NULL,
-    `reference` varchar(32)
+    `reference` varchar(32),
+    FOREIGN KEY (`author`) REFERENCES Users(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`channel`) REFERENCES Channels(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE SystemMessages (
-    `id` varchar(32) PRIMARY KEY,
-    `content` TEXT NOT NULL,
-    `date` datetime NOT NULL,
-    `reference` varchar(32)
+
+CREATE TABLE Summaries (
+    `guild` varchar(32) PRIMARY KEY,
+    `summary` TEXT NOT NULL,
 );

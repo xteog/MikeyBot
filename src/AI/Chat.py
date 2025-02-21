@@ -1,72 +1,100 @@
 from datetime import datetime, timezone
-import json
 import logging
-import re
 import discord
-from AI.ChatMessage import ChatMessage, ChatResponse, convertMessage
+from AI.ChatMessage import ChatMessage, ChatResponse
 import AI.api as api
+from MikeyBotInterface import MikeyBotInterface
 import config
-from exceptions import ResponseException
 from utils import listInsert
 
 
 class Chat:
-    def __init__(self):
+    def __init__(self, bot: MikeyBotInterface, guild: discord.Guild):
+        self.bot = bot
+        self.guild = guild
         self.model = "gemini-2.0-flash"
-        self.history = self.loadDatabase()
+        self.summary = self.loadSummary()
+        self.history = self.loadMessages()
+        self.lock = False
 
         with open(config.geminiDescPath, "r") as f:
-            self.description = f.read()
+            self.prompt = f.read()
 
-    def loadDatabase(self) -> list[ChatMessage]:
-        return []
+    def loadSummary(self) -> str | None:
+        return self.bot.getSummary(guild=self.guild)
 
-    def updateHistory(self, messages: list[discord.Message]) -> None: #TODO salva in database
-        for message in messages:
-            msg = convertMessage(message)
-            i = len(self.history) - 1
+    def loadMessages(self) -> list[ChatMessage]:
+        return list(self.bot.getMessages(guild=self.guild))
 
-            found = False
-            while i >= 0:
+    def updateHistory(self, message: discord.Message) -> ChatMessage:
+        msg = self.bot.insertMessage(message)
+        i = len(self.history) - 1
 
-                if self.history[i] == msg:
-                    found = True
-                    break
+        found = False
+        while i >= 0:
 
-                if self.history[i].date < msg.date:
-                    listInsert(list=self.history, value=msg, index=i + 1)
-                    found = True
-                    break
+            if self.history[i] == msg:
+                found = True
+                break
 
-                i -= 1
+            if self.history[i].date < msg.date:
+                listInsert(list=self.history, value=msg, index=i + 1)
+                found = True
+                break
 
-            if not found:
-                listInsert(list=self.history, value=msg, index=0)
+            i -= 1
 
-    def formatHistory(self) -> list:
+        if not found:
+            listInsert(list=self.history, value=msg, index=0)
+
+        return msg
+
+    def formatInput(self, prompt: bool = True) -> list:
         data = []
+
+        if prompt:
+            desc = {"role": "user", "parts": {"text": self.prompt}}
+            data.append(desc)
+
+        if self.summary:
+            summary = {
+                "role": "user",
+                "parts": {
+                    "text": "This is a summary of what happened before:\n" + self.summary
+                },
+            }
+
+            data.append(summary)
 
         for msg in self.history:
             data.append(msg.formatMessage())
 
-        desc = {"role": "user", "parts": {"text": self.description}}
-
-        data = [desc] + data
-
         return data
 
-    async def sendMessage(self, message: discord.Message, pastMessages: list[discord.Message] = None) -> ChatResponse:
-        if pastMessages:
-            self.updateHistory(pastMessages)
+    async def sendMessage(self, message: discord.Message) -> ChatResponse:
 
-        msg = convertMessage(message=message)
+        if message.reference:
+            repliedMsg = await message.channel.fetch_message(
+                message.reference.message_id
+            )
 
-        response = await api.sendMessage(history=self.formatHistory(), message=str(msg))
+            self.updateHistory(repliedMsg)
 
-        response = self.extractResponse(response)
+        async for msg in message.channel.history(limit=10):
+            if msg.id != message.id and msg.content:
+                self.updateHistory(msg)
 
-        response.content = response.content.replace("@everyone", "@ everyone")
-        response.content = response.content.replace("@here", "@ here")
+        
+        msg = self.bot.insertMessage(message)
+
+        response, tokens = await api.sendMessage(history=self.formatInput(), message=str(msg))
+
+        self.updateHistory(message)
+
+        if tokens > config.maxTokens and not self.lock:
+            self.lock = True
+            await self.generateSummary()
+            self.lock = False
 
         return response
 
@@ -80,37 +108,26 @@ class Chat:
             channel_name="",
             date=datetime.now(timezone.utc),
         )
+
         logging.info(str(msg))
-        self.history.append(msg)
 
-        response = await api.sendMessage(history=self.formatHistory(), message=str(msg))
-        response = self.extractResponse(response)
-
-        response.content = response.content.replace("@everyone", "@ everyone")
-        response.content = response.content.replace("@here", "@ here")
+        response, tokens = await api.sendMessage(history=self.formatInput(), message=str(msg))
 
         return response
+    
 
-    def extractResponse(self, string: str) -> ChatResponse:
-        pattern = r"```json(.|\n)*```"
+    async def generateSummary(self) -> None:
+        history = self.history[:len(self.history) // 2] #TODO based on the number of the tokens
 
-        match = re.search(pattern, string)
-        json_data = None
+        data = []
+        for msg in history:
+            data.append(msg.formatMessage())
 
-        if match:
-            json_string = match.group()
-            json_string = json_string.removeprefix("```json")
-            json_string = json_string.removesuffix("```")
+        response, tokens = await api.sendMessage(history=self.formatInput(prompt=False), message=config.summaryRequest)
 
-            try:
-                json_data = json.loads(json_string)
+        self.bot.updateSummary(guild=self.guild, summary=response.getText())
+        self.summary = response.getText()
 
-                if not isinstance(json_data, dict):
-                    raise Exception("Command not formatted correctly")
-            except Exception as e:
-                logging.error(f"Error decoding JSON: {e}")
-                raise ResponseException("Command not formatted correctly")
+        self.bot.deleteMessages(messages=history) #TODO potrebbe volerci un po'
+        self.history = self.loadMessages()
 
-        text = re.split(pattern, string)[0].strip()
-
-        return ChatResponse(content=text, command=json_data)

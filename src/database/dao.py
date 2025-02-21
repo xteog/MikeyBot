@@ -1,5 +1,6 @@
 import datetime
 import discord
+from AI.ChatMessage import ChatMessage
 from MikeyBotInterface import MikeyBotInterface
 from database.beans import League, Race, Report, Rule, VoteType
 from database.databaseHandler import Database
@@ -7,9 +8,8 @@ import utils
 
 
 class UserDAO:
-    def __init__(self, bot: MikeyBotInterface, dbHandler: Database) -> None:
+    def __init__(self, dbHandler: Database) -> None:
         self.dbHandler = dbHandler
-        self.bot = bot
 
     def getUsers(self) -> tuple[tuple[int, str]]:
         query = """
@@ -600,6 +600,222 @@ class AttendanceDAO:
         """
 
         values = (user_id, race.id)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+
+class MessagesDAO:
+    def __init__(self, dbHandler: Database) -> None:
+        self.dbHandler = dbHandler
+
+    def existsMessage(self, id: str | int) -> bool:
+        query = """
+            SELECT *
+            FROM Messages
+            WHERE id = %s
+        """
+
+        values = (id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        result = self.dbHandler.cursor.fetchall()
+
+        return len(result) > 0
+
+    def getMessage(self, id: str | int, checkReply: bool = True) -> ChatMessage:
+        if not self.existsMessage(id=id):
+            return None
+
+        query = """
+            SELECT M.id AS id, U.id AS authorId, U.nick AS authorName, C.id AS channelId, C.name AS channelName, content, date, reference
+            FROM Messages AS M 
+                JOIN Users AS U ON M.author = U.id
+                JOIN Channels AS C ON M.channel = C.id
+            WHERE M.id = %s
+        """
+        values = (id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        result = self.dbHandler.cursor.fetchall()[0]
+
+        reference = result[7]
+        if reference and checkReply:
+            reference = self.getMessage(id=reference, checkReply=False)
+
+        return ChatMessage(
+            id=result[0],
+            author_id=result[1],
+            author_name=result[2],
+            channel_id=result[3],
+            channel_name=result[4],
+            content=result[5],
+            date=result[6],
+            reference=reference,
+        )
+
+    def getMessages(self, guild: discord.Guild) -> tuple[ChatMessage]:
+        query = """
+            SELECT M.id AS id, U.id AS authorId, U.nick AS authorName, C.id AS channelId, C.name AS channelName, content, date, reference
+            FROM Messages AS M 
+                JOIN Users AS U ON M.author = U.id
+                JOIN Channels AS C ON M.channel = C.id
+            WHERE guild = %s
+            ORDER BY date
+        """
+        values = (guild.id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        results = self.dbHandler.cursor.fetchall()
+
+        messages = []
+        for line in results:
+            reference = self.getMessage(id=line[7], checkReply=False)
+            messages.append(
+                ChatMessage(
+                    id=line[0],
+                    author_id=line[1],
+                    author_name=line[2],
+                    channel_id=line[3],
+                    channel_name=line[4],
+                    content=line[5],
+                    date=line[6],
+                    reference=reference,
+                )
+            )
+
+        return tuple(messages)
+
+    def insertMessage(self, message: discord.Message) -> None:
+        userDAO = UserDAO(dbHandler=self.dbHandler)
+
+        if not userDAO.userExists(id=message.author.id):
+            userDAO.insertUser(id=message.author.id, nick=message.author.name)
+
+        if self.existsMessage(id=message.id):
+            return self.getMessage(id=message.id)
+
+        if not self.existsChannel(id=message.channel.id):
+            self.insertChannel(id=message.channel.id, name=message.channel.name)
+
+        reference = None
+        if message.reference:
+            reference = message.reference.message_id
+
+        query = """
+            INSERT INTO Messages (id, guild, author, channel, content, date, reference)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+
+        values = (
+            message.id,
+            message.guild.id,
+            message.author.id,
+            message.channel.id,
+            utils.convertMentions(message),
+            message.created_at,
+            reference,
+        )
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+    def deleteMessage(self, message: ChatMessage) -> None:
+        query = """
+            DELETE
+            FROM Messages
+            WHERE id = %s
+        """
+
+        values = (message.id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+    def existsChannel(self, id: int) -> bool:
+        query = """
+            SELECT *
+            FROM Channels
+            WHERE id = %s
+        """
+
+        values = (id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        result = self.dbHandler.cursor.fetchall()
+
+        return len(result) > 0
+
+    def insertChannel(self, id: int | str, name: str) -> None:
+        query = """
+            INSERT INTO Channels (id, name)
+            VALUES (%s, %s)
+        """
+
+        values = (id, name)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+
+class SummaryDAO:
+    def __init__(self, dbHandler: Database) -> None:
+        self.dbHandler = dbHandler
+
+    def existsSummary(self, guild: discord.Guild) -> bool:
+        query = """
+            SELECT *
+            FROM Summaries
+            WHERE guild = %s
+        """
+
+        values = (guild.id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        result = self.dbHandler.cursor.fetchall()
+
+        return len(result) > 0
+
+    def insertSummary(self, guild: discord.Guild, summary: str) -> None:
+        query = """
+            INSERT INTO Summaries (guild, summary)
+            VALUES (%s, %s)
+        """
+
+        values = (guild.id, summary)
+
+        self.dbHandler.cursor.execute(query, values)
+        self.dbHandler.database.commit()
+
+    def getSummary(self, guild: discord.Guild) -> str | None:
+        if not self.existsSummary(guild):
+            return None
+
+        query = """
+            SELECT summary
+            FROM Summaries
+            WHERE guild = %s
+        """
+
+        values = (guild.id,)
+
+        self.dbHandler.cursor.execute(query, values)
+        result = self.dbHandler.cursor.fetchall()
+
+        return result[0][0]
+
+    def updateSummary(self, guild: discord.Guild, summary: str) -> None:
+        if not self.existsSummary(guild):
+            self.insertSummary(guild, summary)
+            return
+
+        query = """
+            UPDATE Summaries
+            SET summary = %s
+            WHERE guild = %s
+        """
+
+        values = (summary, guild.id)
 
         self.dbHandler.cursor.execute(query, values)
         self.dbHandler.database.commit()

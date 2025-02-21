@@ -47,9 +47,11 @@ lobbiesChannelId = None
 nummbersChannelId = None
 
 reportWindowDelta = 5
-TODO = "This is a summary of what happened before:"
+
 summaryRequest = "Summarize all the previous messages in no more than 4000 characters. Make sure to include the important stuff. Your response will be used as long term memory, so make sure to not mess it up and include only the summary, no other messages."
 
+maxTokens = 8000
+maxCharsText = 4000
 
 def TEST():
     global Token

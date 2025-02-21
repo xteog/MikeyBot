@@ -10,7 +10,6 @@ import utils
 
 
 async def executeCommand(bot: MikeyBotInterface, command: dict) -> str:
-    print(command)
     if not "command" in command.keys():
         raise ResponseException('Key "command" missing')
 
