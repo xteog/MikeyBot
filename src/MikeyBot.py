@@ -79,7 +79,10 @@ class MikeyBot(MikeyBotInterface):
         self.dbHandler.connect()
 
         for guild in self.guilds:
-            self.geminiChats[guild.id] = Chat(self, guild=guild)
+            try:
+                self.geminiChats[guild.id] = Chat(self, guild=guild)
+            except:
+                logging.warning(f"{guild.name} not found")
 
         try:
 
