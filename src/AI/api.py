@@ -16,6 +16,7 @@ async def sendRequest(url: str, data: dict, tries: int = 0) -> httpx.Response:
         response = await client.post(
             url=url,
             json=data,
+            timeout=20.0,
         )
 
     if response.status_code == 429:
@@ -39,7 +40,5 @@ async def sendMessage(history: list, message: str) -> tuple[ChatResponse, int]:
 
     tokens = response['usageMetadata']['promptTokenCount']
     text = response["candidates"][0]["content"]["parts"][0]["text"]
-
-    logging.info(f"({tokens}) {text}")
 
     return ChatResponse(content=text), tokens

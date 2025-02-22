@@ -145,5 +145,7 @@ class Chat:
         self.bot.updateSummary(guild=self.guild, summary=response.getText())
         self.summary = response.getText()
 
+        logging.info(summary)
+
         self.bot.deleteMessages(messages=history)  # TODO potrebbe volerci un po'
         self.history = self.loadMessages()
