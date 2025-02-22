@@ -195,7 +195,7 @@ class MikeyBot(MikeyBotInterface):
 
         if (
             message.content
-            and message.guild.id == self.serverId
+            and message.guild.id in [1142186589343191143, 881632566589915177, 449754203238301698]
             and (self.user in message.mentions or reply)
         ):
             async with message.channel.typing():
