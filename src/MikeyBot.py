@@ -195,11 +195,12 @@ class MikeyBot(MikeyBotInterface):
 
         if (
             message.content
-            and message.guild.id in [1142186588537880637, 881632566589915177, 449754203238301698]
+            and message.guild.id
+            in [1142186588537880637, 881632566589915177, 449754203238301698]
             and (self.user in message.mentions or reply)
         ):
             async with message.channel.typing():
-                messagesHistory = [message]
+                messagesHistory = []
                 chat = self.getGeminiChat(guild=message.guild)
 
                 try:
@@ -210,15 +211,15 @@ class MikeyBot(MikeyBotInterface):
                         msg.content = response.content
                         messagesHistory.append(msg)
 
-                    await self.executeCommand(  # TODO fai restituire history
+                    await self.executeCommand(
+                        chat=chat,
                         channel=message.channel,
-                        response=response,
-                        history=messagesHistory,
+                        response=response
                     )
 
                 except ResponseException as e:
                     await self.errorHandlingAI(
-                        channel=message.channel, error=e, history=messagesHistory
+                        chta=chat, channel=message.channel, error=e
                     )
                 except RateLimitException:
                     await self.replyMessage(
@@ -581,13 +582,15 @@ class MikeyBot(MikeyBotInterface):
         if msg:
             channel = self.get_channel(channelId)
             return await channel.send(msg[: config.maxCharsText - 1])
-        
+
         return None
 
-    async def replyMessage(self, message: discord.Message, reply: str) -> discord.Message:
+    async def replyMessage(
+        self, message: discord.Message, reply: str
+    ) -> discord.Message:
         if reply:
             return await message.reply(reply[: config.maxCharsText - 1])
-        
+
         return None
 
     async def archiveThread(self, id: str) -> None:
@@ -714,35 +717,35 @@ class MikeyBot(MikeyBotInterface):
 
     async def errorHandlingAI(
         self,
+        chat: Chat,
         channel: discord.TextChannel,
         error: Exception,
-        history: list[discord.Message],
         tries: int = 1,
     ) -> None:
         logging.error(error)
         if tries >= 3:
             raise Exception("Too many tries, the command can't be executed.")
-        
+
         chat = self.getGeminiChat(guild=channel.guild)
 
         try:
             response = await chat.sendSystemMessage(error.__str__())
             if response.getText():
                 msg = await channel.send(response.getText())
-                history.append(msg)
+            chat.updateHistory(msg)
             await self.executeCommand(
-                channel=channel, response=response, history=history, tries=tries + 1
+                chat=chat, channel=channel, response=response, tries=tries + 1
             )
         except ResponseException as e:
             await self.errorHandlingAI(
-                channel=channel, error=e, history=history, tries=tries + 1
+                chat=chat, channel=channel, error=e, tries=tries + 1
             )
 
     async def executeCommand(
         self,
+        chat: Chat,
         channel: discord.TextChannel,
         response: ChatResponse,
-        history: list[discord.Message],
         tries: int = 0,
     ) -> None:
 
@@ -752,13 +755,19 @@ class MikeyBot(MikeyBotInterface):
         chat = self.getGeminiChat(guild=channel.guild)
 
         if response.getCommand():
-            result = await commands.executeCommand(bot=self, command=response.getCommand())
+            result = await commands.executeCommand(
+                bot=self, command=response.getCommand()
+            )
             newResponse = await chat.sendSystemMessage(result)
             if newResponse.getText():
-                msg = await self.sendMessage(newResponse.getText(), channelId=channel.id)
-                history.append(msg)
+                msg = await self.sendMessage(
+                    newResponse.getText(), channelId=channel.id
+                )
+
+            chat.updateHistory(msg)
+
             await self.executeCommand(
-                channel=channel, response=newResponse, history=history, tries=tries + 1
+                chat=chat, channel=channel, response=newResponse, tries=tries + 1
             )
 
     def insertMessage(self, message: discord.Message) -> ChatMessage:
