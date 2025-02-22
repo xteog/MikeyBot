@@ -17,7 +17,7 @@ class Chat:
         self.history = self.loadMessages()
         self.lock = False
 
-        with open(config.geminiDescPath, "r") as f:
+        with open(config.geminiDescPath.format(guildId=guild.id), "r") as f:
             self.prompt = f.read()
 
     def loadSummary(self) -> str | None:

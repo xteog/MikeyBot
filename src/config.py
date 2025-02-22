@@ -24,7 +24,7 @@ googleCredentialsPath = "../data/google_credentials.json"
 geminiCredentialsPath = "../data/gemini_credentials.json"
 welcomeMessagePath = "../data/welcome_message.md"
 connectionTipsPath = "../data/connection_tips.md"
-geminiDescPath = "../data/gemini_description.txt"
+geminiDescPath = "../data/gemini_descriptions/{guildId}.txt"
 
 spreadSheetId = "1Hvruu_KB-dVkpy9V_sC6ZMx9C-Nlge-y8oAk9uSs2gs"
 attendanceUsersRange = "A9:C"

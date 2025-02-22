@@ -17,6 +17,6 @@ src/load_log.py
 /src/google_sheets/__pycache__/
 /src/AI/__pycache__/
 /data/gemini_commands.txt
-/data/gemini_description.txt
+/data/gemini_description/
 /data/gemini_descriptions/
 /src/AI/commands/

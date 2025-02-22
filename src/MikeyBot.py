@@ -54,7 +54,7 @@ class MikeyBot(MikeyBotInterface):
         self.lobbiesChannel = None
 
         self.lobbiesLists = []
-        self.geminiChat = None
+        self.geminiChats = {}
 
         self.ready = False
 
@@ -78,7 +78,8 @@ class MikeyBot(MikeyBotInterface):
         self.dbHandler = Database()
         self.dbHandler.connect()
 
-        self.geminiChat = Chat(self, guild=self.get_guild(self.serverId))
+        for guild in self.guilds:
+            self.geminiChats[guild.id] = Chat(self, guild=guild)
 
         try:
 
@@ -196,9 +197,10 @@ class MikeyBot(MikeyBotInterface):
         ):
             async with message.channel.typing():
                 messagesHistory = [message]
+                chat = self.getGeminiChat(guild=message.guild)
 
                 try:
-                    response = await self.geminiChat.sendMessage(message=message)
+                    response = await chat.sendMessage(message=message)
 
                     if response.getText():
                         msg = await self.replyMessage(message, response.getText())
@@ -225,7 +227,7 @@ class MikeyBot(MikeyBotInterface):
                     raise e
 
                 for msg in messagesHistory:
-                    self.geminiChat.updateHistory(msg)
+                    chat.updateHistory(msg)
 
         if message.mention_everyone:
             await message.author.ban(
@@ -717,9 +719,11 @@ class MikeyBot(MikeyBotInterface):
         logging.error(error)
         if tries >= 3:
             raise Exception("Too many tries, the command can't be executed.")
+        
+        chat = self.getGeminiChat(guild=channel.guild)
 
         try:
-            response = await self.geminiChat.sendSystemMessage(error.__str__())
+            response = await chat.sendSystemMessage(error.__str__())
             if response.getText():
                 msg = await channel.send(response.getText())
                 history.append(msg)
@@ -742,9 +746,11 @@ class MikeyBot(MikeyBotInterface):
         if tries >= 3:
             raise Exception("Too many tries, the command can't be executed.")
 
+        chat = self.getGeminiChat(guild=channel.guild)
+
         if response.getCommand():
             result = await commands.executeCommand(bot=self, command=response.getCommand())
-            newResponse = await self.geminiChat.sendSystemMessage(result)
+            newResponse = await chat.sendSystemMessage(result)
             if newResponse.getText():
                 msg = await self.sendMessage(newResponse.getText(), channelId=channel.id)
                 history.append(msg)
@@ -775,6 +781,9 @@ class MikeyBot(MikeyBotInterface):
         dao = MessagesDAO(self.dbHandler)
         for message in messages:
             dao.deleteMessage(message=message)
+
+    def getGeminiChat(self, guild: discord.Guild) -> Chat:
+        return self.geminiChats[guild.id]
 
     async def on_error(self, *args, **kwargs) -> None:
         logging.error(sys.exception().with_traceback())
